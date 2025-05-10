@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('branches', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('address');
+            $table->string('location')->nullable();
+            $table->unsignedBigInteger('tripsCount')->default(0);
+            $table->unsignedBigInteger('storesCount')->default(0);
+            $table->unsignedBigInteger('titlesCount')->default(0);
+            $table->unsignedBigInteger('workersCount')->default(0);
+            $table->timestamp('creationDate')->nullable();
+            $table->enum('status', ['active', 'notActive'])->default('active');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('branches');
+    }
+};
