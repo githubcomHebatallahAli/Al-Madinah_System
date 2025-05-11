@@ -22,12 +22,14 @@ public function getHijriDate()
     // التأكد من أن الـ API رجعت بيانات بشكل صحيح
     if ($response->successful()) {
         $hijri = $response['data']['hijri'];
-        // هنا تم إزالة "الساعة" والشرط "-"
+
+        // تم تعديل التنسيق ليظهر التاريخ الهجري أولاً، ثم الوقت في النهاية
         return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} {$formattedTime}";
     } else {
         return null; // يمكنك تعديل هذا بناءً على احتياجاتك
     }
 }
- 
+
+
 
 }
