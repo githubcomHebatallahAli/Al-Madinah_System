@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\City;
 use Illuminate\Http\Request;
+use App\Traits\HijriDateTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CityRequest;
 use App\Http\Resources\Admin\CityResource;
 
 class CityController extends Controller
 {
+    use HijriDateTrait;
+
         public function showAll()
     {
         // $this->authorize('showAll',City::class);
@@ -27,12 +30,12 @@ class CityController extends Controller
     public function create(CityRequest $request)
     {
         $this->authorize('manage_users');
+         $hijriDate = $this->getHijriDate();
            $City =City::create ([
                 "name" => $request->name,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+                'creationDate' => $hijriDate,
                 'admin_id' => auth()->id(),
                 'status'=>'active',
-
             ]);
 
            return response()->json([
