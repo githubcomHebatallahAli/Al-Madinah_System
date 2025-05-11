@@ -13,7 +13,7 @@ class Admin extends Authenticatable  implements JWTSubject
 
 
     protected $fillable = [
-        'worker_id',
+        'name',
         'email',
         'password',
         'status',
@@ -29,6 +29,12 @@ class Admin extends Authenticatable  implements JWTSubject
         public function worker()
     {
         return $this->belongsTo(Worker::class);
+    }
+
+
+        public function cities()
+    {
+        return $this->hasMany(City::class);
     }
 
         protected $hidden = [

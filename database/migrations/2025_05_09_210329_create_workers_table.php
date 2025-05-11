@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('cv')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->timestamp('creationDate')->nullable();
+            $table->json('previous_data')->nullable();
             $table->timestamps();
         });
     }

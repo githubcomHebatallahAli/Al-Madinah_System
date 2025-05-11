@@ -9,15 +9,23 @@ class City extends Model
 {
      use HasFactory;
     protected $fillable = [
+        'admin_id',
         'name',
         'creationDate',
         'status',
         'branchesCount',
-        'storesCount'
+
     ];
 
-        public function branch()
+        public function branches()
     {
         return $this->hasMany(Branch::class);
     }
+
+    public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
+
+    
 }

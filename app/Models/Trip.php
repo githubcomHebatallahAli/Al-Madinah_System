@@ -7,17 +7,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Trip extends Model
 {
-         use HasFactory;
+      use HasFactory;
     protected $fillable = [
-        'name',
-        'creationDate',
-        'status',
+        'admin_id',
         'branch_id',
-        'pilgrimsCount',
+        'name',
+        'workersCount',
         'status',
-        'creationDate',
-        'description'
+        'creationDate'
     ];
+
+        public function workers()
+    {
+        return $this->hasMany(Worker::class);
+    }
 
         public function branch()
     {

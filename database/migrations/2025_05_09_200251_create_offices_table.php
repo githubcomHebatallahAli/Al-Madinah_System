@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('titles', function (Blueprint $table) {
+        Schema::create('offices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
-            $table->string('name');
-            $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
-            $table->unsignedBigInteger('workersCount')->default(0);
+            $table->foreignId('branch_id')->nullable()->constrained('branches')->cascadeOnDelete();
+            $table->string('name')->nullable();
+            $table->string('address')->nullable();
+            $table->string('phoNum1')->nullable();
+            $table->string('phoNum2')->nullable();
+            $table->unsignedBigInteger('campaignsCount')->default(0);
             $table->timestamp('creationDate')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->json('changed_data')->nullable();
@@ -29,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('titles');
+        Schema::dropIfExists('offices');
     }
 };

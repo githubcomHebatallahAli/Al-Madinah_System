@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->enum('status', ['active', 'notActive'])->default('active');
+            $table->json('changed_data')->nullable();
             $table->timestamps();
         });
     }

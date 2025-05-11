@@ -9,6 +9,7 @@ class Title extends Model
 {
       use HasFactory;
     protected $fillable = [
+        'admin_id',
         'branch_id',
         'name',
         'workersCount',
@@ -16,7 +17,7 @@ class Title extends Model
         'creationDate'
     ];
 
-        public function worker()
+        public function workers()
     {
         return $this->hasMany(Worker::class);
     }

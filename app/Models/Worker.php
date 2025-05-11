@@ -7,10 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Worker extends Model
 {
-        use HasFactory;
-
-
+    use HasFactory;
     protected $fillable = [
+        'admin_id',
         'title_id',
         'store_id',
         'name',
@@ -23,14 +22,9 @@ class Worker extends Model
         'creationDate'
     ];
 
-        public function admin()
+        public function admins()
     {
         return $this->hasMany(Admin::class);
-    }
-
-        public function branch()
-    {
-        return $this->belongsTo(Branch::class);
     }
 
         public function title()
@@ -42,4 +36,9 @@ class Worker extends Model
     {
         return $this->belongsTo(Store::class);
     }
+
+   public function campaigns()
+{
+    return $this->belongsToMany(Campaign::class, 'campaign_workers');
+}
 }

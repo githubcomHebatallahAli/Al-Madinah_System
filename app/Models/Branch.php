@@ -8,9 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Branch extends Model
 {
         use HasFactory;
-
-
     protected $fillable = [
+        'admin_id',
         'city_id',
         'name',
         'address',
@@ -24,18 +23,23 @@ class Branch extends Model
         'status'
     ];
 
-            public function title()
+        public function titles()
     {
         return $this->hasMany(Title::class);
     }
 
-            public function trip()
+        public function trips()
     {
         return $this->hasMany(Trip::class);
     }
 
-            public function store()
+        public function stores()
     {
         return $this->hasMany(Store::class);
+    }
+
+        public function offices()
+    {
+        return $this->hasMany(Office::class);
     }
 }

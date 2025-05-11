@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
             $table->string('name');
             $table->unsignedBigInteger('branchesCount')->default(0);
-            $table->unsignedBigInteger('storesCount')->default(0);
             $table->timestamp('creationDate')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
+            $table->json('changed_data')->nullable();
             $table->timestamps();
         });
     }

@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
 
             // 'delegate' => \App\Http\Middleware\AuthenticateMiddleware::class,
-            // 'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
     })

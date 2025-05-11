@@ -9,6 +9,8 @@ class Store extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'admin_id',
+        'branch_id',
         'name',
         'address',
         'productsCount',
@@ -17,12 +19,12 @@ class Store extends Model
         'creationDate'
     ];
 
-        public function worker()
+        public function workers()
     {
         return $this->hasMany(Worker::class);
     }
 
-    //     public function product()
+    //     public function products()
     // {
     //     return $this->hasMany(Product::class);
     // }

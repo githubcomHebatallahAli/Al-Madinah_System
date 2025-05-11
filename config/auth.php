@@ -38,11 +38,6 @@ return [
     */
 
     'guards' => [
-        'delegate' => [
-            'driver' => 'jwt',
-            'provider' => 'delegates',
-            'hash' => false,
-        ],
 
         'admin' => [
             'driver' => 'jwt',
@@ -79,12 +74,9 @@ return [
             'model' => App\Models\Admin::class,
         ],
 
-        'delegates' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\Delegate::class,
-        ],
 
-        
+
+
 
         // 'users' => [
         //     'driver' => 'database',
@@ -125,12 +117,7 @@ return [
             'throttle' => 60,
         ],
 
-        'delegates' => [
-            'provider' => 'delegates',
-            'table' => 'password_resets',
-            'expire' => 60,
-            'throttle' => 60,
-        ],
+ 
     ],
 
     /*
