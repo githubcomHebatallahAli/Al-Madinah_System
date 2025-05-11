@@ -104,6 +104,7 @@ class CityController extends Controller
 
      public function active(string $id)
   {
+      $this->authorize('manage_users');
       $City =City::findOrFail($id);
 
       if (!$City) {
@@ -111,7 +112,7 @@ class CityController extends Controller
            'message' => "City not found."
        ]);
    }
-    $this->authorize('active',$City);
+    // $this->authorize('active',$City);
 
       $City->update(['status' => 'active']);
 
@@ -123,6 +124,7 @@ class CityController extends Controller
 
      public function notActive(string $id)
   {
+      $this->authorize('manage_users');
       $City =City::findOrFail($id);
 
       if (!$City) {
@@ -130,7 +132,7 @@ class CityController extends Controller
            'message' => "City not found."
        ]);
    }
-    $this->authorize('notActive',$City);
+    // $this->authorize('notActive',$City);
 
       $City->update(['status' => 'notActive']);
 
