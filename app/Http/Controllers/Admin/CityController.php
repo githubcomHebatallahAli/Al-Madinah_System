@@ -8,6 +8,7 @@ use App\Traits\HijriDateTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CityRequest;
 use App\Http\Resources\Admin\CityResource;
+use Carbon\Carbon;
 
 class CityController extends Controller
 {
@@ -30,14 +31,16 @@ class CityController extends Controller
     public function create(CityRequest $request)
     {
         $this->authorize('manage_users');
-         $hijriDate = $this->getHijriDate();
-           $City =City::create ([
-                "name" => $request->name,
-                'creationDate' => $hijriDate,
-                'admin_id' => auth()->id(),
-                'status'=>'active',
-            ]);
+    $now = Carbon::now('Asia/Riyadh');
 
+    // إنشاء المدينة
+    $City = City::create([
+        "name" => $request->name,
+        'creationDate' => $now,  // الميلادي مع الوقت بنظام 24 ساعة
+        'creationDateHijri' => $this->getHijriDate(),  // الهجري مع الوقت
+        'admin_id' => auth()->id(),
+        'status' => 'active',
+    ]);
            return response()->json([
             'data' =>new CityResource($City),
             'message' => "City Created Successfully."
