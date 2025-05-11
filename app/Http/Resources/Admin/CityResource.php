@@ -19,6 +19,7 @@ class CityResource extends JsonResource
             'name' => $this -> name,
             'branchesCount' => $this-> branchesCount,
             'status' => $this-> status,
+            'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
             'admin' => $this->admin?->name,
         ] ;

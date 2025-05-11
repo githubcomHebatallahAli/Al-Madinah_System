@@ -23,6 +23,7 @@ class CityRequest extends FormRequest
     {
         return [
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
             'status' => 'nullable|in:active,notActive',
             'name' =>'required|string',
             'admin_id' =>'nullable|exists:admins,id',
