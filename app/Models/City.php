@@ -67,10 +67,7 @@ protected static function booted()
     });
 }
 
-// public function setChangedDataAttribute($value)
-// {
-//     $this->attributes['changed_data'] = json_encode($value, JSON_UNESCAPED_UNICODE);
-// }
+
 
 protected $casts = [
     'changed_data' => 'array',

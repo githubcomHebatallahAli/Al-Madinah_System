@@ -85,14 +85,14 @@ class CityController extends Controller
         }
            $City->update([
             "name" => $request->name,
-            'creationDate' => $gregorianDate,  // ميلادي مع الوقت
+            'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status,
+            'status'=> $request-> status ?? 'active',
             'admin_id' => auth()->id(),
 
             ]);
 
-            $changedData = $this->getChangedData($oldData, $City->toArray());
+        $changedData = $this->getChangedData($oldData, $City->toArray());
         $City->changed_data = $changedData;
 
            $City->save();
