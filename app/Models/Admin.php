@@ -18,7 +18,8 @@ class Admin extends Authenticatable  implements JWTSubject
         'password',
         'status',
         'role_id',
-        'creationDate'
+        'creationDate',
+        'creationDateHijri'
     ];
 
         public function role()

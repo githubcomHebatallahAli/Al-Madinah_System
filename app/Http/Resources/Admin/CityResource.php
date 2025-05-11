@@ -22,6 +22,7 @@ class CityResource extends JsonResource
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
             'admin' => $this->admin?->name,
+            
         ] ;
     }
 }
