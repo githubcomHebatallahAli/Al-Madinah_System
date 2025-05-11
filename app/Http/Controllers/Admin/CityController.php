@@ -114,13 +114,8 @@ class CityController extends Controller
    }
        $oldData = $City->toArray();
 
-    // التاريخ
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
-    // $this->authorize('active',$City);
-
-    //   $City->update(['status' => 'active']);
-
 
     $City->status = 'active';
     $City->creationDate = $creationDate;
@@ -148,9 +143,22 @@ class CityController extends Controller
            'message' => "City not found."
        ]);
    }
-    // $this->authorize('notActive',$City);
 
-      $City->update(['status' => 'notActive']);
+          $oldData = $City->toArray();
+
+    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $hijriDate = $this->getHijriDate();
+
+    $City->status = 'notActive';
+    $City->creationDate = $creationDate;
+    $City->creationDateHijri = $hijriDate;
+    $City->admin_id = auth()->id();
+    $City->save();
+
+    $changedData = $this->getChangedData($oldData, $City->toArray());
+    $City->changed_data = $changedData;
+    $City->save();
+
 
       return response()->json([
           'data' => new CityResource($City),
