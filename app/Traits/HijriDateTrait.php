@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 
 trait HijriDateTrait
 {
-  public function getHijriDate()
+      public function getHijriDate()
     {
         // الحصول على الوقت الحالي بتوقيت السعودية
         $now = now()->timezone('Asia/Riyadh');
@@ -19,8 +19,8 @@ trait HijriDateTrait
         // استخراج التاريخ الهجري من الاستجابة
         $hijri = $response['data']['hijri'];
 
-        // تنسيق التاريخ الهجري بدون الوقت
-        return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} {$now->format('H:i:s')}";
+        // تنسيق التاريخ الهجري مع الوقت
+        return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$now->format('H:i:s')}";
     }
 
 
