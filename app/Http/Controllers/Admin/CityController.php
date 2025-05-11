@@ -31,16 +31,18 @@ class CityController extends Controller
     public function create(CityRequest $request)
     {
         $this->authorize('manage_users');
-    $now = Carbon::now('Asia/Riyadh');
+           $hijriDate = $this->getHijriDate();
 
-    // إنشاء المدينة
-    $City = City::create([
-        "name" => $request->name,
-        'creationDate' => $now,  // الميلادي مع الوقت بنظام 24 ساعة
-        'creationDateHijri' => $this->getHijriDate(),  // الهجري مع الوقت
-        'admin_id' => auth()->id(),
-        'status' => 'active',
-    ]);
+        // إذا أردت التاريخ الميلادي مع الوقت أيضًا
+        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+        $City = City::create([
+            "name" => $request->name,
+            'creationDate' => $gregorianDate,  // ميلادي مع الوقت
+            'creationDateHijri' => $hijriDate,  // هجري مع الوقت
+            'admin_id' => auth()->id(),
+            'status' => 'active',
+        ]);
            return response()->json([
             'data' =>new CityResource($City),
             'message' => "City Created Successfully."
