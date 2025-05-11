@@ -32,8 +32,6 @@ class CityController extends Controller
     {
         $this->authorize('manage_users');
            $hijriDate = $this->getHijriDate();
-
-        // إذا أردت التاريخ الميلادي مع الوقت أيضًا
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
         $City = City::create([
@@ -53,8 +51,8 @@ class CityController extends Controller
         {
             $this->authorize('manage_users');
 
-        $City = City::withCount('details')
-        ->with('details')->find($id);
+        $City = City::withCount('branches')
+        ->with('branches')->find($id);
 
             if (!$City) {
                 return response()->json([
