@@ -5,14 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Models\City;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
+use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CityRequest;
 use App\Http\Resources\Admin\CityResource;
-use Carbon\Carbon;
+
 
 class CityController extends Controller
 {
     use HijriDateTrait;
+    use TracksChangesTrait;
 
         public function showAll()
     {
@@ -70,8 +72,11 @@ class CityController extends Controller
 
         public function update(CityRequest $request, string $id)
         {
-            $this->authorize('manage_users');
+          $this->authorize('manage_users');
+        $hijriDate = $this->getHijriDate();
+        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
            $City =City::findOrFail($id);
+             $oldData = $City->toArray();
 
            if (!$City) {
             return response()->json([
@@ -80,11 +85,15 @@ class CityController extends Controller
         }
            $City->update([
             "name" => $request->name,
-            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+            'creationDate' => $gregorianDate,  // ميلادي مع الوقت
+            'creationDateHijri' => $hijriDate,
             'status'=> $request-> status,
             'admin_id' => auth()->id(),
 
             ]);
+
+            $changedData = $this->getChangedData($oldData, $City->toArray());
+        $City->changed_data = json_encode($changedData);
 
            $City->save();
            return response()->json([
