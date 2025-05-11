@@ -29,4 +29,33 @@ class City extends Model
 }
 
 
+
+
+protected static function booted()
+{
+    static::created(function ($category) {
+        $category->branchesCount = $category->branches()->count();
+        $category->save();
+    });
+
+
+
+    static::deleted(function ($category) {
+        if (method_exists($category, 'isForceDeleting') && $category->isForceDeleting()) {
+            return;
+        }
+
+        if (!$category->trashed()) {
+            $category->branchesCount = $category->branches()->count();
+            $category->save();
+        }
+    });
+
+}
+
+public function getbranchesCountAttribute()
+        {
+            return $this->branches()->count();
+        }
+
 }
