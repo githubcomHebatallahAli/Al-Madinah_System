@@ -93,7 +93,7 @@ class CityController extends Controller
             ]);
 
             $changedData = $this->getChangedData($oldData, $City->toArray());
-        $City->changed_data = json_encode($changedData);
+        $City->changed_data = $changedData;
 
            $City->save();
            return response()->json([
