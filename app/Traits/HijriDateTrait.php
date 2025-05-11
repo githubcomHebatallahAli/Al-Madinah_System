@@ -6,21 +6,18 @@ use Illuminate\Support\Facades\Http;
 
 trait HijriDateTrait
 {
-    // دالة للحصول على التاريخ الهجري
-    public function getHijriDate()
-    {
-        // الحصول على الوقت الحالي بتوقيت السعودية
-        $now = now()->timezone('Asia/Riyadh')->format('d-m-Y');
+  public function getHijriDate()
+{
+    $now = now()->timezone('Asia/Riyadh');
+    $formattedTime = $now->format('H:i:s'); 
 
-        // استدعاء API لتحويل التاريخ
-        $response = Http::get('https://api.aladhan.com/v1/gToH', [
-            'date' => $now,
-        ]);
+    $response = Http::get('https://api.aladhan.com/v1/gToH', [
+        'date' => $now->format('d-m-Y'),
+    ]);
 
-        // استخراج التاريخ الهجري من الاستجابة
-        $hijri = $response['data']['hijri'];
+    $hijri = $response['data']['hijri'];
 
-        // تنسيق التاريخ الهجري
-        return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']}";
-    }
+    return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - الساعة {$formattedTime}";
+}
+
 }

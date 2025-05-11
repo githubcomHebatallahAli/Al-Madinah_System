@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->timestamp('creationDate')->nullable();
+            $table->dateTime('creationDate')->nullable();
+            $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
             $table->timestamps();
         });
