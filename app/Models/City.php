@@ -33,21 +33,21 @@ class City extends Model
 
 protected static function booted()
 {
-    static::created(function ($category) {
-        $category->branchesCount = $category->branches()->count();
-        $category->save();
+    static::created(function ($city) {
+        $city->branchesCount = $city->branches()->count();
+        $city->save();
     });
 
 
 
-    static::deleted(function ($category) {
-        if (method_exists($category, 'isForceDeleting') && $category->isForceDeleting()) {
+    static::deleted(function ($city) {
+        if (method_exists($city, 'isForceDeleting') && $city->isForceDeleting()) {
             return;
         }
 
-        if (!$category->trashed()) {
-            $category->branchesCount = $category->branches()->count();
-            $category->save();
+        if (!$city->trashed()) {
+            $city->branchesCount = $city->branches()->count();
+            $city->save();
         }
     });
 
