@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Branch;
 use Illuminate\Http\Request;
+use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BranchRequest;
@@ -37,6 +38,7 @@ class BranchController extends Controller
         $Branch = Branch::create([
             'city_id'=> $request ->city_id,
             "name" => $request->name,
+            "address" => $request-> address,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'admin_id' => auth()->id(),
@@ -85,6 +87,7 @@ class BranchController extends Controller
            $Branch->update([
            'city_id'=> $request ->city_id,
             "name" => $request->name,
+            "address" => $request-> address,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',

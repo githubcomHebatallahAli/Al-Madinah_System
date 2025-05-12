@@ -27,6 +27,7 @@ class BranchRequest extends FormRequest
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'name' =>'required|string',
+            'address' =>'required|string',
             'admin_id' =>'nullable|exists:admins,id',
         ];
     }
