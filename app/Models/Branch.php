@@ -58,7 +58,7 @@ class Branch extends Model
 protected static function booted()
 {
     static::saved(function ($branch) {
-        // إذا تم إضافة أو تعديل الفرع، نقوم بتحديث عدد الفروع في المدينة المرتبطة به
+        // عندما يتم إضافة أو تعديل الفرع، نقوم بتحديث عدد الفروع في المدينة المرتبطة
         if ($branch->city) {
             $branch->city->update([
                 'branchesCount' => $branch->city->branches()->count()
@@ -67,10 +67,8 @@ protected static function booted()
     });
 
     static::updating(function ($branch) {
-        // نخزن المدينة القديمة إذا كان سيتم تغيير city_id
+        // نخزن المدينة القديمة إذا كان سيتم تغيير city_id فقط
         if ($branch->isDirty('city_id')) {
-            // هنا لا نحتاج لحفظ المدينة القديمة في قاعدة البيانات.
-            // سنقوم فقط بالاحتفاظ بالقيمة في الذاكرة أثناء التحديث
             $branch->old_city_id = $branch->getOriginal('city_id');
         }
     });
@@ -95,6 +93,7 @@ protected static function booted()
         }
     });
 }
+
 
 
 
