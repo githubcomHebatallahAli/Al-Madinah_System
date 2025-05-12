@@ -66,7 +66,25 @@ protected static function booted()
             ]);
         }
     });
+
+    static::updating(function ($branch) {
+
+        $branch->old_city_id = $branch->getOriginal('city_id');
+    });
+
+    static::updated(function ($branch) {
+        if (isset($branch->old_city_id) && $branch->old_city_id != $branch->city_id) {
+
+            $oldCity = \App\Models\City::find($branch->old_city_id);
+            if ($oldCity) {
+                $oldCity->update([
+                    'branchesCount' => $oldCity->branches()->count()
+                ]);
+            }
+        }
+    });
 }
+
 
 
 }
