@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('phoNum1')->nullable();
             $table->string('phoNum2')->nullable();
             $table->unsignedBigInteger('campaignsCount')->default(0);
-            $table->timestamp('creationDate')->nullable();
+            $table->dateTime('creationDate')->nullable();
+            $table->string('creationDateHijri')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->json('changed_data')->nullable();
             $table->timestamps();
