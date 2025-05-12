@@ -55,36 +55,18 @@ class Branch extends Model
     return $this->belongsTo(Admin::class, 'admin_id');
 }
 
-
-
 protected static function booted()
 {
     static::saved(function ($branch) {
+        // بعد إضافة أو تعديل فرع، تحديث عدد الفروع في المدينة
         if ($branch->city) {
-
             $branch->city->update([
                 'branchesCount' => $branch->city->branches()->count()
             ]);
         }
     });
-
-    static::updating(function ($branch) {
-
-        $branch->old_city_id = $branch->getOriginal('city_id');
-    });
-
-    static::updated(function ($branch) {
-        if (isset($branch->old_city_id) && $branch->old_city_id != $branch->city_id) {
-
-            $oldCity = City::find($branch->old_city_id);
-            if ($oldCity) {
-                $oldCity->update([
-                    'branchesCount' => $oldCity->branches()->count()
-                ]);
-            }
-        }
-    });
 }
+
 
 
 
