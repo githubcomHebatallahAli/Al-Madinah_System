@@ -16,7 +16,8 @@ class BranchResource extends JsonResource
     {
         return [
             "id" => $this -> id,
-            'city' => $this->city?->name,
+            'city_id' => $this->city?->id,
+            'city_name' => $this->city?->name,
             'name' => $this -> name,
             'address' => $this -> address,
             'tripsCount' => $this-> tripsCount,
@@ -25,7 +26,8 @@ class BranchResource extends JsonResource
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
-            'admin' => $this->admin?->name,
+            'admin_id' => $this->admin?->id,
+            'admin_name' => $this->admin?->name,
             'changed_data' => $this -> changed_data
         ];
     }
