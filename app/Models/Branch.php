@@ -61,6 +61,7 @@ protected static function booted()
 {
     static::saved(function ($branch) {
         if ($branch->city) {
+
             $branch->city->update([
                 'branchesCount' => $branch->city->branches()->count()
             ]);
@@ -75,7 +76,7 @@ protected static function booted()
     static::updated(function ($branch) {
         if (isset($branch->old_city_id) && $branch->old_city_id != $branch->city_id) {
 
-            $oldCity = \App\Models\City::find($branch->old_city_id);
+            $oldCity = City::find($branch->old_city_id);
             if ($oldCity) {
                 $oldCity->update([
                     'branchesCount' => $oldCity->branches()->count()
@@ -84,6 +85,7 @@ protected static function booted()
         }
     });
 }
+
 
 
 
