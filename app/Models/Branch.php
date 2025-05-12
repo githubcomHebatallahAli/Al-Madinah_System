@@ -56,20 +56,17 @@ class Branch extends Model
 }
 
 
-public function workers()
-{
-    return $this->hasManyThrough(Worker::class, Title::class);
-}
-
-
 
 protected static function booted()
 {
-    static::created(function ($branch) {
-        $branch->city->update([
-            'branchesCount' => $branch->city->branches()->count()
-        ]);
+    static::saved(function ($branch) {
+        if ($branch->city) {
+            $branch->city->update([
+                'branchesCount' => $branch->city->branches()->count()
+            ]);
+        }
     });
 }
+
 
 }

@@ -18,7 +18,7 @@ class CityController extends Controller
 
         public function showAll()
     {
-        // $this->authorize('showAll',City::class);
+       
         $this->authorize('manage_users');
        $City = City::orderBy('created_at', 'desc')
                  ->get();
