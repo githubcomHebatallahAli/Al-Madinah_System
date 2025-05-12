@@ -50,6 +50,12 @@ class Branch extends Model
     'changed_data' => 'array',
 ];
 
+    public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
+
+
 public function workers()
 {
     return $this->hasManyThrough(Worker::class, Title::class);

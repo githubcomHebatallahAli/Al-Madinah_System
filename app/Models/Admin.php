@@ -37,6 +37,11 @@ class Admin extends Authenticatable  implements JWTSubject
     {
         return $this->hasMany(City::class);
     }
+    
+        public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
 
         protected $hidden = [
         'password',
