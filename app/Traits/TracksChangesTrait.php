@@ -7,7 +7,7 @@ trait TracksChangesTrait
 {
     public function getChangedData(array $oldData, array $newData): array
 {
-    $ignoredKeys = ['updated_at', 'creationDate', 'creationDateHijri'];
+    $ignoredKeys = ['updated_at'];
     $changed = [];
 
     foreach ($newData as $key => $newValue) {
