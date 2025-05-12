@@ -69,7 +69,8 @@ protected static function booted()
     static::updating(function ($branch) {
         // نخزن المدينة القديمة إذا كان سيتم تغيير city_id فقط
         if ($branch->isDirty('city_id')) {
-            $branch->old_city_id = $branch->getOriginal('city_id');
+            // نستخدم old_city_id كمؤقت فقط في الذاكرة
+            $branch->setAttribute('old_city_id', $branch->getOriginal('city_id'));
         }
     });
 
@@ -93,6 +94,7 @@ protected static function booted()
         }
     });
 }
+
 
 
 
