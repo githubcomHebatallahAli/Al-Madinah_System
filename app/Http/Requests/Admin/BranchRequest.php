@@ -11,7 +11,7 @@ class BranchRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class BranchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'city_id' => 'required|exists:cities,id',
+            'status' => 'nullable|in:active,notActive',
+            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
+            'name' =>'required|string',
+            'admin_id' =>'nullable|exists:admins,id',
         ];
     }
 }

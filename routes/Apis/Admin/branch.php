@@ -1,0 +1,18 @@
+
+<?php
+
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\BranchController;
+
+
+Route::controller(BranchController::class)->prefix('/admin')->middleware('admin')->group(
+    function () {
+
+   Route::get('/showAll/branch','showAll');
+   Route::post('/create/branch', 'create');
+   Route::get('/edit/branch/{id}','edit');
+   Route::post('/update/branch/{id}', 'update');
+   Route::patch('notActive/branch/{id}', 'notActive');
+Route::patch('active/branch/{id}', 'active');
+   });

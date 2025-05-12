@@ -17,10 +17,8 @@ return new class extends Migration
             $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();
             $table->string('name');
             $table->string('address');
-            $table->string('location')->nullable();
             $table->unsignedBigInteger('tripsCount')->default(0);
             $table->unsignedBigInteger('storesCount')->default(0);
-            $table->unsignedBigInteger('titlesCount')->default(0);
             $table->unsignedBigInteger('workersCount')->default(0);
             $table->timestamp('creationDate')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
