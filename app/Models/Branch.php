@@ -61,13 +61,15 @@ public function workers()
     return $this->hasManyThrough(Worker::class, Title::class);
 }
 
+
+
 protected static function booted()
 {
     static::created(function ($branch) {
-        $branch->storesCount = $branch->stores()->count();
-        $branch->tripsCount = $branch->trips()->count();
-        $branch->workersCount = $branch->workers()->count();
-        $branch->save();
+        $branch->city->update([
+            'branchesCount' => $branch->city->branches()->count()
+        ]);
     });
 }
+
 }

@@ -20,8 +20,7 @@ class CityController extends Controller
     {
         // $this->authorize('showAll',City::class);
         $this->authorize('manage_users');
-       $City = City::withCount('branches')
-                 ->orderBy('created_at', 'desc')
+       $City = City::orderBy('created_at', 'desc')
                  ->get();
 
                   return response()->json([
@@ -54,8 +53,7 @@ class CityController extends Controller
         {
             $this->authorize('manage_users');
 
-        $City = City::withCount('branches')
-        ->with('branches')->find($id);
+       $City = City::with('branches')->find($id);
 
             if (!$City) {
                 return response()->json([
