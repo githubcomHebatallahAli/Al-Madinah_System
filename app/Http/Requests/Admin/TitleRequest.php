@@ -11,7 +11,7 @@ class TitleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class TitleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'branch_id' => 'required|exists:branches,id',
+            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
+            'status' => 'nullable|in:active,notActive',
+            'name' =>'required|string',
+            'admin_id' =>'nullable|exists:admins,id',
         ];
     }
 }
