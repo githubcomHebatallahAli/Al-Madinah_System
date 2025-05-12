@@ -67,18 +67,17 @@ protected static function booted()
     });
 
     static::updating(function ($branch) {
-        // نخزن المدينة القديمة فقط في الذاكرة عند تغيير city_id
+        // نخزن المدينة القديمة في الذاكرة فقط إذا كان سيتم تغيير city_id
         if ($branch->isDirty('city_id')) {
-            // استخدام المصفوفات للتخزين المؤقت
-            $branch->attributes['old_city_id'] = $branch->getOriginal('city_id');
+            $branch->setAttribute('old_city_id', $branch->getOriginal('city_id'));  // تخزين مؤقت في الذاكرة
         }
     });
 
     static::updated(function ($branch) {
         // إذا كان هناك تغيير في city_id، نقوم بتحديث المدينة القديمة والجديدة
-        if (isset($branch->attributes['old_city_id']) && $branch->attributes['old_city_id'] != $branch->city_id) {
+        if (isset($branch->old_city_id) && $branch->old_city_id != $branch->city_id) {
             // تحديث المدينة القديمة
-            $oldCity = \App\Models\City::find($branch->attributes['old_city_id']);
+            $oldCity = \App\Models\City::find($branch->old_city_id);
             if ($oldCity) {
                 $oldCity->update([
                     'branchesCount' => $oldCity->branches()->count()
