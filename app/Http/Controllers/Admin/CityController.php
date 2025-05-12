@@ -20,8 +20,9 @@ class CityController extends Controller
     {
         // $this->authorize('showAll',City::class);
         $this->authorize('manage_users');
-        $City = City::orderBy('created_at', 'desc')
-        ->get();
+       $City = City::withCount('branches')
+                 ->orderBy('created_at', 'desc')
+                 ->get();
 
                   return response()->json([
                       'data' =>  CityResource::collection($City),
