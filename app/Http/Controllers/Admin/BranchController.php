@@ -54,8 +54,9 @@ class BranchController extends Controller
         {
             $this->authorize('manage_users');
 
-        $Branch = Branch::withCount('branches')
-        ->with('branches')->find($id);
+        $Branch = Branch::with(['titles','offices','trips','stores'])
+        ->find($id);
+
 
             if (!$Branch) {
                 return response()->json([

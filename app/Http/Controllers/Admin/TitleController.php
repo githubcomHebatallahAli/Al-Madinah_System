@@ -52,8 +52,8 @@ class TitleController extends Controller
         {
             $this->authorize('manage_users');
 
-        $Title = Title::withCount('Titlees')
-        ->with('Titlees')->find($id);
+        $Title = Title::
+        with('workers')->find($id);
 
             if (!$Title) {
                 return response()->json([
