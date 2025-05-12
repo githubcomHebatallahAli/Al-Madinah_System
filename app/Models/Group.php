@@ -10,19 +10,24 @@ class Group extends Model
     use HasFactory;
     protected $fillable = [
         'admin_id',
-        'office_id',
+        'campaign_id',
         'groupNum',
+        'numBus',
         'status',
-        'creationDate'
+        'creationDate',
+        'creationDateHijri',
+        'changed_data'
     ];
 
-        public function office()
+        public function campaign()
     {
-        return $this->belongsTo(Office::class);
+        return $this->belongsTo(Campaign::class);
     }
 
-        public function campaigns()
-    {
-        return $this->hasMany(Campaign::class);
-    }
+            public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
+
+
 }

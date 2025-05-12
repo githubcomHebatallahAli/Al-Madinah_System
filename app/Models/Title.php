@@ -14,7 +14,9 @@ class Title extends Model
         'name',
         'workersCount',
         'status',
-        'creationDate'
+        'creationDate',
+        'creationDateHijri',
+        'changed_data'
     ];
 
         public function workers()
@@ -25,6 +27,31 @@ class Title extends Model
         public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+            public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
+
+
+
+        protected static function booted()
+    {
+        static::created(function ($title) {
+            $title->branch->increment('workersCount', $title->workers()->count());
+        });
+
+        static::updated(function ($title) {
+            if ($title->wasChanged('branch_id')) {
+                // حساب عدد العمال في العنوان قبل النقل
+                $workersCount = $title->workers()->count();
+
+                Branch::find($title->getOriginal('branch_id'))->decrement('workersCount', $workersCount);
+                $title->branch->increment('workersCount', $workersCount);
+            }
+        });
+
     }
 
 

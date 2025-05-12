@@ -16,7 +16,9 @@ class Store extends Model
         'productsCount',
         'workersCount',
         'status',
-        'creationDate'
+        'creationDate',
+        'creationDateHijri',
+        'changed_data'
     ];
 
         public function workers()
@@ -28,4 +30,29 @@ class Store extends Model
     // {
     //     return $this->hasMany(Product::class);
     // }
+
+            public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
 }
+
+        protected static function booted()
+    {
+        static::created(function ($store) {
+            $store->branch->increment('storesCount');
+        });
+
+        static::updated(function ($store) {
+            if ($store->wasChanged('branch_id')) {
+                Branch::find($store->getOriginal('branch_id'))->decrement('storesCount');
+                $store->branch->increment('storesCount');
+            }
+        });
+
+        // إذا كان لديك حذف
+        static::deleted(function ($store) {
+            $store->branch->decrement('storesCount');
+        });
+    }
+}
+

@@ -19,13 +19,15 @@ class Worker extends Model
         'salary',
         'cv',
         'status',
-        'creationDate'
+        'creationDate',
+        'creationDateHijri',
+        'changed_data'
     ];
 
-        public function admins()
-    {
-        return $this->hasMany(Admin::class);
-    }
+     public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
 
         public function title()
     {
@@ -41,4 +43,27 @@ class Worker extends Model
 {
     return $this->belongsToMany(Campaign::class, 'campaign_workers');
 }
+
+
+
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'title_id');
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($worker) {
+            $worker->title->branch->increment('workersCount');
+        });
+
+        static::updated(function ($worker) {
+            if ($worker->wasChanged('title_id')) {
+                $worker->title->branch->increment('workersCount');
+                Title::find($worker->getOriginal('title_id'))->branch->decrement('workersCount');
+            }
+        });
+
+    }
 }

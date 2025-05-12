@@ -16,12 +16,37 @@ class Office extends Model
         'phoNum1',
         'phoNum2',
         'creationDate',
-        "status"
+        "status",
+        'campaignsCount',
+        'creationDateHijri',
+        'changed_data'
 
     ];
 
-         public function groups()
+         public function campaigns()
     {
-        return $this->hasMany(Group::class);
+        return $this->hasMany(Campaign::class);
+    }
+
+        public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
+
+
+        protected static function booted()
+    {
+        static::created(function ($office) {
+            $office->branch->increment('officesCount');
+        });
+
+        static::updated(function ($office) {
+            if ($office->wasChanged('branch_id')) {
+                Branch::find($office->getOriginal('branch_id'))->decrement('officesCount');
+                $office->branch->increment('officesCount');
+            }
+        });
+
     }
 }
+

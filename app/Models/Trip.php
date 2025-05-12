@@ -12,20 +12,43 @@ class Trip extends Model
         'admin_id',
         'branch_id',
         'name',
-        'workersCount',
+        'pilgrimsCount',
         'status',
-        'creationDate'
+        'creationDate',
+        'description',
+        'creationDateHijri',
+        'changed_data'
     ];
 
-        public function workers()
-    {
-        return $this->hasMany(Worker::class);
-    }
 
         public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
 
-
+            public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
 }
+
+
+      protected static function booted()
+    {
+        static::created(function ($trip) {
+            $trip->branch->increment('tripsCount');
+        });
+
+        static::updated(function ($trip) {
+            if ($trip->wasChanged('branch_id')) {
+                Branch::find($trip->getOriginal('branch_id'))->decrement('tripsCount');
+
+                $trip->branch->increment('tripsCount');
+            }
+        });
+
+
+    }
+}
+
+
+

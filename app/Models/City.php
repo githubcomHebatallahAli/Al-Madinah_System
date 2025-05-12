@@ -13,6 +13,7 @@ class City extends Model
         'name',
         'creationDate',
         'creationDateHijri',
+        'changed_data',
         'status',
         'branchesCount',
 

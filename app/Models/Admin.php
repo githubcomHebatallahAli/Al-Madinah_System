@@ -19,7 +19,8 @@ class Admin extends Authenticatable  implements JWTSubject
         'status',
         'role_id',
         'creationDate',
-        'creationDateHijri'
+        'creationDateHijri',
+        'changed_data'
     ];
 
         public function role()
@@ -27,21 +28,53 @@ class Admin extends Authenticatable  implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
-        public function worker()
-    {
-        return $this->belongsTo(Worker::class);
-    }
+    //     public function worker()
+    // {
+    //     return $this->belongsTo(Worker::class);
+    // }
 
 
         public function cities()
     {
         return $this->hasMany(City::class);
     }
-    
+
         public function branches()
     {
         return $this->hasMany(Branch::class);
     }
+
+        public function offices()
+    {
+        return $this->hasMany(Office::class);
+    }
+
+        public function stores()
+    {
+        return $this->hasMany(Store::class);
+    }
+
+        public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+        public function titles()
+    {
+        return $this->hasMany(Title::class);
+    }
+
+        public function groups()
+    {
+        return $this->hasMany(Group::class);
+    }
+
+        public function campaigns()
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
+
 
         protected $hidden = [
         'password',

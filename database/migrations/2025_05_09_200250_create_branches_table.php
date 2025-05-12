@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('address');
             $table->unsignedBigInteger('tripsCount')->default(0);
             $table->unsignedBigInteger('storesCount')->default(0);
+            $table->unsignedBigInteger('officesCount')->default(0);
             $table->unsignedBigInteger('workersCount')->default(0);
              $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();

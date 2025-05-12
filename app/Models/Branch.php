@@ -18,7 +18,9 @@ class Branch extends Model
         'tripsCount',
         'storesCount',
         'workersCount',
-        'status'
+        'officesCount',
+        'status',
+        'changed_data'
     ];
 
         public function titles()
@@ -46,33 +48,31 @@ class Branch extends Model
         return $this->belongsTo(City::class);
     }
 
-    protected $casts = [
-    'changed_data' => 'array',
-];
-
-    public function admin()
+        public function admin()
 {
     return $this->belongsTo(Admin::class, 'admin_id');
 }
 
+    protected $casts = [
+    'changed_data' => 'array',
+];
+
+
+
 protected static function booted()
 {
     static::saved(function ($branch) {
-        // إذا كان هناك تغيير في المدينة
         if ($branch->wasChanged('city_id')) {
-            // تقليل العدد في المدينة القديمة
             if (!is_null($branch->getOriginal('city_id'))) {
                 City::where('id', $branch->getOriginal('city_id'))
                     ->decrement('branchesCount');
             }
 
-            // زيادة العدد في المدينة الجديدة
             if ($branch->city_id) {
                 City::where('id', $branch->city_id)
                     ->increment('branchesCount');
             }
         }
-        // إذا كان إنشاء جديد وليس تحديث
         elseif ($branch->wasRecentlyCreated && $branch->city_id) {
             City::where('id', $branch->city_id)
                 ->increment('branchesCount');
