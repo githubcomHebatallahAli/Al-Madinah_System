@@ -24,7 +24,7 @@ class BranchController extends Controller
 
                   return response()->json([
                       'data' =>  BranchResource::collection($Branch),
-                      'message' => "Show All Cities."
+                      'message' => "Show All branches."
                   ]);
     }
 
