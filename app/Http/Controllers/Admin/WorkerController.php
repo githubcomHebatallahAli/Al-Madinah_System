@@ -109,12 +109,13 @@ public function update(WorkerRequest $request, string $id)
                 $cvPath = $request->file('cv')->store('Workers', 'public');
                  $Worker->cv = $cvPath;
             }
+            $Worker->save();
 
-        // $changedData = $this->getChangedData($oldData, $Worker->toArray());
-        // $Worker->changed_data = $changedData;
-         $changedData = $this->getChangedData($oldData, array_merge($Worker->toArray(), [
-        'cv' => $Worker->cv ?? null,
-    ]));
+        $changedData = $this->getChangedData($oldData, $Worker->toArray());
+        $Worker->changed_data = $changedData;
+        //  $changedData = $this->getChangedData($oldData, array_merge($Worker->toArray(), [
+        // 'cv' => $Worker->cv ?? null,
+
     $Worker->changed_data = $changedData;
 
            $Worker->save();
