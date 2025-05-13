@@ -88,7 +88,7 @@ public function update(WorkerRequest $request, string $id)
                 'message' => "Worker not found."
             ], 404);
         }
-           $Worker->fill([
+           $Worker->update([
             'title_id'=> $request ->title_id,
             'store_id'=> $request ->store_id,
             "name" => $request->name,
