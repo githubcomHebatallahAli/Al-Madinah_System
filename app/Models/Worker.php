@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Worker extends Model
 {
     use HasFactory;
+     const storageFolder= 'Workers';
     protected $fillable = [
         'admin_id',
         'title_id',

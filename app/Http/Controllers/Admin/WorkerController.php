@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Http\Resources\Admin\WorkerResource;
 
@@ -41,12 +42,17 @@ public function create(WorkerRequest $request)
             "personPhoNum" => $request->personPhoNum,
             "branchPhoNum" => $request->branchPhoNum,
             "salary" => $request->salary,
-            "cv" => $request->cv,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'admin_id' => auth()->id(),
             'status' => 'active',
         ]);
+             if ($request->hasFile('cv')) {
+                $cvPath = $request->file('cv')->store(Worker::storageFolder);
+                $Worker->cv = $cvPath;
+            }
+             $Worker->save();
+
            return response()->json([
             'data' =>new WorkerResource($Worker),
             'message' => "Worker Created Successfully."
@@ -90,16 +96,26 @@ public function update(WorkerRequest $request, string $id)
             "personPhoNum" => $request->personPhoNum,
             "branchPhoNum" => $request->branchPhoNum,
             "salary" => $request->salary,
-            "cv" => $request->cv,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
             'admin_id' => auth()->id(),
-
             ]);
 
-        $changedData = $this->getChangedData($oldData, $Worker->toArray());
-        $Worker->changed_data = $changedData;
+                        if ($request->hasFile('cv')) {
+                if ($Worker->cv) {
+                    Storage::disk('public')->delete( $Worker->cv);
+                }
+                $cvPath = $request->file('cv')->store('Workers', 'public');
+                 $Worker->cv = $cvPath;
+            }
+
+        // $changedData = $this->getChangedData($oldData, $Worker->toArray());
+        // $Worker->changed_data = $changedData;
+         $changedData = $this->getChangedData($oldData, array_merge($Worker->toArray(), [
+        'cv' => $Worker->cv ?? null,
+    ]));
+    $Worker->changed_data = $changedData;
 
            $Worker->save();
            return response()->json([
