@@ -33,7 +33,7 @@ class WorkerRequest extends FormRequest
             'branchPhoNum' =>'nullable|string',
             'idNum' =>'required|integer',
             'salary' =>'required|numeric|regex:/^\d{1,5}(\.\d{1,2})?$/',
-            'cv' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:2048',
+            'cv' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg',
         ];
     }
 }
