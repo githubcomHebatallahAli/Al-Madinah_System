@@ -25,6 +25,10 @@ class Worker extends Model
         'changed_data'
     ];
 
+    protected $casts = [
+    'salary' => 'decimal:2',
+];
+
      public function admin()
 {
     return $this->belongsTo(Admin::class, 'admin_id');
