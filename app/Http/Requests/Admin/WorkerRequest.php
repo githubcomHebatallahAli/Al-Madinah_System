@@ -24,7 +24,7 @@ class WorkerRequest extends FormRequest
         return [
             'admin_id' =>'nullable|exists:admins,id',
             'title_id' => 'required|exists:titles,id',
-            'store_id' => 'required|exists:stores,id',
+            'store_id' => 'nullable|exists:stores,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
