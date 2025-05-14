@@ -22,23 +22,7 @@ class AdminSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        DB::table('admins')->insert([
-            'name'=> 'AboEsraa',
-            'email' => 'admin@mail.com',
-            'password' => Hash::make('admin@234'),
-            'role_id' => '2',
-            'status' => 'active',
-        ]);
 
-        // DB::table('admins')->insert([
-        //     'name' => 'Employee',
-        //     'email' => 'employee@mail.com',
-        //     'password' => Hash::make('employee@543'),
-        //     'phoNum'=>'0111334455',
-        //     'role_id' => '3',
-        //     'status' => 'active',
-        //     'type' => 'station',
-        // ]);
 
     }
 }

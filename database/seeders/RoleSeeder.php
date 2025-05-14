@@ -15,14 +15,39 @@ class RoleSeeder extends Seeder
     {
         DB::table('roles')->insert([
             'name' => 'Super Admin',
+            'guardName'=> 'admin',
+            'status'=> 'active'
         ]);
 
         DB::table('roles')->insert([
-            'name' => 'Admin',
+            'name' => 'Branch Manager',
+            'guardName'=> 'worker',
+            'status'=> 'active'
         ]);
 
         DB::table('roles')->insert([
-            'name' => 'Employee',
+            'name' => 'Delegate',
+            'guardName'=> 'worker',
+            'status'=> 'active'
+        ]);
+
+        DB::table('roles')->insert([
+            'name' => 'Supervisor',
+            'guardName'=> 'worker',
+            'status'=> 'active'
+        ]);
+
+
+        DB::table('roles')->insert([
+            'name' => 'Accountant',
+            'guardName'=> 'worker',
+            'status'=> 'active'
+        ]);
+
+        DB::table('roles')->insert([
+            'name' => 'Storekeeper',
+            'guardName'=> 'worker',
+            'status'=> 'active'
         ]);
 
 
