@@ -2,73 +2,106 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Worker extends Model
+class Worker extends Authenticatable  implements JWTSubject
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
      const storageFolder= 'Workers';
     protected $fillable = [
-        'admin_id',
         'title_id',
         'store_id',
         'name',
+        'email',
+        'password',
+        'role_id',
         'idNum',
         'personPhoNum',
         'branchPhoNum',
         'salary',
         'cv',
         'status',
+        'dashboardAccess',
         'creationDate',
         'creationDateHijri',
-        'changed_data'
+        'changed_data',
+        'added_by',
     ];
 
-    protected $casts = [
-    'salary' => 'decimal:2',
-];
+   protected $casts = [
+        'salary' => 'decimal:2',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
 
-     public function admin()
-{
-    return $this->belongsTo(Admin::class, 'admin_id');
-}
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-        public function title()
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function addedBy()
+    {
+        return $this->belongsTo(Worker::class, 'added_by');
+    }
+
+    public function title()
     {
         return $this->belongsTo(Title::class);
     }
 
-        public function store()
+    public function store()
     {
         return $this->belongsTo(Store::class);
     }
 
-   public function campaigns()
-{
-    return $this->belongsToMany(Campaign::class, 'campaign_workers');
-}
-
-
+    public function campaigns()
+    {
+        return $this->belongsToMany(Campaign::class, 'campaign_workers');
+    }
 
 
     public function branch()
     {
-        return $this->belongsTo(Branch::class, 'title_id');
+        return $this->hasOneThrough(Branch::class, Title::class, 'id', 'id', 'title_id', 'branch_id');
     }
 
     protected static function booted()
     {
         static::created(function ($worker) {
-            $worker->title->branch->increment('workersCount');
+            if ($worker->title && $worker->title->branch) {
+                $worker->title->branch->increment('workersCount');
+            }
         });
 
         static::updated(function ($worker) {
             if ($worker->wasChanged('title_id')) {
-                $worker->title->branch->increment('workersCount');
-                Title::find($worker->getOriginal('title_id'))->branch->decrement('workersCount');
+                if ($worker->title && $worker->title->branch) {
+                    $worker->title->branch->increment('workersCount');
+                }
+
+                $oldTitle = Title::find($worker->getOriginal('title_id'));
+                if ($oldTitle && $oldTitle->branch) {
+                    $oldTitle->branch->decrement('workersCount');
+                }
             }
         });
+    }
 
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }

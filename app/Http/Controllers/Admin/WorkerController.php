@@ -113,8 +113,6 @@ public function update(WorkerRequest $request, string $id)
 
         $changedData = $this->getChangedData($oldData, $Worker->toArray());
         $Worker->changed_data = $changedData;
-        //  $changedData = $this->getChangedData($oldData, array_merge($Worker->toArray(), [
-        // 'cv' => $Worker->cv ?? null,
 
     $Worker->changed_data = $changedData;
 

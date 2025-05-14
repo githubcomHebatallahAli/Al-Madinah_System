@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            // $table->foreignId('worker_id')->nullable()->constrained('workers')->cascadeOnDelete();
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->foreignId('role_id')->nullable()->constrained('roles')->cascadeOnDelete();
+            $table->foreignId('added_by')->nullable()->constrained('admins');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

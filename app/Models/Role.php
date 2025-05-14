@@ -10,10 +10,18 @@ class Role extends Model
       use HasFactory;
     protected $fillable = [
         'name',
+        'status',
+        'guardName',
+        'changed_data'
     ];
 
      public function admin()
     {
         return $this->hasMany(Admin::class);
+    }
+
+     public function worker()
+    {
+        return $this->hasMany(Worker::class);
     }
 }

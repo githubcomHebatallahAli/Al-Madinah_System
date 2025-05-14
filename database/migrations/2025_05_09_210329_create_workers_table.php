@@ -13,9 +13,13 @@ return new class extends Migration
     {
         Schema::create('workers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
-            $table->foreignId('title_id')->constrained('titles')->cascadeOnDelete();
+            $table->foreignId('title_id')->constrained('titles')->nullOnDelete();
             $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
+            $table->foreignId('role_id')->nullable()->constrained('roles')->cascadeOnDelete();
+            $table->foreignId('added_by')->nullable()->constrained('workers');
+            $table->string('email')->unique()->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password')->nullable();
             $table->string('name');
             $table->string('idNum');
             $table->string('personPhoNum');
@@ -23,6 +27,7 @@ return new class extends Migration
             $table->decimal('salary');
             $table->string('cv')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
+            $table->enum('dashboardAccess', ['ok', 'notOk'])->default('notOk');
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();

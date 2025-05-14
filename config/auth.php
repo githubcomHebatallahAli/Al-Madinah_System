@@ -44,6 +44,11 @@ return [
             'provider' => 'admins',
             'hash' => false,
         ],
+        'worker' => [
+            'driver' => 'jwt',
+            'provider' => 'workers',
+            'hash' => false,
+        ],
     ],
 
     /*
@@ -72,6 +77,10 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
+        ],
+        'workers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Worker::class,
         ],
 
 
@@ -117,7 +126,14 @@ return [
             'throttle' => 60,
         ],
 
- 
+        'workers' => [
+            'provider' => 'workers',
+            'table' => 'password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+
     ],
 
     /*

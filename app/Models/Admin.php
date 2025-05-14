@@ -20,7 +20,8 @@ class Admin extends Authenticatable  implements JWTSubject
         'role_id',
         'creationDate',
         'creationDateHijri',
-        'changed_data'
+        'changed_data',
+        'added_by',
     ];
 
         public function role()
@@ -28,10 +29,10 @@ class Admin extends Authenticatable  implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
-    //     public function worker()
-    // {
-    //     return $this->belongsTo(Worker::class);
-    // }
+      public function addedBy()
+    {
+        return $this->belongsTo(Admin::class, 'added_by');
+    }
 
 
         public function cities()
