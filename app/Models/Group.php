@@ -30,4 +30,9 @@ class Group extends Model
 }
 
 
+    protected $casts = [
+    'changed_data' => 'array',
+];
+
+
 }

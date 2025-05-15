@@ -29,7 +29,9 @@ class AdminRegisterRequest extends FormRequest
             'password' => 'required|string|confirmed|min:6',
             'role_id' => 'nullable|exists:roles,id',
             'status' => 'nullable|in:active,notActive',
-            'added_by' => 'nullable','exists:admins,id'
+            'added_by' => 'nullable','exists:admins,id',
+            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
         ];
     }
 

@@ -31,7 +31,7 @@ class Store extends Model
     //     return $this->hasMany(Product::class);
     // }
 
-            public function admin()
+    public function admin()
 {
     return $this->belongsTo(Admin::class, 'admin_id');
 }
@@ -54,5 +54,11 @@ class Store extends Model
             $store->branch->decrement('storesCount');
         });
     }
+
+
+    protected $casts = [
+    'changed_data' => 'array',
+];
+
 }
 

@@ -92,8 +92,10 @@ class Admin extends Authenticatable  implements JWTSubject
     }
 
     protected $casts = [
-        'password' => 'hashed'
+        'password' => 'hashed',
+        'changed_data' => 'array',
     ];
+
 
     public function getJWTIdentifier()
     {

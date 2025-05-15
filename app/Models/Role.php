@@ -24,4 +24,9 @@ class Role extends Model
     {
         return $this->hasMany(Worker::class);
     }
+
+    protected $casts = [
+    'changed_data' => 'array',
+];
+
 }

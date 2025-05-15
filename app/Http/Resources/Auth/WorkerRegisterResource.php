@@ -21,6 +21,10 @@ class WorkerRegisterResource extends JsonResource
             'worker'=> new WorkerResource($this->worker),
             'email'=>$this->email,
             'role' => new RoleResource($this->role),
+            'creationDate' => $this -> creationDate,
+            'creationDateHijri'=> $this -> creationDateHijri,
+            'changed_data' => $this -> changed_data,
+            'added_by' => $this -> added_by
         ];
     }
 }

@@ -11,10 +11,16 @@ class WorkerLogin extends Model
         'email',
         'password',
         'role_id',
+        'creationDate',
+        'creationDateHijri',
+        'changed_data',
+        'added_by',
      ];
 
      public function worker()
 {
     return $this->belongsTo(Worker::class);
 }
+
+
 }

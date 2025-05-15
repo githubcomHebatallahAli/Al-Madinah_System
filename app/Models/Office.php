@@ -48,5 +48,9 @@ class Office extends Model
         });
 
     }
+
+    protected $casts = [
+    'changed_data' => 'array',
+];
 }
 

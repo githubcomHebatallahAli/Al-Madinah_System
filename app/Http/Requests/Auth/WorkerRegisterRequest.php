@@ -26,6 +26,9 @@ class WorkerRegisterRequest extends FormRequest
             'password' => 'required|string|confirmed|min:6',
             'role_id' => 'nullable|exists:roles,id',
             'worker_id' => 'nullable|exists:workers,id',
+            'added_by' => 'nullable','exists:workers,id',
+            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
         ];
     }
 }

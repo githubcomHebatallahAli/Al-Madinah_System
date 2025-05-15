@@ -38,7 +38,10 @@ class Worker extends Authenticatable  implements JWTSubject
         'salary' => 'decimal:2',
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'changed_data' => 'array',
     ];
+
+
 
     protected $hidden = [
         'password',
