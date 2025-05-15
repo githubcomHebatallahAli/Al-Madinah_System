@@ -16,7 +16,7 @@ class AuthenticateMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::guard('delegate')->check()) {
+        if (!Auth::guard('worker')->check()) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
