@@ -3,15 +3,13 @@
 namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
+use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class BranchResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+    use AddedByResourceTrait;
+
     public function toArray(Request $request): array
     {
         return [
@@ -27,9 +25,9 @@ class BranchResource extends JsonResource
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
-            'admin_id' => $this->admin?->id,
-            'admin_name' => $this->admin?->name,
-            'changed_data' => $this -> changed_data
+            'changed_data' => $this -> changed_data,
+
+
         ];
     }
 }

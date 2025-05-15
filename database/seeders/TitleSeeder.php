@@ -15,7 +15,6 @@ class TitleSeeder extends Seeder
     public function run(): void
     {
             DB::table('titles')->insert([
-            // 'admin_id' => 1,
             'branch_id' => 1,
             'name' => 'Branch Manager',
             'workersCount' => 0,
@@ -24,7 +23,6 @@ class TitleSeeder extends Seeder
             'status' => 'active',
         ]);
             DB::table('titles')->insert([
-            // 'admin_id' => 1,
             'branch_id' => 1,
             'name' => 'Delegate',
             'workersCount' => 0,
@@ -33,7 +31,6 @@ class TitleSeeder extends Seeder
             'status' => 'active',
         ]);
             DB::table('titles')->insert([
-            // 'admin_id' => 1,
             'branch_id' => 1,
             'name' => 'Supervisor',
             'workersCount' => 0,
@@ -42,7 +39,6 @@ class TitleSeeder extends Seeder
             'status' => 'active',
         ]);
             DB::table('titles')->insert([
-            // 'admin_id' => 1,
             'branch_id' => 1,
             'name' => 'Accountant',
             'workersCount' => 0,
@@ -51,7 +47,6 @@ class TitleSeeder extends Seeder
             'status' => 'active',
         ]);
             DB::table('titles')->insert([
-            // 'admin_id' => 1,
             'branch_id' => 1,
             'name' => 'Storekeeper',
             'workersCount' => 0,

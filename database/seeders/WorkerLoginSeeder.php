@@ -27,7 +27,7 @@ class WorkerLoginSeeder extends Seeder
             'password' => Hash::make('delegate@345'),
         ]);
          DB::table('worker_logins')->insert([
-            'title_id' => '3',
+            'worker_id' => '3',
             'role_id' => '4',
             'email' => 'supervisor@mail.com',
             'password' => Hash::make('supervisor@456'),

@@ -15,7 +15,6 @@ class StoreSeeder extends Seeder
     public function run(): void
     {
             DB::table('stores')->insert([
-            'admin_id' => 1, // بدون مشرف حالياً
             'branch_id' => 1,
             'name' => 'Store Alexandria 1',
             'address' => 'شارع جمال عبد الناصر - سيدي بشر',

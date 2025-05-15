@@ -3,15 +3,12 @@
 namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
+use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class WorkerResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+   use AddedByResourceTrait;
     public function toArray(Request $request): array
     {
         return [
@@ -32,7 +29,6 @@ class WorkerResource extends JsonResource
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
             'changed_data' => $this -> changed_data,
-            'added_by' => $this -> added_by
         ];
     }
 }

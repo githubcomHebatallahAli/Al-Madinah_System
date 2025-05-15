@@ -14,7 +14,6 @@ class BranchSeeder extends Seeder
     public function run(): void
     {
          DB::table('branches')->insert([
-            'admin_id' => '1',
             'city_id'=> '1',
             'name' => 'Hogag',
             'address'=> 'vvv',

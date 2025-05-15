@@ -14,7 +14,6 @@ class CitySeeder extends Seeder
     public function run(): void
     {
          DB::table('cities')->insert([
-            'admin_id' => 1,
             'name'=> 'El Damam',
             'status' => 'active',
         ]);
