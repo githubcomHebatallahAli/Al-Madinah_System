@@ -1,0 +1,22 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+class CitySeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+         DB::table('cities')->insert([
+            'admin_id' => 1,
+            'name'=> 'El Damam',
+            'status' => 'active',
+        ]);
+    }
+}
