@@ -22,10 +22,10 @@ class WorkerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'admin_id' =>'nullable|exists:admins,id',
             'title_id' => 'required|exists:titles,id',
             'store_id' => 'nullable|exists:stores,id',
             'status' => 'nullable|in:active,notActive',
+            'dashboardAccess' => 'nullable|in:ok,notOk',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'name' =>'required|string',
@@ -34,6 +34,7 @@ class WorkerRequest extends FormRequest
             'idNum' =>'required|integer',
             'salary' =>'required|numeric|regex:/^\d{1,5}(\.\d{1,2})?$/',
             'cv' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg',
+            'added_by' => 'nullable','exists:workers,id'
         ];
     }
 }

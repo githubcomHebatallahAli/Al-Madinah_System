@@ -29,11 +29,11 @@ class WorkerResource extends JsonResource
             'cv' => $this -> cv ,
             'workersCount' => $this-> workersCount,
             'status' => $this-> status,
+            'dashboardAccess' => $this-> dashboardAccess,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
-            'admin_id' => $this->admin?->id,
-            'admin_name' => $this->admin?->name,
-            'changed_data' => $this -> changed_data
+            'changed_data' => $this -> changed_data,
+            'added_by' => $this -> added_by
         ];
     }
 }

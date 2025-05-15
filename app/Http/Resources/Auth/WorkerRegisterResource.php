@@ -7,7 +7,7 @@ use App\Http\Resources\Admin\RoleResource;
 use App\Http\Resources\Admin\WorkerResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AdminRegisterResource extends JsonResource
+class WorkerRegisterResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,15 +18,9 @@ class AdminRegisterResource extends JsonResource
     {
         return [
             'id'=>$this->id,
-            'name'=>$this->name,
+            'worker'=> new WorkerResource($this->worker),
             'email'=>$this->email,
             'role' => new RoleResource($this->role),
-            'status' => $this -> status,
-            'creationDate' => $this -> creationDate,
-            'creationDateHijri'=> $this -> creationDateHijri,
-            'changed_data' => $this -> changed_data,
-            'added_by' => $this -> added_by
-
         ];
     }
 }

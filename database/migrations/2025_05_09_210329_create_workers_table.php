@@ -15,11 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('title_id')->constrained('titles')->cascadeOnDelete();
             $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
-            $table->foreignId('role_id')->nullable()->constrained('roles')->cascadeOnDelete();
             $table->string('name');
-            $table->string('email')->unique()->nullable();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password')->nullable();
             $table->string('idNum');
             $table->string('personPhoNum');
             $table->string('branchPhoNum')->nullable();

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('guardName', ['admin', 'worker'])->default('admin');
+            $table->enum('guardName', ['admin', 'worker'])->default('worker');
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->json('changed_data')->nullable();
             $table->timestamps();

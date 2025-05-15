@@ -15,9 +15,6 @@ class Worker extends Authenticatable  implements JWTSubject
         'title_id',
         'store_id',
         'name',
-        'email',
-        'password',
-        'role_id',
         'idNum',
         'personPhoNum',
         'branchPhoNum',
@@ -30,6 +27,12 @@ class Worker extends Authenticatable  implements JWTSubject
         'changed_data',
         'added_by',
     ];
+
+    public function workerLogin()
+{
+    return $this->hasOne(WorkerLogin::class);
+}
+
 
    protected $casts = [
         'salary' => 'decimal:2',
