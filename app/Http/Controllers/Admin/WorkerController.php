@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Http\Resources\Admin\WorkerResource;
@@ -34,6 +35,18 @@ public function create(WorkerRequest $request)
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
+          $addedById = null;
+
+    if (Auth::guard('admin')->check() && Auth::guard('admin')->user()->role_id == 1) {
+        $addedById = Auth::guard('admin')->id(); // Super Admin
+    } elseif (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 2) {
+        $addedById = Auth::guard('worker')->id(); // Branch Manager
+    } else {
+        return response()->json([
+            'message' => 'Unauthorized: Only SuperAdmin or BranchManager can add workers.'
+        ], 403);
+    }
+
         $Worker = Worker::create([
             'title_id'=> $request ->title_id,
             'store_id'=> $request ->store_id,
@@ -44,7 +57,7 @@ public function create(WorkerRequest $request)
             "salary" => $request->salary,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
-            'admin_id' => auth()->id(),
+            'added_by' => $addedById,
             'status' => 'active',
         ]);
              if ($request->hasFile('cv')) {
@@ -99,7 +112,7 @@ public function update(WorkerRequest $request, string $id)
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'admin_id' => auth()->id(),
+            'added_by'
             ]);
 
                         if ($request->hasFile('cv')) {

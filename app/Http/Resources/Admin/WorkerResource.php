@@ -21,7 +21,6 @@ class WorkerResource extends JsonResource
             'store_id' => $this->store?->id,
             'store_name' => $this->store?->name,
             'name' => $this -> name,
-            'address' => $this -> address,
             'idNum' => $this -> idNum ,
             'personPhoNum' => $this -> personPhoNum ,
             'branchPhoNum' => $this -> branchPhoNum ,
