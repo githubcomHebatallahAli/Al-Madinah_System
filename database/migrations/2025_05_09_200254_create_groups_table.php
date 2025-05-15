@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('groups', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->string('added_by_type')->nullable();
             $table->foreignId('campaign_id')->constrained('campaigns')->cascadeOnDelete();
             $table->string('groupNum')->nullable();
             $table->string('numBus')->nullable();

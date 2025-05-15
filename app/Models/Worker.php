@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasCreatorTrait;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Worker extends Authenticatable  implements JWTSubject
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,HasCreatorTrait;
      const storageFolder= 'Workers';
     protected $fillable = [
         'title_id',
@@ -26,6 +27,7 @@ class Worker extends Authenticatable  implements JWTSubject
         'creationDateHijri',
         'changed_data',
         'added_by',
+        'added_by_type',
     ];
 
     public function workerLogin()
@@ -53,10 +55,10 @@ class Worker extends Authenticatable  implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
-    public function addedBy()
-    {
-        return $this->belongsTo(Worker::class, 'added_by');
-    }
+    // public function addedBy()
+    // {
+    //     return $this->belongsTo(Worker::class, 'added_by');
+    // }
 
     public function title()
     {

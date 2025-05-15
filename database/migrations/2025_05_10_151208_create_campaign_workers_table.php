@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('campaign_workers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->string('added_by_type')->nullable();
             $table->foreignId('campaign_id')->constrained('campaigns')->cascadeOnDelete();
             $table->foreignId('worker_id')->constrained('workers')->cascadeOnDelete();
             $table->timestamp('joined_at')->nullable();

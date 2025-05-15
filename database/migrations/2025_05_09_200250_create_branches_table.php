@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('branches', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->string('added_by_type')->nullable();
             $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();
             $table->string('name');
             $table->string('address');

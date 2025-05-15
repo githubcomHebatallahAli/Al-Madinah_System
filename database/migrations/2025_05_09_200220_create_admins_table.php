@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('name');
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->foreignId('role_id')->nullable()->constrained('roles')->cascadeOnDelete();
-            $table->foreignId('added_by')->nullable()->constrained('admins');
+            // $table->foreignId('added_by')->nullable()->constrained('admins');
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->string('added_by_type')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

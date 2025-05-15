@@ -25,7 +25,8 @@ return new class extends Migration
             $table->enum('dashboardAccess', ['ok', 'notOk'])->default('notOk');
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
-            $table->foreignId('added_by')->nullable()->constrained('workers');
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->string('added_by_type')->nullable();
             $table->json('changed_data')->nullable();
             $table->timestamps();
         });

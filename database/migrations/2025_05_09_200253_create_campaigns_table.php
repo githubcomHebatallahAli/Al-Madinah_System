@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('campaigns', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('admins')->cascadeOnDelete();
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->string('added_by_type')->nullable();
             $table->foreignId('office_id')->constrained('offices')->cascadeOnDelete();
             $table->string('name');
             $table->unsignedBigInteger('groupsCount')->default(0);

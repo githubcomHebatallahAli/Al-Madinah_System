@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasCreatorTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Store extends Model
 {
-    use HasFactory;
+    use HasFactory,HasCreatorTrait;
     protected $fillable = [
-        'admin_id',
+        'added_by',
+        'added_by_type',
         'branch_id',
         'name',
         'address',
@@ -31,10 +33,10 @@ class Store extends Model
     //     return $this->hasMany(Product::class);
     // }
 
-    public function admin()
-{
-    return $this->belongsTo(Admin::class, 'admin_id');
-}
+//     public function admin()
+// {
+//     return $this->belongsTo(Admin::class, 'admin_id');
+// }
 
         protected static function booted()
     {

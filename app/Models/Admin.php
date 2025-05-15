@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasCreatorTrait;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Admin extends Authenticatable  implements JWTSubject
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,HasCreatorTrait;
 
 
     protected $fillable = [
@@ -22,6 +23,7 @@ class Admin extends Authenticatable  implements JWTSubject
         'creationDateHijri',
         'changed_data',
         'added_by',
+        'added_by_type'
     ];
 
         public function role()
@@ -29,10 +31,10 @@ class Admin extends Authenticatable  implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
-      public function addedBy()
-    {
-        return $this->belongsTo(Admin::class, 'added_by');
-    }
+    //   public function addedBy()
+    // {
+    //     return $this->belongsTo(Admin::class, 'added_by');
+    // }
 
 
         public function cities()

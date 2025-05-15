@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasCreatorTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Campaign extends Model
 {
-    use HasFactory;
+    use HasFactory,HasCreatorTrait;
     protected $fillable = [
-        'admin_id',
+        'added_by',
+        'added_by_type',
         'office_id',
         'name',
         'status',
@@ -33,10 +35,10 @@ class Campaign extends Model
     return $this->hasMany(Group::class);
 }
 
-        public function admin()
-{
-    return $this->belongsTo(Admin::class, 'admin_id');
-}
+//         public function admin()
+// {
+//     return $this->belongsTo(Admin::class, 'admin_id');
+// }
 
 
     protected $casts = [
