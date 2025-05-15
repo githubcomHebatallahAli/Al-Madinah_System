@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\WorkerController;
 
 
-Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->middleware(['admin','worker'])->group(
+Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
    Route::get('/showAll/worker','showAll');
