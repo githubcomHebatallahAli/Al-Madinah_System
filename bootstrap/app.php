@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             'worker' => \App\Http\Middleware\AuthenticateMiddleware::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'adminOrWorker' => \App\Http\Middleware\AdminOrWorkerMiddleware::class,
         ]);
 
     })
