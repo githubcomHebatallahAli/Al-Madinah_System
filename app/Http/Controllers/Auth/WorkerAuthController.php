@@ -12,6 +12,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Http\Resources\Admin\WorkerResource;
+use App\Http\Requests\Auth\WorkerRegisterRequest;
 
 class WorkerAuthController extends Controller
 {
@@ -36,7 +37,7 @@ public function login(LoginRequest $request)
 
 
 
-    public function register(WorkerRequest $request)
+    public function register(WorkerRegisterRequest $request)
     {
     $admin = auth('admin')->user();
     $branchManager= auth('worker')->user();
