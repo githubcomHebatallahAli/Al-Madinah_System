@@ -58,11 +58,18 @@ public function login(LoginRequest $request)
             return response()->json($validator->errors()->toJson(), 400);
         }
 
+    $hijriDate = $this->getHijriDate();
+    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
-        $workerData = array_merge(
-            $validator->validated(),
-            ['password' => bcrypt($request->password)],
-        );
+
+      $workerData = array_merge(
+        $validator->validated(),
+        [
+            'password' => bcrypt($request->password),
+            'creationDate' => $gregorianDate,
+            'creationDateHijri' => $hijriDate,
+        ]
+    );
 
         $worker = WorkerLogin::create($workerData);
 
