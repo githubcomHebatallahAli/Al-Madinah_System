@@ -35,7 +35,7 @@ class Role extends Model
 
      public function worker()
     {
-        return $this->hasMany(Worker::class);
+        return $this->hasMany(WorkerLogin::class);
     }
 
     protected $casts = [

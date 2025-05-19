@@ -31,6 +31,9 @@ class WorkerLogin extends Model
 {
     return $this->belongsTo(Worker::class);
 }
-
+     public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
 
 }
