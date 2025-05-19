@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Http\Resources\Admin\WorkerResource;
 use App\Http\Requests\Auth\WorkerRegisterRequest;
+use App\Http\Resources\Auth\WorkerRegisterResource;
 
 class WorkerAuthController extends Controller
 {
@@ -79,7 +80,7 @@ public function login(LoginRequest $request)
 
         return response()->json([
             'message' => 'worker Registration successful',
-            'worker' => new WorkerResource($worker->load('workerLogin'))
+            'worker' => new WorkerRegisterResource($worker->load('worker'))
         ]);
     }
 
