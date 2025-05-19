@@ -18,7 +18,8 @@ class CityResource extends JsonResource
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
-            'changed_data' => $this -> changed_data
+            'changed_data' => $this -> changed_data,
+            'added_by' => $this->addedByAttribute(),
 
         ] ;
     }

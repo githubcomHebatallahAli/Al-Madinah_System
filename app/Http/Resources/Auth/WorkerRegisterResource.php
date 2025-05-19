@@ -21,6 +21,7 @@ class WorkerRegisterResource extends JsonResource
             'creationDate' => $this -> creationDate,
             'creationDateHijri'=> $this -> creationDateHijri,
             'changed_data' => $this -> changed_data,
+            'added_by' => $this->addedByAttribute(),
 
         ];
     }

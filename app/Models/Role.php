@@ -22,6 +22,12 @@ class Role extends Model
 
     ];
 
+    public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
+
      public function admin()
     {
         return $this->hasMany(Admin::class);

@@ -60,6 +60,12 @@ class Worker extends Authenticatable  implements JWTSubject
     //     return $this->belongsTo(Worker::class, 'added_by');
     // }
 
+    public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
+
     public function title()
     {
         return $this->belongsTo(Title::class);

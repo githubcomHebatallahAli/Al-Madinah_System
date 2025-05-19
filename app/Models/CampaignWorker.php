@@ -19,4 +19,10 @@ class CampaignWorker extends Model
         'creationDateHijri',
         'changed_data',
     ];
+
+    public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
 }

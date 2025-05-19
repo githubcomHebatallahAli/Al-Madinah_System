@@ -21,6 +21,12 @@ class WorkerLogin extends Model
         'added_by_type',
      ];
 
+     public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
+
      public function worker()
 {
     return $this->belongsTo(Worker::class);

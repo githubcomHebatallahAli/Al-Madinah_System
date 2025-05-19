@@ -40,6 +40,12 @@ class Campaign extends Model
 //     return $this->belongsTo(Admin::class, 'admin_id');
 // }
 
+public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
+
 
     protected $casts = [
     'changed_data' => 'array',

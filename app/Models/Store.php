@@ -38,6 +38,12 @@ class Store extends Model
 //     return $this->belongsTo(Admin::class, 'admin_id');
 // }
 
+public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
+
         protected static function booted()
     {
         static::created(function ($store) {

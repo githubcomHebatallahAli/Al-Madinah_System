@@ -11,6 +11,8 @@ class StoreResource extends JsonResource
    use AddedByResourceTrait;
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'added_by' => $this->addedByAttribute(),
+        ];
     }
 }

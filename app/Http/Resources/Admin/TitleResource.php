@@ -22,7 +22,8 @@ class TitleResource extends JsonResource
             'creationDate'=> $this-> creationDate,
             'admin_id' => $this->admin?->id,
             'admin_name' => $this->admin?->name,
-            'changed_data' => $this -> changed_data
+            'changed_data' => $this -> changed_data,
+            'added_by' => $this->addedByAttribute(),
         ];
     }
 }

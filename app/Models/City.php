@@ -21,6 +21,12 @@ class City extends Model
 
     ];
 
+    public function creator()
+{
+    return $this->morphTo('added_by');
+}
+
+
         public function branches()
     {
         return $this->hasMany(Branch::class);
