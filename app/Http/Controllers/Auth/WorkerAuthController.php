@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Models\Worker;
 use App\Models\WorkerLogin;
 use Illuminate\Http\Request;
+use App\Traits\HijriDateTrait;
+use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Validator;
@@ -13,6 +15,8 @@ use App\Http\Resources\Admin\WorkerResource;
 
 class WorkerAuthController extends Controller
 {
+    use HijriDateTrait;
+    use TracksChangesTrait;
 public function login(LoginRequest $request)
 {
     $validator = Validator::make($request->all(), $request->rules());

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\Admin;
+use App\Traits\HijriDateTrait;
+use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Auth\LoginRequest;
@@ -12,6 +14,8 @@ use App\Http\Resources\Auth\AdminRegisterResource;
 
 class AdminAuthController extends Controller
 {
+     use HijriDateTrait;
+    use TracksChangesTrait;
        public function login(LoginRequest $request)
     {
         $validator = Validator::make($request->all(), $request->rules());
