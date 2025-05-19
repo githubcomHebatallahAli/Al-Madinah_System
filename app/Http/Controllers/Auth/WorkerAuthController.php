@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Models\WorkerLogin;
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Validator;
@@ -34,12 +35,64 @@ public function login(LoginRequest $request)
 
 
 
-    public function register(WorkerRegisterRequest $request)
-    {
-    $admin = auth('admin')->user();
-    $branchManager= auth('worker')->user();
+    // public function register(WorkerRegisterRequest $request)
+    // {
+    // $admin = auth('admin')->user();
+    // $branchManager= auth('worker')->user();
 
-      $authorized = ($admin && $admin->role_id == 1) ||
+    //   $authorized = ($admin && $admin->role_id == 1) ||
+    //               ($branchManager && $branchManager->workerLogin->role_id == 2);
+
+    // if (!$authorized) {
+    //     return response()->json([
+    //         'message' => 'Unauthorized. Only Super Admins or Branch Managers can register new workers.'
+    //     ], 403);
+    // }
+
+
+
+    //     $validator = Validator::make($request->all(), $request->rules());
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors()->toJson(), 400);
+    //     }
+
+    // $hijriDate = $this->getHijriDate();
+    // $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+
+    //   $workerData = array_merge(
+    //     $validator->validated(),
+    //     [
+    //         'password' => bcrypt($request->password),
+    //         'creationDate' => $gregorianDate,
+    //         'creationDateHijri' => $hijriDate,
+    //     //     'added_by' => $admin ? $admin->id : $branchManager->id,
+    //     // 'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
+
+    //     ]
+    // );
+
+
+
+    //     $worker = WorkerLogin::create($workerData);
+
+
+    //     $worker->save();
+
+    //     return response()->json([
+    //         'message' => 'worker Registration successful',
+    //         'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
+    //     ]);
+    // }
+
+
+    public function register(WorkerRegisterRequest $request)
+{
+    $admin = auth('admin')->user();
+    $branchManager = auth('worker')->user();
+
+    $authorized = ($admin && $admin->role_id == 1) ||
                   ($branchManager && $branchManager->workerLogin->role_id == 2);
 
     if (!$authorized) {
@@ -48,55 +101,43 @@ public function login(LoginRequest $request)
         ], 403);
     }
 
+    $validator = Validator::make($request->all(), $request->rules());
 
-
-        $validator = Validator::make($request->all(), $request->rules());
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
-        }
+    if ($validator->fails()) {
+        return response()->json($validator->errors()->toJson(), 400);
+    }
 
     $hijriDate = $this->getHijriDate();
     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
+    $addedById = $admin ? $admin->id : ($branchManager ? $branchManager->id : null);
+    $addedByType = $admin ? get_class($admin) : ($branchManager ? get_class($branchManager) : null);
 
-      $workerData = array_merge(
-        // $validator->validated(),
-        // [
-        //     'password' => bcrypt($request->password),
-        //     'creationDate' => $gregorianDate,
-        //     'creationDateHijri' => $hijriDate,
-        //     'added_by' => $admin ? $admin->id : $branchManager->id,
-        // 'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
-        // ]
+    Log::info('Registering worker with added_by info', [
+        'added_by' => $addedById,
+        'added_by_type' => $addedByType,
+    ]);
+
+    $workerData = array_merge(
+        $validator->validated(),
+        [
+            'password' => bcrypt($request->password),
+            'creationDate' => $gregorianDate,
+            'creationDateHijri' => $hijriDate,
+            'added_by' => $addedById,
+            'added_by_type' => $addedByType,
+        ]
     );
 
-    $workerData = $validator->validated();
-$workerData['password'] = bcrypt($request->password);
-$workerData['creationDate'] = $gregorianDate;
-$workerData['creationDateHijri'] = $hijriDate;
+    $worker = WorkerLogin::create($workerData);
 
-if ($admin) {
-    $workerData['added_by'] = $admin->id;
-    $workerData['added_by_type'] = get_class($admin);
-} elseif ($branchManager) {
-    $workerData['added_by'] = $branchManager->id;
-    $workerData['added_by_type'] = get_class($branchManager);
-} else {
-    $workerData['added_by'] = null;
-    $workerData['added_by_type'] = null;
+    $worker->save();
+
+    return response()->json([
+        'message' => 'worker Registration successful',
+        'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
+    ]);
 }
-
-        $worker = WorkerLogin::create($workerData);
-
-
-        $worker->save();
-
-        return response()->json([
-            'message' => 'worker Registration successful',
-            'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
-        ]);
-    }
 
 
     public function logout()
