@@ -78,7 +78,7 @@ public function login(LoginRequest $request)
 
         return response()->json([
             'message' => 'worker Registration successful',
-            'worker' => new WorkerRegisterResource($worker->load(['worker', 'creator']))
+            'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
         ]);
     }
 

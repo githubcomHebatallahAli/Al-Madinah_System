@@ -85,7 +85,7 @@ class AdminAuthController extends Controller
         return response()->json($validator->errors()->toJson(), 400);
     }
 
-    
+
     $hijriDate = $this->getHijriDate();
     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
@@ -96,6 +96,7 @@ class AdminAuthController extends Controller
             'status' => 'active',
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
+            
         ]
     );
 
