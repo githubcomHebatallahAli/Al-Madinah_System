@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\Worker;
 use App\Models\WorkerLogin;
-use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Requests\Admin\WorkerRequest;
-use App\Http\Resources\Admin\WorkerResource;
 use App\Http\Requests\Auth\WorkerRegisterRequest;
 use App\Http\Resources\Auth\WorkerRegisterResource;
 
@@ -80,7 +76,7 @@ public function login(LoginRequest $request)
 
         return response()->json([
             'message' => 'worker Registration successful',
-            'worker' => new WorkerRegisterResource($worker->load('worker'))
+            'worker' => new WorkerRegisterResource($worker->load(['worker', 'creator']))
         ]);
     }
 
