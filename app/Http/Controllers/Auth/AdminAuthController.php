@@ -14,7 +14,9 @@ use App\Http\Resources\Auth\AdminRegisterResource;
 
 class AdminAuthController extends Controller
 {
-    
+    use HijriDateTrait;
+    use TracksChangesTrait;
+
        public function login(LoginRequest $request)
     {
         $validator = Validator::make($request->all(), $request->rules());
@@ -36,37 +38,74 @@ class AdminAuthController extends Controller
     }
 
 
+    // public function register(AdminRegisterRequest $request)
+    // {
+    //     if (!Gate::allows('create', Admin::class)) {
+    //         return response()->json([
+    //             'message' => 'Unauthorized'
+    //         ], 403);
+    //     }
+
+    //     $validator = Validator::make($request->all(), $request->rules());
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors()->toJson(), 400);
+    //     }
+
+
+    //     $adminData = array_merge(
+    //         $validator->validated(),
+    //         ['password' => bcrypt($request->password)],
+    //         ['status' => 'active'],
+
+    //     );
+
+    //     $admin = Admin::create($adminData);
+
+
+    //     $admin->save();
+
+    //     return response()->json([
+    //         'message' => 'Admin Registration successful',
+    //         'admin' =>new AdminRegisterResource($admin)
+    //     ]);
+    // }
+
     public function register(AdminRegisterRequest $request)
-    {
-        if (!Gate::allows('create', Admin::class)) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $validator = Validator::make($request->all(), $request->rules());
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
-        }
-
-
-        $adminData = array_merge(
-            $validator->validated(),
-            ['password' => bcrypt($request->password)],
-            ['status' => 'active'],
-        );
-
-        $admin = Admin::create($adminData);
-
-
-        $admin->save();
-
+{
+    if (!Gate::allows('create', Admin::class)) {
         return response()->json([
-            'message' => 'Admin Registration successful',
-            'admin' =>new AdminRegisterResource($admin)
-        ]);
+            'message' => 'Unauthorized'
+        ], 403);
     }
+
+    $validator = Validator::make($request->all(), $request->rules());
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors()->toJson(), 400);
+    }
+
+    // الحصول على التواريخ
+    $hijriDate = $this->getHijriDate();
+    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    $adminData = array_merge(
+        $validator->validated(),
+        [
+            'password' => bcrypt($request->password),
+            'status' => 'active',
+            'creationDate' => $gregorianDate,
+            'creationDateHijri' => $hijriDate,
+        ]
+    );
+
+    $admin = Admin::create($adminData);
+    return response()->json([
+        'message' => 'Admin Registration successful',
+        'admin' => new AdminRegisterResource($admin)
+    ]);
+}
+
 
 
     public function logout()

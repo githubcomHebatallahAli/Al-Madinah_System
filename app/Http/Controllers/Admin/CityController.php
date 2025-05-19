@@ -18,7 +18,7 @@ class CityController extends Controller
 
         public function showAll()
     {
-       
+
         $this->authorize('manage_users');
        $City = City::orderBy('created_at', 'desc')
                  ->get();
@@ -40,7 +40,7 @@ class CityController extends Controller
             "name" => $request->name,
             'creationDate' => $gregorianDate,  // ميلادي مع الوقت
             'creationDateHijri' => $hijriDate,  // هجري مع الوقت
-            'admin_id' => auth()->id(),
+            // 'admin_id' => auth()->id(),
             'status' => 'active',
         ]);
            return response()->json([
