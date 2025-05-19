@@ -61,15 +61,31 @@ public function login(LoginRequest $request)
 
 
       $workerData = array_merge(
-        $validator->validated(),
-        [
-            'password' => bcrypt($request->password),
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'added_by' => $admin ? $admin->id : $branchManager->id,
-        'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
-        ]
+        // $validator->validated(),
+        // [
+        //     'password' => bcrypt($request->password),
+        //     'creationDate' => $gregorianDate,
+        //     'creationDateHijri' => $hijriDate,
+        //     'added_by' => $admin ? $admin->id : $branchManager->id,
+        // 'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
+        // ]
     );
+
+    $workerData = $validator->validated();
+$workerData['password'] = bcrypt($request->password);
+$workerData['creationDate'] = $gregorianDate;
+$workerData['creationDateHijri'] = $hijriDate;
+
+if ($admin) {
+    $workerData['added_by'] = $admin->id;
+    $workerData['added_by_type'] = get_class($admin);
+} elseif ($branchManager) {
+    $workerData['added_by'] = $branchManager->id;
+    $workerData['added_by_type'] = get_class($branchManager);
+} else {
+    $workerData['added_by'] = null;
+    $workerData['added_by_type'] = null;
+}
 
         $worker = WorkerLogin::create($workerData);
 
