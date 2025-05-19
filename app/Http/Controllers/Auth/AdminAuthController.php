@@ -14,8 +14,7 @@ use App\Http\Resources\Auth\AdminRegisterResource;
 
 class AdminAuthController extends Controller
 {
-     use HijriDateTrait;
-    use TracksChangesTrait;
+    
        public function login(LoginRequest $request)
     {
         $validator = Validator::make($request->all(), $request->rules());

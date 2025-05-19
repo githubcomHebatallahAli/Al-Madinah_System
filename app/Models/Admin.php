@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Traits\HijriDateTrait;
 use App\Traits\HasCreatorTrait;
+use App\Traits\TracksChangesTrait;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Admin extends Authenticatable  implements JWTSubject
 {
-    use HasFactory, Notifiable,HasCreatorTrait;
+    use HasFactory, Notifiable,HasCreatorTrait ,HijriDateTrait, TracksChangesTrait;
 
 
     protected $fillable = [
