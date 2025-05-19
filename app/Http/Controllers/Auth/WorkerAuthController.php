@@ -66,6 +66,8 @@ public function login(LoginRequest $request)
             'password' => bcrypt($request->password),
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
+            'added_by' => $admin ? $admin->id : $branchManager->id,
+        'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
         ]
     );
 
