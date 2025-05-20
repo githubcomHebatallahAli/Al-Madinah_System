@@ -28,10 +28,10 @@ class AppServiceProvider extends ServiceProvider
 //         (Auth::guard('worker')->check() && $user->role_id == 2);
 // });
 
-Gate::define('manage_system', function () {
-    $user = Auth::guard('worker')->user() ?? Auth::guard('admin')->user();
-    return $user && in_array($user->role_id, [1, 2]);
-});
+  Gate::define('manage_system', function () {
+        $user = Auth::guard('worker')->user() ?? Auth::guard('admin')->user();
+        return $user && in_array($user->role_id, [1, 2]);
+    });
 
 
     }
