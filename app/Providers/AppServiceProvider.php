@@ -43,7 +43,8 @@ class AppServiceProvider extends ServiceProvider
 // });
 
 Gate::define('manage_system', function ($user) {
-    return in_array($user->role_id, [1, 2]); // 1=admin, 2=branchManager
+    // إذا كان المستخدم مؤهلًا كأدمن أو مدير فرع
+    return ($user->role_id == 1) || ($user->role_id == 2);
 });
 
     }
