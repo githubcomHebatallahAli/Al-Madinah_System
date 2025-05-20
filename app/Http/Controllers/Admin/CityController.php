@@ -41,6 +41,7 @@ class CityController extends Controller
             'creationDateHijri' => $hijriDate,
             'status' => 'active',
             'added_by' => auth('admin')->id(),
+            'added_by_type' => 'App\Models\Admin',
         ]);
          $City->load('creator');
            return response()->json([
