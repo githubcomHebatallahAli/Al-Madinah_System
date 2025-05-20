@@ -121,9 +121,7 @@ public function update(WorkerRequest $request, string $id)
 
         $changedData = $this->getChangedData($oldData, $Worker->toArray());
         $Worker->changed_data = $changedData;
-
-    $Worker->changed_data = $changedData;
-
+        // $Worker->changed_data = $changedData;
            $Worker->save();
            return response()->json([
             'data' =>new WorkerResource($Worker),
@@ -260,7 +258,5 @@ public function active(string $id)
           'message' => 'Worker has been Ok.'
       ]);
   }
-
-
 
 }

@@ -14,5 +14,7 @@ Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->midd
    Route::get('/edit/worker/{id}','edit');
    Route::post('/update/worker/{id}', 'update');
    Route::patch('notActive/worker/{id}', 'notActive');
-    Route::patch('active/worker/{id}', 'active');
+   Route::patch('active/worker/{id}', 'active');
+   Route::patch('notOk/worker/{id}', 'notOk');
+    Route::patch('ok/worker/{id}', 'ok');
    });

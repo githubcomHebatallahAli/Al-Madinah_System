@@ -20,7 +20,8 @@ class TitleController extends Controller
         public function showAll()
     {
         $this->authorize('manage_system');
-        $Title = Title::orderBy('created_at', 'desc')
+        $Title = Title::with('creator')
+        ->orderBy('created_at', 'desc')
         ->get();
 
                   return response()->json([
@@ -45,6 +46,7 @@ class TitleController extends Controller
             'status' => 'active',
             'added_by' => $addedById,
         ]);
+        $Title->load('creator');
            return response()->json([
             'data' =>new TitleResource($Title),
             'message' => "Title Created Successfully."
@@ -55,10 +57,8 @@ class TitleController extends Controller
         {
             $this->authorize('manage_system');
 
-        $Title = Title::with('workers')
+        $Title = Title::with(['workers','creator'])
         ->find($id);
-
-
             if (!$Title) {
                 return response()->json([
                     'message' => "Title not found."
@@ -92,8 +92,8 @@ class TitleController extends Controller
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
             'added_by' => $addedById,
-
             ]);
+            $Title->load('creator');
 
         $changedData = $this->getChangedData($oldData, $Title->toArray());
         $Title->changed_data = $changedData;
@@ -130,6 +130,7 @@ class TitleController extends Controller
     $changedData = $this->getChangedData($oldData, $Title->toArray());
     $Title->changed_data = $changedData;
     $Title->save();
+    $Title->load('creator');
 
       return response()->json([
           'data' => new TitleResource($Title),
@@ -163,6 +164,7 @@ class TitleController extends Controller
     $changedData = $this->getChangedData($oldData, $Title->toArray());
     $Title->changed_data = $changedData;
     $Title->save();
+    $Title->load('creator');
 
 
       return response()->json([
