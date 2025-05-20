@@ -79,6 +79,7 @@ class TitleController extends Controller
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $addedById = $this->getAddedByIdOrFail();
+        $addedByType = $this->getAddedByType();
            $Title =Title::findOrFail($id);
              $oldData = $Title->toArray();
 
@@ -94,6 +95,7 @@ class TitleController extends Controller
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
             'added_by' => $addedById,
+            'added_by_type' => $addedByType,
             ]);
             $Title->load('creator');
 
@@ -111,6 +113,7 @@ class TitleController extends Controller
   {
       $this->authorize('manage_system');
       $addedById = $this->getAddedByIdOrFail();
+       $addedByType = $this->getAddedByType();
       $Title =Title::findOrFail($id);
 
       if (!$Title) {
@@ -127,6 +130,7 @@ class TitleController extends Controller
     $Title->creationDate = $creationDate;
     $Title->creationDateHijri = $hijriDate;
     $Title->added_by = $addedById;
+    $Title->added_by_type = $addedByType;
     $Title->save();
 
     $changedData = $this->getChangedData($oldData, $Title->toArray());
@@ -144,6 +148,7 @@ class TitleController extends Controller
   {
      $this->authorize('manage_system');
      $addedById = $this->getAddedByIdOrFail();
+    $addedByType = $this->getAddedByType();
       $Title =Title::findOrFail($id);
 
       if (!$Title) {
@@ -161,13 +166,13 @@ class TitleController extends Controller
     $Title->creationDate = $creationDate;
     $Title->creationDateHijri = $hijriDate;
     $Title->added_by = $addedById;
+    $Title->added_by_type = $addedByType;
     $Title->save();
 
     $changedData = $this->getChangedData($oldData, $Title->toArray());
     $Title->changed_data = $changedData;
     $Title->save();
     $Title->load('creator');
-
 
       return response()->json([
           'data' => new TitleResource($Title),
