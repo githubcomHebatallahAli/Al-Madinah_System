@@ -86,8 +86,9 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'added_by' => $request->added_by,
-            // 'added_by' => auth('admin')->id(),
+
+            'added_by' => auth('admin')->id(),
+            'added_by_type' => 'App\Models\Admin',
             ]);
             $City->load('creator');
 
@@ -120,6 +121,7 @@ class CityController extends Controller
     $City->creationDate = $creationDate;
     $City->creationDateHijri = $hijriDate;
     $City->added_by = auth('admin')->id();
+    $City->added_by_type = 'App\Models\Admin';
     $City->save();
 
     $changedData = $this->getChangedData($oldData, $City->toArray());
@@ -152,6 +154,7 @@ class CityController extends Controller
     $City->creationDate = $creationDate;
     $City->creationDateHijri = $hijriDate;
     $City->added_by = auth('admin')->id();
+    $City->added_by_type = 'App\Models\Admin';
     $City->save();
 
     $changedData = $this->getChangedData($oldData, $City->toArray());
