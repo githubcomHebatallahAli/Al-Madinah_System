@@ -20,12 +20,7 @@ class TitleController extends Controller
 
         public function showAll()
     {
-           dd([
-        'Auth::user()' => Auth::user(),
-        'Auth::guard("admin")->user()' => Auth::guard('admin')->user(),
-        'Auth::guard("worker")->user()' => Auth::guard('worker')->user(),
-        'user_role_id' => Auth::user()->role_id ?? null
-    ]);
+          
         $this->authorize('manage_system');
         $Title = Title::with('creator')
         ->orderBy('created_at', 'desc')
