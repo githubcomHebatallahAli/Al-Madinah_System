@@ -25,6 +25,11 @@ class RoleRequest extends FormRequest
     {
         return [
             'name' =>'required|string',
+            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
+            'status' => 'nullable|in:active,notActive',
+            'added_by' => 'nullable','exists:admins,id',
+            'guardName'=> 'nullable|in:admin,worker',
         ];
     }
 

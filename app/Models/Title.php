@@ -38,7 +38,7 @@ class Title extends Model
 
 public function creator()
 {
-    return $this->morphTo('added_by');
+    return $this->morphTo(null, 'added_by_type', 'added_by');
 }
 
 

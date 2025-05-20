@@ -3,14 +3,12 @@
 namespace App\Models;
 
 use App\Traits\HasCreatorTrait;
-use Tymon\JWTAuth\Contracts\JWTSubject;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Worker extends Authenticatable  implements JWTSubject
+class Worker extends Model
 {
-    use HasFactory, Notifiable,HasCreatorTrait;
+    use HasFactory,HasCreatorTrait;
      const storageFolder= 'Workers';
     protected $fillable = [
         'title_id',
@@ -38,17 +36,11 @@ class Worker extends Authenticatable  implements JWTSubject
 
    protected $casts = [
         'salary' => 'decimal:2',
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
         'changed_data' => 'array',
     ];
 
 
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
 
     // public function role()
     // {
@@ -60,9 +52,9 @@ class Worker extends Authenticatable  implements JWTSubject
     //     return $this->belongsTo(Worker::class, 'added_by');
     // }
 
-    public function creator()
+public function creator()
 {
-    return $this->morphTo('added_by');
+    return $this->morphTo(null, 'added_by_type', 'added_by');
 }
 
 
@@ -109,13 +101,5 @@ class Worker extends Authenticatable  implements JWTSubject
         });
     }
 
-    public function getJWTIdentifier()
-    {
-        return $this->getKey();
-    }
 
-    public function getJWTCustomClaims()
-    {
-        return [];
-    }
 }

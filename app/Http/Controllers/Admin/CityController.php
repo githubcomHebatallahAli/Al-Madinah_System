@@ -33,14 +33,13 @@ class CityController extends Controller
     public function create(CityRequest $request)
     {
         $this->authorize('manage_users');
-           $hijriDate = $this->getHijriDate();
+        $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
         $City = City::create([
             "name" => $request->name,
             'creationDate' => $gregorianDate,  // ميلادي مع الوقت
             'creationDateHijri' => $hijriDate,  // هجري مع الوقت
-            // 'admin_id' => auth()->id(),
             'status' => 'active',
         ]);
            return response()->json([

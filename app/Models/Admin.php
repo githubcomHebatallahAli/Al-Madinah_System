@@ -33,14 +33,10 @@ class Admin extends Authenticatable  implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
-    //   public function addedBy()
-    // {
-    //     return $this->belongsTo(Admin::class, 'added_by');
-    // }
 
-    public function creator()
+public function creator()
 {
-    return $this->morphTo('added_by');
+    return $this->morphTo(null, 'added_by_type', 'added_by');
 }
 
 

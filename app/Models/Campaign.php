@@ -35,14 +35,11 @@ class Campaign extends Model
     return $this->hasMany(Group::class);
 }
 
-//         public function admin()
-// {
-//     return $this->belongsTo(Admin::class, 'admin_id');
-// }
+
 
 public function creator()
 {
-    return $this->morphTo('added_by');
+    return $this->morphTo(null, 'added_by_type', 'added_by');
 }
 
 
