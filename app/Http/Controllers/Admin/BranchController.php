@@ -20,7 +20,7 @@ class BranchController extends Controller
         public function showAll()
     {
        if (!Gate::allows('manage_system')) {
-    abort(403, 'Unauthorized');
+    abort(403, 'Un');
 }
         // $this->authorize('manage_system');
         $Branch = Branch::with('creator')
