@@ -51,6 +51,7 @@ $addedById = $this->getAddedByIdOrFail();
             'creationDateHijri' => $hijriDate,
             'added_by' => $addedById,
             'status' => 'active',
+            'dashboardAccess'=>'ok'
         ]);
              if ($request->hasFile('cv')) {
                 $cvPath = $request->file('cv')->store(Worker::storageFolder);
@@ -105,6 +106,7 @@ public function update(WorkerRequest $request, string $id)
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
+            'dashboardAccess'=> $request-> dashboardAccess ?? 'notOk',
             'added_by' => $addedById,
             ]);
 
@@ -192,6 +194,70 @@ public function active(string $id)
       return response()->json([
           'data' => new WorkerResource($Worker),
           'message' => 'Worker has been notActive.'
+      ]);
+  }
+
+     public function notOk(string $id)
+  {
+    $this->authorize('manage_system');
+      $Worker =Worker::findOrFail($id);
+
+      if (!$Worker) {
+       return response()->json([
+           'message' => "Worker not found."
+       ]);
+   }
+
+    $oldData = $Worker->toArray();
+    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $hijriDate = $this->getHijriDate();
+    $addedById = $this->getAddedByIdOrFail();
+
+    $Worker->dashboardAccess = 'notOk';
+    $Worker->creationDate = $creationDate;
+    $Worker->creationDateHijri = $hijriDate;
+    $Worker->added_by = $addedById;
+    $Worker->save();
+
+    $changedData = $this->getChangedData($oldData, $Worker->toArray());
+    $Worker->changed_data = $changedData;
+    $Worker->save();
+
+      return response()->json([
+          'data' => new WorkerResource($Worker),
+          'message' => 'Worker has been notOk.'
+      ]);
+  }
+
+     public function ok(string $id)
+  {
+    $this->authorize('manage_system');
+      $Worker =Worker::findOrFail($id);
+
+      if (!$Worker) {
+       return response()->json([
+           'message' => "Worker not found."
+       ]);
+   }
+
+    $oldData = $Worker->toArray();
+    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $hijriDate = $this->getHijriDate();
+    $addedById = $this->getAddedByIdOrFail();
+
+    $Worker->dashboardAccess = 'ok';
+    $Worker->creationDate = $creationDate;
+    $Worker->creationDateHijri = $hijriDate;
+    $Worker->added_by = $addedById;
+    $Worker->save();
+
+    $changedData = $this->getChangedData($oldData, $Worker->toArray());
+    $Worker->changed_data = $changedData;
+    $Worker->save();
+
+      return response()->json([
+          'data' => new WorkerResource($Worker),
+          'message' => 'Worker has been Ok.'
       ]);
   }
 

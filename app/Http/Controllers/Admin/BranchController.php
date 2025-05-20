@@ -18,7 +18,8 @@ class BranchController extends Controller
         public function showAll()
     {
         $this->authorize('manage_system');
-        $Branch = Branch::orderBy('created_at', 'desc')
+        $Branch = Branch::with('creator')
+        ->orderBy('created_at', 'desc')
         ->get();
 
                   return response()->json([
@@ -41,8 +42,10 @@ class BranchController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status' => 'active',
-            'added_by'  => auth('admin')->id()
+            'added_by'  => auth('admin')->id(),
+            'added_by_type' => 'App\Models\Admin',
         ]);
+          $Branch->load('creator');
            return response()->json([
             'data' =>new BranchResource($Branch),
             'message' => "Branch Created Successfully."
@@ -52,7 +55,7 @@ class BranchController extends Controller
         public function edit(string $id)
         {
         $this->authorize('manage_system');
-        $Branch = Branch::with(['titles','offices','trips','stores'])
+        $Branch = Branch::with(['titles','offices','trips','stores','creator'])
         ->find($id);
 
 
@@ -88,8 +91,11 @@ class BranchController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'added_by' => auth('admin')->id()
+            'added_by' => auth('admin')->id(),
+            'added_by_type' => 'App\Models\Admin',
             ]);
+
+            $Branch->load('creator');
 
         $changedData = $this->getChangedData($oldData, $Branch->toArray());
         $Branch->changed_data = $changedData;
@@ -120,11 +126,13 @@ class BranchController extends Controller
     $Branch->creationDate = $creationDate;
     $Branch->creationDateHijri = $hijriDate;
     $Branch->added_by = auth('admin')->id();
+    $Branch->added_by_type = 'App\Models\Admin';
     $Branch->save();
 
     $changedData = $this->getChangedData($oldData, $Branch->toArray());
     $Branch->changed_data = $changedData;
     $Branch->save();
+     $Branch->load('creator');
 
       return response()->json([
           'data' => new BranchResource($Branch),
@@ -152,11 +160,13 @@ class BranchController extends Controller
     $Branch->creationDate = $creationDate;
     $Branch->creationDateHijri = $hijriDate;
     $Branch->added_by = auth('admin')->id();
+    $Branch->added_by_type = 'App\Models\Admin';
     $Branch->save();
 
     $changedData = $this->getChangedData($oldData, $Branch->toArray());
     $Branch->changed_data = $changedData;
     $Branch->save();
+    $Branch->load('creator');
 
 
       return response()->json([
