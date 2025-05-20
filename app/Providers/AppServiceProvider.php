@@ -22,11 +22,11 @@ class AppServiceProvider extends ServiceProvider
             return    Auth::guard('admin')->check()&& $user->role_id == 1;
         });
 
-//     Gate::define('manage_system', function ($user) {
-//     return
-//         (Auth::guard('admin')->check() && $user->role_id == 1) ||
-//         (Auth::guard('worker')->check() && $user->role_id == 2);
-// });
+    Gate::define('manage_system', function ($user) {
+    return
+        (Auth::guard('admin')->check() && $user->role_id == 1) ||
+        (Auth::guard('worker')->check() && $user->role_id == 2);
+});
 
 // Gate::define('manage_system', function ($user) {
 //     // الأدمن (admin) - role_id == 1
@@ -42,10 +42,6 @@ class AppServiceProvider extends ServiceProvider
 //     return false;
 // });
 
-Gate::define('manage_system', function ($user) {
-    // إذا كان المستخدم مؤهلًا كأدمن أو مدير فرع
-    return ($user->role_id == 1) || ($user->role_id == 2);
-});
 
     }
 }
