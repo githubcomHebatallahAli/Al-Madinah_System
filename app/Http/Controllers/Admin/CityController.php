@@ -85,7 +85,8 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'added_by' => auth('admin')->id(),
+            'added_by' => $request->added_by,
+            // 'added_by' => auth('admin')->id(),
             ]);
             $City->load('creator');
 
