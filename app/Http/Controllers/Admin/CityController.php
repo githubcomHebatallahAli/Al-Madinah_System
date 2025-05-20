@@ -18,7 +18,8 @@ class CityController extends Controller
         public function showAll()
     {
         $this->authorize('manage_users');
-       $City = City::orderBy('created_at', 'desc')
+       $City = City::with('creator')
+       ->orderBy('created_at', 'desc')
                  ->get();
 
                   return response()->json([
@@ -41,6 +42,7 @@ class CityController extends Controller
             'status' => 'active',
             'added_by' => auth('admin')->id(),
         ]);
+         $City->load('creator');
            return response()->json([
             'data' =>new CityResource($City),
             'message' => "City Created Successfully."
@@ -51,7 +53,7 @@ class CityController extends Controller
         {
             $this->authorize('manage_users');
 
-       $City = City::with('branches')->find($id);
+       $City = City::with(['creator','branches'])->find($id);
 
             if (!$City) {
                 return response()->json([
@@ -84,8 +86,8 @@ class CityController extends Controller
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
             'added_by' => auth('admin')->id(),
-
             ]);
+            $City->load('creator');
 
         $changedData = $this->getChangedData($oldData, $City->toArray());
         $City->changed_data = $changedData;
