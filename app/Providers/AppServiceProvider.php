@@ -22,18 +22,11 @@ class AppServiceProvider extends ServiceProvider
             return    Auth::guard('admin')->check()&& $user->role_id == 1;
         });
 
-  Gate::define('manage_system', function () {
-        if (Auth::guard('admin')->check() && Auth::guard('admin')->user()->role_id == 1) {
-            return true;
-        }
-
-        if (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 2) {
-            return true;
-        }
-
-        return false;
-    });
-    }
+    Gate::define('manage_system', function ($user) {
+    return
+        (Auth::guard('admin')->check() && $user->role_id == 1) ||
+        (Auth::guard('worker')->check() && $user->role_id == 2);
+});
 
     }
-
+}
