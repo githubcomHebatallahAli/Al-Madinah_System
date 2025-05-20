@@ -28,18 +28,22 @@ class AppServiceProvider extends ServiceProvider
 //         (Auth::guard('worker')->check() && $user->role_id == 2);
 // });
 
+// Gate::define('manage_system', function ($user) {
+//     // الأدمن (admin) - role_id == 1
+//     if (Auth::guard('admin')->check() && $user->role_id == 1) {
+//         return true;
+//     }
+
+//     // مدير الفرع (worker) - role_id == 2
+//     if (Auth::guard('worker')->check() && $user->role_id == 2) {
+//         return true;
+//     }
+
+//     return false;
+// });
+
 Gate::define('manage_system', function ($user) {
-    // الأدمن (admin) - role_id == 1
-    if (Auth::guard('admin')->check() && $user->role_id == 1) {
-        return true;
-    }
-
-    // مدير الفرع (worker) - role_id == 2
-    if (Auth::guard('worker')->check() && $user->role_id == 2) {
-        return true;
-    }
-
-    return false;
+    return in_array($user->role_id, [1, 2]); // 1=admin, 2=branchManager
 });
 
     }
