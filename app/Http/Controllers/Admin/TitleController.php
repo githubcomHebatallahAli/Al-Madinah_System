@@ -20,11 +20,7 @@ class TitleController extends Controller
 
         public function showAll()
     {
-        // $this->authorize('manage_system');
-           if (
-        (Auth::guard('admin')->check() && Auth::guard('admin')->user()->role_id == 1) ||
-        (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 2)
-    )
+        $this->authorize('manage_system');
         $Title = Title::with('creator')
         ->orderBy('created_at', 'desc')
         ->get();
