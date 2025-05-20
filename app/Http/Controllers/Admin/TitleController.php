@@ -37,6 +37,7 @@ class TitleController extends Controller
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $addedById = $this->getAddedByIdOrFail();
+        $addedByType = $this->getAddedByType();
 
         $Title = Title::create([
             'branch_id'=> $request ->branch_id,
@@ -45,6 +46,7 @@ class TitleController extends Controller
             'creationDateHijri' => $hijriDate,
             'status' => 'active',
             'added_by' => $addedById,
+            'added_by_type' => $addedByType,
         ]);
         $Title->load('creator');
            return response()->json([
