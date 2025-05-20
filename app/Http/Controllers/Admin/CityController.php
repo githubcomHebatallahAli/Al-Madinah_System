@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\City;
-use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
@@ -18,7 +17,6 @@ class CityController extends Controller
 
         public function showAll()
     {
-
         $this->authorize('manage_users');
        $City = City::orderBy('created_at', 'desc')
                  ->get();
@@ -38,8 +36,8 @@ class CityController extends Controller
 
         $City = City::create([
             "name" => $request->name,
-            'creationDate' => $gregorianDate,  // ميلادي مع الوقت
-            'creationDateHijri' => $hijriDate,  // هجري مع الوقت
+            'creationDate' => $gregorianDate,
+            'creationDateHijri' => $hijriDate,
             'status' => 'active',
         ]);
            return response()->json([
@@ -59,8 +57,6 @@ class CityController extends Controller
                     'message' => "City not found."
                 ], 404);
             }
-
-            // $this->authorize('edit',$City);
 
             return response()->json([
                 'data' => new CityResource($City),
@@ -86,7 +82,6 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'admin_id' => auth()->id(),
 
             ]);
 
@@ -118,7 +113,6 @@ class CityController extends Controller
     $City->status = 'active';
     $City->creationDate = $creationDate;
     $City->creationDateHijri = $hijriDate;
-    $City->admin_id = auth()->id();
     $City->save();
 
     $changedData = $this->getChangedData($oldData, $City->toArray());
@@ -150,7 +144,6 @@ class CityController extends Controller
     $City->status = 'notActive';
     $City->creationDate = $creationDate;
     $City->creationDateHijri = $hijriDate;
-    $City->admin_id = auth()->id();
     $City->save();
 
     $changedData = $this->getChangedData($oldData, $City->toArray());

@@ -17,7 +17,6 @@ class BranchController extends Controller
 
         public function showAll()
     {
-        // $this->authorize('showAll',Branch::class);
         $this->authorize('manage_users');
         $Branch = Branch::orderBy('created_at', 'desc')
         ->get();
@@ -41,7 +40,6 @@ class BranchController extends Controller
             "address" => $request-> address,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
-            'admin_id' => auth()->id(),
             'status' => 'active',
         ]);
            return response()->json([
@@ -64,8 +62,6 @@ class BranchController extends Controller
                 ], 404);
             }
 
-            // $this->authorize('edit',$Branch);
-
             return response()->json([
                 'data' => new BranchResource($Branch),
                 'message' => "Edit Branch By ID Successfully."
@@ -77,8 +73,8 @@ class BranchController extends Controller
           $this->authorize('manage_users');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-           $Branch =Branch::findOrFail($id);
-             $oldData = $Branch->toArray();
+        $Branch =Branch::findOrFail($id);
+        $oldData = $Branch->toArray();
 
            if (!$Branch) {
             return response()->json([
@@ -92,8 +88,6 @@ class BranchController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'admin_id' => auth()->id(),
-
             ]);
 
         $changedData = $this->getChangedData($oldData, $Branch->toArray());

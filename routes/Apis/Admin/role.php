@@ -14,4 +14,6 @@ Route::get('/edit/role/{id}','edit');
 Route::post('/update/role/{id}', 'update');
 Route::patch('notActive/role/{id}', 'notActive');
 Route::patch('active/role/{id}', 'active');
+Route::patch('admin/role/{id}', 'admin');
+Route::patch('worker/role/{id}', 'worker');
    });
