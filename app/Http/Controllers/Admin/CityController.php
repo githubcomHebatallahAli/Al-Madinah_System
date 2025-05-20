@@ -40,8 +40,9 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status' => 'active',
-            'added_by' => auth('admin')->id(),
-            'added_by_type' => 'App\Models\Admin',
+            // 'added_by' => auth('admin')->id(),
+            // 'added_by_type' => 'App\Models\Admin',
+            'added_by' =>$request->added_by
         ]);
          $City->load('creator');
            return response()->json([
@@ -86,7 +87,6 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-
             'added_by' => auth('admin')->id(),
             'added_by_type' => 'App\Models\Admin',
             ]);
