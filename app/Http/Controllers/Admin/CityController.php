@@ -127,6 +127,7 @@ class CityController extends Controller
     $changedData = $this->getChangedData($oldData, $City->toArray());
     $City->changed_data = $changedData;
     $City->save();
+      $City->load('creator');
 
       return response()->json([
           'data' => new CityResource($City),
@@ -160,6 +161,7 @@ class CityController extends Controller
     $changedData = $this->getChangedData($oldData, $City->toArray());
     $City->changed_data = $changedData;
     $City->save();
+      $City->load('creator');
 
 
       return response()->json([
