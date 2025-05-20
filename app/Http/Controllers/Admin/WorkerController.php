@@ -11,15 +11,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Http\Resources\Admin\WorkerResource;
+use App\Traits\HandleAddedByTrait;
 
 class WorkerController extends Controller
 {
     use HijriDateTrait;
     use TracksChangesTrait;
+    use HandleAddedByTrait;
 
 public function showAll()
     {
-        $this->authorize('manage_users');
+        $this->authorize('manage_system');
         $Worker = Worker::orderBy('created_at', 'desc')
         ->get();
 
@@ -31,21 +33,11 @@ public function showAll()
 
 public function create(WorkerRequest $request)
     {
-        $this->authorize('manage_users');
+        $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
-          $addedById = null;
-
-    if (Auth::guard('admin')->check() && Auth::guard('admin')->user()->role_id == 1) {
-        $addedById = Auth::guard('admin')->id(); // Super Admin
-    } elseif (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 2) {
-        $addedById = Auth::guard('worker')->id(); // Branch Manager
-    } else {
-        return response()->json([
-            'message' => 'Unauthorized: Only SuperAdmin or BranchManager can add workers.'
-        ], 403);
-    }
+$addedById = $this->getAddedByIdOrFail();
 
         $Worker = Worker::create([
             'title_id'=> $request ->title_id,
@@ -74,7 +66,7 @@ public function create(WorkerRequest $request)
 
 public function edit(string $id)
     {
-        $this->authorize('manage_users');
+       $this->authorize('manage_system');
         $Worker = Worker::find($id);
             if (!$Worker) {
                 return response()->json([
@@ -90,9 +82,10 @@ public function edit(string $id)
 
 public function update(WorkerRequest $request, string $id)
     {
-        $this->authorize('manage_users');
+        $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $addedById = $this->getAddedByIdOrFail();
            $Worker =Worker::findOrFail($id);
              $oldData = $Worker->toArray();
 
@@ -112,7 +105,7 @@ public function update(WorkerRequest $request, string $id)
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'added_by'
+            'added_by' => $addedById,
             ]);
 
                         if ($request->hasFile('cv')) {
@@ -138,7 +131,7 @@ public function update(WorkerRequest $request, string $id)
 
 public function active(string $id)
   {
-    $this->authorize('manage_users');
+      $this->authorize('manage_system');
     $Worker =Worker::findOrFail($id);
 
       if (!$Worker) {
@@ -150,11 +143,12 @@ public function active(string $id)
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
+    $addedById = $this->getAddedByIdOrFail();
 
     $Worker->status = 'active';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
-    $Worker->admin_id = auth()->id();
+    $Worker->added_by = $addedById;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
@@ -169,7 +163,7 @@ public function active(string $id)
 
      public function notActive(string $id)
   {
-      $this->authorize('manage_users');
+    $this->authorize('manage_system');
       $Worker =Worker::findOrFail($id);
 
       if (!$Worker) {
@@ -182,11 +176,12 @@ public function active(string $id)
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
+    $addedById = $this->getAddedByIdOrFail();
 
     $Worker->status = 'notActive';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
-    $Worker->admin_id = auth()->id();
+    $Worker->added_by = $addedById;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
@@ -199,4 +194,7 @@ public function active(string $id)
           'message' => 'Worker has been notActive.'
       ]);
   }
+
+
+
 }

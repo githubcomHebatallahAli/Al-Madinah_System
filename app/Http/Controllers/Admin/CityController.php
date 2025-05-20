@@ -39,6 +39,7 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status' => 'active',
+            'added_by' => auth('admin')->id(),
         ]);
            return response()->json([
             'data' =>new CityResource($City),
@@ -82,6 +83,7 @@ class CityController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
+            'added_by' => auth('admin')->id(),
 
             ]);
 
@@ -113,6 +115,7 @@ class CityController extends Controller
     $City->status = 'active';
     $City->creationDate = $creationDate;
     $City->creationDateHijri = $hijriDate;
+    $City->added_by = auth('admin')->id();
     $City->save();
 
     $changedData = $this->getChangedData($oldData, $City->toArray());
@@ -144,6 +147,7 @@ class CityController extends Controller
     $City->status = 'notActive';
     $City->creationDate = $creationDate;
     $City->creationDateHijri = $hijriDate;
+    $City->added_by = auth('admin')->id();
     $City->save();
 
     $changedData = $this->getChangedData($oldData, $City->toArray());

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Title;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
+use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TitleRequest;
@@ -12,12 +13,13 @@ use App\Http\Resources\Admin\TitleResource;
 
 class TitleController extends Controller
 {
-        use HijriDateTrait;
+    use HijriDateTrait;
     use TracksChangesTrait;
+    use HandleAddedByTrait;
 
         public function showAll()
     {
-        $this->authorize('manage_users');
+        $this->authorize('manage_system');
         $Title = Title::orderBy('created_at', 'desc')
         ->get();
 
@@ -30,17 +32,18 @@ class TitleController extends Controller
 
     public function create(TitleRequest $request)
     {
-        $this->authorize('manage_users');
-           $hijriDate = $this->getHijriDate();
+       $this->authorize('manage_system');
+        $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $addedById = $this->getAddedByIdOrFail();
 
         $Title = Title::create([
             'branch_id'=> $request ->branch_id,
             "name" => $request->name,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
-            'admin_id' => auth()->id(),
             'status' => 'active',
+            'added_by' => $addedById,
         ]);
            return response()->json([
             'data' =>new TitleResource($Title),
@@ -50,7 +53,7 @@ class TitleController extends Controller
 
         public function edit(string $id)
         {
-            $this->authorize('manage_users');
+            $this->authorize('manage_system');
 
         $Title = Title::with('workers')
         ->find($id);
@@ -62,8 +65,6 @@ class TitleController extends Controller
                 ], 404);
             }
 
-            // $this->authorize('edit',$Title);
-
             return response()->json([
                 'data' => new TitleResource($Title),
                 'message' => "Edit Title By ID Successfully."
@@ -72,9 +73,10 @@ class TitleController extends Controller
 
         public function update(TitleRequest $request, string $id)
         {
-          $this->authorize('manage_users');
+          $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $addedById = $this->getAddedByIdOrFail();
            $Title =Title::findOrFail($id);
              $oldData = $Title->toArray();
 
@@ -89,7 +91,7 @@ class TitleController extends Controller
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
-            'admin_id' => auth()->id(),
+            'added_by' => $addedById,
 
             ]);
 
@@ -105,7 +107,8 @@ class TitleController extends Controller
 
      public function active(string $id)
   {
-      $this->authorize('manage_users');
+      $this->authorize('manage_system');
+      $addedById = $this->getAddedByIdOrFail();
       $Title =Title::findOrFail($id);
 
       if (!$Title) {
@@ -121,7 +124,7 @@ class TitleController extends Controller
     $Title->status = 'active';
     $Title->creationDate = $creationDate;
     $Title->creationDateHijri = $hijriDate;
-    $Title->admin_id = auth()->id();
+    $Title->added_by = $addedById;
     $Title->save();
 
     $changedData = $this->getChangedData($oldData, $Title->toArray());
@@ -136,7 +139,8 @@ class TitleController extends Controller
 
      public function notActive(string $id)
   {
-      $this->authorize('manage_users');
+     $this->authorize('manage_system');
+     $addedById = $this->getAddedByIdOrFail();
       $Title =Title::findOrFail($id);
 
       if (!$Title) {
@@ -153,7 +157,7 @@ class TitleController extends Controller
     $Title->status = 'notActive';
     $Title->creationDate = $creationDate;
     $Title->creationDateHijri = $hijriDate;
-    $Title->admin_id = auth()->id();
+    $Title->added_by = $addedById;
     $Title->save();
 
     $changedData = $this->getChangedData($oldData, $Title->toArray());

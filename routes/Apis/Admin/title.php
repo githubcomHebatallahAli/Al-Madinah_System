@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TitleController;
 
 
-Route::controller(TitleController::class)->prefix('/admin')->middleware('admin')->group(
+Route::controller(TitleController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
    Route::get('/showAll/title','showAll');
