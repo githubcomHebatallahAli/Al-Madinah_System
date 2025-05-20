@@ -8,6 +8,7 @@ use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\BranchRequest;
 use App\Http\Resources\Admin\BranchResource;
 
@@ -18,13 +19,10 @@ class BranchController extends Controller
 
         public function showAll()
     {
-         dd([
-        'Auth::user()' => Auth::user(),
-        'Auth::guard("admin")->user()' => Auth::guard('admin')->user(),
-        'Auth::guard("worker")->user()' => Auth::guard('worker')->user(),
-        'user_role_id' => Auth::user()->role_id ?? null
-    ]);
-        $this->authorize('manage_system');
+       if (!Gate::allows('manage_system')) {
+    abort(403, 'Unauthorized');
+}
+        // $this->authorize('manage_system');
         $Branch = Branch::with('creator')
         ->orderBy('created_at', 'desc')
         ->get();
