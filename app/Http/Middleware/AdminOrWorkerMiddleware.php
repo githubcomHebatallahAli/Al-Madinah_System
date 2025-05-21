@@ -15,29 +15,36 @@ class AdminOrWorkerMiddleware
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
 
-    //         public function handle(Request $request, Closure $next): Response
-    // {
-    //     if (Auth::guard('admin')->check() || Auth::guard('worker')->check()) {
-    //         return $next($request);
-    //     }
+// public function handle(Request $request, Closure $next): Response
+// {
+//     if (Auth::guard('admin')->check()) {
+//         Auth::setUser(Auth::guard('admin')->user());
+//         return $next($request);
+//     }
 
-    //     return response()->json(['message' => 'Unauthenticated.'], 401);
-    // }
+//     if (Auth::guard('worker')->check()) {
+//         Auth::setUser(Auth::guard('worker')->user());
+//         return $next($request);
+//     }
+
+//     return response()->json(['message' => 'Unauthenticated.'], 401);
+// }
 
 public function handle(Request $request, Closure $next): Response
 {
     if (Auth::guard('admin')->check()) {
-        Auth::setUser(Auth::guard('admin')->user());
+        Auth::shouldUse('admin'); // ⬅️ دي بتخلي auth()->user() يجيب من admin
         return $next($request);
     }
 
     if (Auth::guard('worker')->check()) {
-        Auth::setUser(Auth::guard('worker')->user());
+        Auth::shouldUse('worker'); // ⬅️ ودي من worker
         return $next($request);
     }
 
     return response()->json(['message' => 'Unauthenticated.'], 401);
 }
+
 
 
     }
