@@ -50,6 +50,11 @@ class Branch extends Model
         return $this->belongsTo(City::class);
     }
 
+        public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
+
 
 
 public function creator()

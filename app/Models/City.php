@@ -32,10 +32,10 @@ public function creator()
         return $this->hasMany(Branch::class);
     }
 
-//     public function admin()
-// {
-//     return $this->belongsTo(Admin::class, 'admin_id');
-// }
+    public function admin()
+{
+    return $this->belongsTo(Admin::class, 'admin_id');
+}
 
 
 protected $casts = [
