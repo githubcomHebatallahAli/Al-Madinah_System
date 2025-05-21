@@ -24,7 +24,8 @@ class TitleController extends Controller
     {
 
         $this->authorize('manage_system');
-        $Title = Title::with('creator')
+        $Title = Title::with(['creator',
+        'creator.branch'])
         ->orderBy('created_at', 'desc')
         ->get();
 
