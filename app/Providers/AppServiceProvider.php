@@ -26,10 +26,11 @@ class AppServiceProvider extends ServiceProvider
 
 Gate::define('manage_system', function ($user) {
     return $user && (
-        ($user instanceof Admin && $user->role_id == 1) ||
-        ($user instanceof Worker && $user->role_id == 2)
+        ($user instanceof \App\Models\Admin && $user->role_id == 1) ||
+        ($user instanceof \App\Models\WorkerLogin && $user->role_id == 2)
     );
 });
+
 
 
 

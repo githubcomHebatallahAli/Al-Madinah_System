@@ -24,7 +24,7 @@ class AdminOrWorkerMiddleware
     //     return response()->json(['message' => 'Unauthenticated.'], 401);
     // }
 
-    public function handle(Request $request, Closure $next): Response
+public function handle(Request $request, Closure $next): Response
 {
     if (Auth::guard('admin')->check()) {
         Auth::setUser(Auth::guard('admin')->user());
@@ -38,6 +38,7 @@ class AdminOrWorkerMiddleware
 
     return response()->json(['message' => 'Unauthenticated.'], 401);
 }
+
 
     }
 
