@@ -10,6 +10,7 @@ use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\Admin\TitleRequest;
+use App\Traits\LoadsCreatorRelationsTrait;
 use App\Http\Resources\Admin\TitleResource;
 
 class TitleController extends Controller
@@ -17,10 +18,11 @@ class TitleController extends Controller
     use HijriDateTrait;
     use TracksChangesTrait;
     use HandleAddedByTrait;
+    use LoadsCreatorRelationsTrait;
 
         public function showAll()
     {
-          
+
         $this->authorize('manage_system');
         $Title = Title::with('creator')
         ->orderBy('created_at', 'desc')
@@ -50,7 +52,7 @@ class TitleController extends Controller
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
         ]);
-        $Title->load('creator');
+         $this->loadCreatorRelations($Title);
            return response()->json([
             'data' =>new TitleResource($Title),
             'message' => "Title Created Successfully."
