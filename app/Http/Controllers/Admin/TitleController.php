@@ -63,13 +63,14 @@ class TitleController extends Controller
         {
             $this->authorize('manage_system');
 
-        $Title = Title::with(['workers','creator'])
+        $Title = Title::with(['workers'])
         ->find($id);
             if (!$Title) {
                 return response()->json([
                     'message' => "Title not found."
                 ], 404);
             }
+            $this->loadCreatorRelations($Title);
 
             return response()->json([
                 'data' => new TitleResource($Title),
@@ -101,7 +102,7 @@ class TitleController extends Controller
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
             ]);
-            $Title->load('creator');
+            $this->loadCreatorRelations($Title);
 
         $changedData = $this->getChangedData($oldData, $Title->toArray());
         $Title->changed_data = $changedData;
@@ -140,7 +141,8 @@ class TitleController extends Controller
     $changedData = $this->getChangedData($oldData, $Title->toArray());
     $Title->changed_data = $changedData;
     $Title->save();
-    $Title->load('creator');
+    $this->loadCreatorRelations($Title);
+
 
       return response()->json([
           'data' => new TitleResource($Title),
@@ -176,7 +178,7 @@ class TitleController extends Controller
     $changedData = $this->getChangedData($oldData, $Title->toArray());
     $Title->changed_data = $changedData;
     $Title->save();
-    $Title->load('creator');
+    $this->loadCreatorRelations($Title);
 
       return response()->json([
           'data' => new TitleResource($Title),
