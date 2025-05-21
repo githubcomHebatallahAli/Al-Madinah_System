@@ -4,20 +4,19 @@ namespace App\Traits;
 
 trait LoadsCreatorRelationsTrait
 {
-    /**
-     * Load default creator relationships (for added_by info).
-     *
-     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection $model
-     * @return void
-     */
     public function loadCreatorRelations($model): void
     {
-        $relations = [
-            'creator',
-            'creator.workerLogin.role',
-            'creator.role',
-            'creator.branch',
-        ];
+        $relations = ['creator'];
+
+        if ($model->added_by_type === \App\Models\Admin::class) {
+            $relations[] = 'creator.role';
+            $relations[] = 'creator.branch'; // لو موجودة
+        }
+
+        if ($model->added_by_type === \App\Models\Worker::class) {
+            $relations[] = 'creator.workerLogin.role';
+            $relations[] = 'creator.branch'; // لو موجودة
+        }
 
         $model->loadMissing($relations);
     }

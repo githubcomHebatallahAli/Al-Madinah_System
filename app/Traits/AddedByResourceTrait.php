@@ -30,7 +30,7 @@ trait AddedByResourceTrait
     //     });
     // }
 
-     public function addedByAttribute()
+    public function addedByAttribute()
     {
         return $this->whenLoaded('creator', function () {
             $creator = $this->creator;
@@ -47,10 +47,15 @@ trait AddedByResourceTrait
                 $roleName = optional($creator->role)->name ?? '';
             }
 
-            if ($isWorker && $creator->relationLoaded('workerLogin')) {
-                $email = $creator->workerLogin->email ?? null;
-                $roleId = $creator->workerLogin->role_id ?? null;
-                $roleName = optional($creator->workerLogin->role)->name ?? '';
+            if ($isWorker) {
+                $email = optional($creator->workerLogin)->email ?? null;
+                $roleId = $creator->role_id
+                    ?? optional($creator->workerLogin)->role_id
+                    ?? optional($creator->workerLogin->role)->id;
+
+                $roleName = optional($creator->role)->name
+                    ?? optional($creator->workerLogin->role)->name
+                    ?? '';
             }
 
             return [
