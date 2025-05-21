@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Admin;
+use App\Models\Worker;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -24,10 +26,11 @@ class AppServiceProvider extends ServiceProvider
 
 Gate::define('manage_system', function ($user) {
     return $user && (
-        ($user instanceof \App\Models\Admin && $user->role_id == 1) ||
-        ($user instanceof \App\Models\Worker && $user->role_id == 2)
+        ($user instanceof Admin && $user->role_id == 1) ||
+        ($user instanceof Worker && $user->role_id == 2)
     );
 });
+
 
 
 

@@ -33,10 +33,7 @@ public function showAll()
 
 public function create(WorkerRequest $request)
     {
-       $user = auth('admin')->user() ?? auth('worker')->user();
-
-$this->authorize('manage_system', $user);
-
+        $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
