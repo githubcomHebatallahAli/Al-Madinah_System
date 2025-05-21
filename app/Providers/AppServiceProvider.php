@@ -22,13 +22,13 @@ class AppServiceProvider extends ServiceProvider
             return    Auth::guard('admin')->check()&& $user->role_id == 1;
         });
 
-Gate::define('manage_system', function () {
-    $admin = auth('admin')->user();
-    $branchManager = auth('worker')->user();
-
-    return ($admin && $admin->role_id == 1) ||
-           ($branchManager && $branchManager->role_id == 2);
+Gate::define('manage_system', function ($user) {
+    return $user && (
+        ($user instanceof \App\Models\Admin && $user->role_id == 1) ||
+        ($user instanceof \App\Models\Worker && $user->role_id == 2)
+    );
 });
+
 
 
 
