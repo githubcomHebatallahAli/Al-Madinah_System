@@ -27,7 +27,6 @@ class CityRequest extends FormRequest
             'creationDateHijri'=>'nullable|string',
             'status' => 'nullable|in:active,notActive',
             'name' =>'required|string',
-            'admin_id' =>'nullable|exists:admins,id',
             'added_by' => [
                 'nullable',
                 'integer',
