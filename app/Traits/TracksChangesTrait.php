@@ -31,7 +31,7 @@ trait TracksChangesTrait
 // }
 
 
-    public function getChangedData(array $oldData, array $newData): array
+   public function getChangedData(array $oldData, array $newData): array
     {
         $ignoredKeys = ['updated_at'];
         $changed = [];
@@ -54,7 +54,7 @@ trait TracksChangesTrait
             $changed['added_by'] = $this->formatAddedByData($oldData['added_by_type'], $oldData['added_by']);
         }
 
-        // بيانات من قام بالتعديل (المستخدم الحالي)
+        // بيانات من قام بالتعديل
         if (Auth::guard('admin')->check() || Auth::guard('worker')->check()) {
             $changed['updated_by'] = $this->formatUpdatedByData();
         }
@@ -80,23 +80,17 @@ trait TracksChangesTrait
         }
 
         if ($type === Worker::class) {
-            $worker = Worker::with(['branch', 'role', 'workerLogin.role'])->find($id);
+            $worker = Worker::with(['branch', 'workerLogin.role'])->find($id);
             if (!$worker) return null;
 
-            $email = optional($worker->workerLogin)->email;
-            $roleId = $worker->role_id
-                ?? optional($worker->workerLogin)->role_id
-                ?? optional(optional($worker->workerLogin)->role)->id;
-
-            $roleName = optional($worker->role)->name
-                ?? optional(optional($worker->workerLogin)->role)->name;
+            $login = $worker->workerLogin;
 
             return [
                 'id' => $worker->id,
                 'name' => $worker->name,
-                'email' => $email,
-                'role_id' => $roleId,
-                'role_name' => $roleName,
+                'email' => optional($login)->email,
+                'role_id' => optional($login)->role_id,
+                'role_name' => optional(optional($login)->role)->name,
                 'type' => Worker::class,
                 'branch' => $worker->branch ? [
                     'id' => $worker->branch->id,
@@ -125,20 +119,14 @@ trait TracksChangesTrait
 
         if (Auth::guard('worker')->check()) {
             $worker = Auth::guard('worker')->user();
-            $email = optional($worker->workerLogin)->email;
-            $roleId = $worker->role_id
-                ?? optional($worker->workerLogin)->role_id
-                ?? optional(optional($worker->workerLogin)->role)->id;
-
-            $roleName = optional($worker->role)->name
-                ?? optional(optional($worker->workerLogin)->role)->name;
+            $login = $worker->workerLogin;
 
             return [
                 'id' => $worker->id,
                 'name' => $worker->name,
-                'email' => $email,
-                'role_id' => $roleId,
-                'role_name' => $roleName,
+                'email' => optional($login)->email,
+                'role_id' => optional($login)->role_id,
+                'role_name' => optional(optional($login)->role)->name,
                 'type' => Worker::class,
                 'branch' => $worker->branch ? [
                     'id' => $worker->branch->id,
