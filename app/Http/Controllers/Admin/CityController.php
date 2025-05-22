@@ -36,6 +36,7 @@ class CityController extends Controller
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
         $City = City::create([
+            'admin_id'=>$request->admin_id,
             "name" => $request->name,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
@@ -82,6 +83,7 @@ class CityController extends Controller
             ], 404);
         }
            $City->update([
+            'admin_id'=>$request->admin_id,
             "name" => $request->name,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,

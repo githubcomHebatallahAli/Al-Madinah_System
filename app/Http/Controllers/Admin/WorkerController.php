@@ -5,30 +5,35 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Worker;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
+use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\WorkerRequest;
+use App\Traits\LoadsCreatorRelationsTrait;
 use App\Http\Resources\Admin\WorkerResource;
-use App\Traits\HandleAddedByTrait;
 
 class WorkerController extends Controller
 {
     use HijriDateTrait;
     use TracksChangesTrait;
     use HandleAddedByTrait;
+    use LoadsCreatorRelationsTrait;
 
 public function showAll()
     {
         $this->authorize('manage_system');
-        $Worker = Worker::orderBy('created_at', 'desc')
+        $Workers = Worker::orderBy('created_at', 'desc')
         ->get();
+          foreach ($Workers as $worker) {
+        $this->loadCreatorRelations($worker);
+    }
 
-                  return response()->json([
-                      'data' =>  WorkerResource::collection($Worker),
-                      'message' => "Show All Workeres."
-                  ]);
+         return response()->json([
+             'data' =>  WorkerResource::collection($Workers),
+             'message' => "Show All Workeres."
+        ]);
     }
 
 public function create(WorkerRequest $request)
@@ -38,6 +43,7 @@ public function create(WorkerRequest $request)
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
 $addedById = $this->getAddedByIdOrFail();
+$addedByType = $this->getAddedByType();
 
         $Worker = Worker::create([
             'title_id'=> $request ->title_id,
@@ -50,6 +56,7 @@ $addedById = $this->getAddedByIdOrFail();
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'added_by' => $addedById,
+            'added_by_type' => $addedByType,
             'status' => 'active',
             'dashboardAccess'=>'ok'
         ]);
@@ -58,6 +65,7 @@ $addedById = $this->getAddedByIdOrFail();
                 $Worker->cv = $cvPath;
             }
              $Worker->save();
+             $this->loadCreatorRelations($Worker);
 
            return response()->json([
             'data' =>new WorkerResource($Worker),
@@ -74,6 +82,7 @@ public function edit(string $id)
                     'message' => "Worker not found."
                 ], 404);
             }
+            $this->loadCreatorRelations($Worker);
 
             return response()->json([
                 'data' => new WorkerResource($Worker),
@@ -87,6 +96,7 @@ public function update(WorkerRequest $request, string $id)
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $addedById = $this->getAddedByIdOrFail();
+        $addedByType = $this->getAddedByType();
            $Worker =Worker::findOrFail($id);
              $oldData = $Worker->toArray();
 
@@ -108,6 +118,7 @@ public function update(WorkerRequest $request, string $id)
             'status'=> $request-> status ?? 'active',
             'dashboardAccess'=> $request-> dashboardAccess ?? 'notOk',
             'added_by' => $addedById,
+            'added_by_type' => $addedByType,
             ]);
 
                         if ($request->hasFile('cv')) {
@@ -121,8 +132,8 @@ public function update(WorkerRequest $request, string $id)
 
         $changedData = $this->getChangedData($oldData, $Worker->toArray());
         $Worker->changed_data = $changedData;
-        // $Worker->changed_data = $changedData;
            $Worker->save();
+           $this->loadCreatorRelations($Worker);
            return response()->json([
             'data' =>new WorkerResource($Worker),
             'message' => " Update Worker By Id Successfully."
@@ -144,16 +155,19 @@ public function active(string $id)
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
     $addedById = $this->getAddedByIdOrFail();
+    $addedByType = $this->getAddedByType();
 
     $Worker->status = 'active';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
     $Worker->added_by = $addedById;
+    $Worker->added_by_type = $addedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
+    $this->loadCreatorRelations($Worker);
 
       return response()->json([
           'data' => new WorkerResource($Worker),
@@ -177,16 +191,19 @@ public function active(string $id)
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
     $addedById = $this->getAddedByIdOrFail();
+    $addedByType = $this->getAddedByType();
 
     $Worker->status = 'notActive';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
     $Worker->added_by = $addedById;
+    $Worker->added_by_type = $addedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
+    $this->loadCreatorRelations($Worker);
 
 
       return response()->json([
@@ -210,17 +227,19 @@ public function active(string $id)
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
     $addedById = $this->getAddedByIdOrFail();
+    $addedByType = $this->getAddedByType();
 
     $Worker->dashboardAccess = 'notOk';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
     $Worker->added_by = $addedById;
+    $Worker->added_by_type = $addedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
-
+    $this->loadCreatorRelations($Worker);
       return response()->json([
           'data' => new WorkerResource($Worker),
           'message' => 'Worker has been notOk.'
@@ -242,16 +261,19 @@ public function active(string $id)
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
     $addedById = $this->getAddedByIdOrFail();
+    $addedByType = $this->getAddedByType();
 
     $Worker->dashboardAccess = 'ok';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
     $Worker->added_by = $addedById;
+    $Worker->added_by_type = $addedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
+    $this->loadCreatorRelations($Worker);
 
       return response()->json([
           'data' => new WorkerResource($Worker),
