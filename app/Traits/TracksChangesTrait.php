@@ -30,7 +30,6 @@ trait TracksChangesTrait
 //     return $changed;
 // }
 
-
     public function getChangedData(array $oldData, array $newData): array
     {
         $ignoredKeys = ['updated_at', 'created_at'];
@@ -41,7 +40,7 @@ trait TracksChangesTrait
                 continue;
             }
 
-            // المقارنة بين القيم كـ string لتفادي الاختلافات الوهمية
+            // مقارنة القيم كـ string لتفادي الاختلافات الوهمية
             if (array_key_exists($key, $oldData) && (string)$oldData[$key] !== (string)$newValue) {
                 $changed[$key] = [
                     'old' => $oldData[$key],
@@ -55,7 +54,7 @@ trait TracksChangesTrait
             $changed['added_by'] = $this->formatUserData($this->added_by_type, $this->added_by);
         }
 
-        // بيانات من قام بالتعديل
+        // بيانات من قام بالتعديل (المستخدم الحالي)
         if (Auth::guard('admin')->check() || Auth::guard('worker')->check()) {
             $changed['updated_by'] = $this->getCurrentUserData();
         }
