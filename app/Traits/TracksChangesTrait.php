@@ -2,28 +2,152 @@
 
 namespace App\Traits;
 
+use App\Models\Admin;
+use App\Models\Worker;
+use Illuminate\Support\Facades\Auth;
+
 
 trait TracksChangesTrait
 {
+//     public function getChangedData(array $oldData, array $newData): array
+// {
+//     $ignoredKeys = ['updated_at'];
+//     $changed = [];
+
+//     foreach ($newData as $key => $newValue) {
+//         if (in_array($key, $ignoredKeys)) {
+//             continue;
+//         }
+
+//         if (array_key_exists($key, $oldData) && $oldData[$key] !== $newValue) {
+//             $changed[$key] = [
+//                 'old' => $oldData[$key],
+//                 'new' => $newValue,
+//             ];
+//         }
+//     }
+
+//     return $changed;
+// }
+
+
     public function getChangedData(array $oldData, array $newData): array
-{
-    $ignoredKeys = ['updated_at'];
-    $changed = [];
+    {
+        $ignoredKeys = ['updated_at'];
+        $changed = [];
 
-    foreach ($newData as $key => $newValue) {
-        if (in_array($key, $ignoredKeys)) {
-            continue;
+        foreach ($newData as $key => $newValue) {
+            if (in_array($key, $ignoredKeys)) {
+                continue;
+            }
+
+            if (array_key_exists($key, $oldData) && $oldData[$key] !== $newValue) {
+                $changed[$key] = [
+                    'old' => $oldData[$key],
+                    'new' => $newValue,
+                ];
+            }
         }
 
-        if (array_key_exists($key, $oldData) && $oldData[$key] !== $newValue) {
-            $changed[$key] = [
-                'old' => $oldData[$key],
-                'new' => $newValue,
-            ];
+        // بيانات من أضاف السجل
+        if (isset($oldData['added_by']) && isset($oldData['added_by_type'])) {
+            $changed['added_by'] = $this->formatAddedByData($oldData['added_by_type'], $oldData['added_by']);
         }
+
+        // بيانات من قام بالتعديل (المستخدم الحالي)
+        if (Auth::guard('admin')->check() || Auth::guard('worker')->check()) {
+            $changed['updated_by'] = $this->formatUpdatedByData();
+        }
+
+        return $changed;
     }
 
-    return $changed;
-}
+    protected function formatAddedByData(string $type, int $id): ?array
+    {
+        if ($type === Admin::class) {
+            $admin = Admin::with('role')->find($id);
+            if (!$admin) return null;
+
+            return [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role_id' => $admin->role_id,
+                'role_name' => optional($admin->role)->name,
+                'type' => Admin::class,
+                'branch' => null,
+            ];
+        }
+
+        if ($type === Worker::class) {
+            $worker = Worker::with(['branch', 'role', 'workerLogin.role'])->find($id);
+            if (!$worker) return null;
+
+            $email = optional($worker->workerLogin)->email;
+            $roleId = $worker->role_id
+                ?? optional($worker->workerLogin)->role_id
+                ?? optional(optional($worker->workerLogin)->role)->id;
+
+            $roleName = optional($worker->role)->name
+                ?? optional(optional($worker->workerLogin)->role)->name;
+
+            return [
+                'id' => $worker->id,
+                'name' => $worker->name,
+                'email' => $email,
+                'role_id' => $roleId,
+                'role_name' => $roleName,
+                'type' => Worker::class,
+                'branch' => $worker->branch ? [
+                    'id' => $worker->branch->id,
+                    'name' => $worker->branch->name,
+                ] : null,
+            ];
+        }
+
+        return null;
+    }
+
+    protected function formatUpdatedByData(): ?array
+    {
+        if (Auth::guard('admin')->check()) {
+            $admin = Auth::guard('admin')->user();
+            return [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role_id' => $admin->role_id,
+                'role_name' => optional($admin->role)->name,
+                'type' => Admin::class,
+                'branch' => null,
+            ];
+        }
+
+        if (Auth::guard('worker')->check()) {
+            $worker = Auth::guard('worker')->user();
+            $email = optional($worker->workerLogin)->email;
+            $roleId = $worker->role_id
+                ?? optional($worker->workerLogin)->role_id
+                ?? optional(optional($worker->workerLogin)->role)->id;
+
+            $roleName = optional($worker->role)->name
+                ?? optional(optional($worker->workerLogin)->role)->name;
+
+            return [
+                'id' => $worker->id,
+                'name' => $worker->name,
+                'email' => $email,
+                'role_id' => $roleId,
+                'role_name' => $roleName,
+                'type' => Worker::class,
+                'branch' => $worker->branch ? [
+                    'id' => $worker->branch->id,
+                    'name' => $worker->branch->name,
+                ] : null,
+            ];
+        }
+
+        return null;
+    }
 
 }
