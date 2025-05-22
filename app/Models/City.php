@@ -10,6 +10,7 @@ class City extends Model
 {
     use HasFactory,HasCreatorTrait;
     protected $fillable = [
+        'admin_id',
         'added_by',
         'added_by_type',
         'name',
@@ -18,7 +19,6 @@ class City extends Model
         'changed_data',
         'status',
         'branchesCount',
-
     ];
 
 public function creator()
@@ -31,6 +31,11 @@ public function creator()
     {
         return $this->hasMany(Branch::class);
     }
+
+    public function admin()
+{
+    return $this->belongsTo(Admin::class);
+}
 
 
 

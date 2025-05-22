@@ -27,7 +27,7 @@ class TitleController extends Controller
         orderBy('created_at', 'desc')
         ->get();
          foreach ($Titles as $title) {
-        $this->loadCreatorRelations($title); // تشحن العلاقات الصحيحة حسب النوع
+        $this->loadCreatorRelations($title);
     }
 
                   return response()->json([

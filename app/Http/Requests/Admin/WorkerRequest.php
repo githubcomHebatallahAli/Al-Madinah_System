@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class WorkerRequest extends FormRequest
@@ -34,7 +35,26 @@ class WorkerRequest extends FormRequest
             'idNum' =>'required|integer',
             'salary' =>'required|numeric|regex:/^\d{1,5}(\.\d{1,2})?$/',
             'cv' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg',
-            'added_by' => 'nullable','exists:workers,id'
+            'added_by' => [
+                'nullable',
+                'integer',
+                function ($attribute, $value, $fail) {
+                    $type = $this->input('added_by_type');
+
+                    if ($type === 'App\Models\Admin' && !\App\Models\Admin::where('id', $value)->exists()) {
+                        $fail('المُضيف غير موجود كـ Admin.');
+                    }
+
+                    if ($type === 'App\Models\Worker' && !\App\Models\Worker::where('id', $value)->exists()) {
+                        $fail('المُضيف غير موجود كـ Worker.');
+                    }
+                },
+            ],
+            'added_by_type' => [
+                'nullable',
+                'string',
+                Rule::in(['App\Models\Admin', 'App\Models\Worker']),
+            ],
         ];
     }
 }

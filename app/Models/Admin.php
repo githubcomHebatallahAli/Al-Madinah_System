@@ -46,40 +46,40 @@ public function creator()
         return $this->hasMany(City::class);
     }
 
-        public function branches()
-    {
-        return $this->hasMany(Branch::class);
-    }
+    //     public function branches()
+    // {
+    //     return $this->hasMany(Branch::class);
+    // }
 
-        public function offices()
-    {
-        return $this->hasMany(Office::class);
-    }
+    //     public function offices()
+    // {
+    //     return $this->hasMany(Office::class);
+    // }
 
-        public function stores()
-    {
-        return $this->hasMany(Store::class);
-    }
+    //     public function stores()
+    // {
+    //     return $this->hasMany(Store::class);
+    // }
 
-        public function trips()
-    {
-        return $this->hasMany(Trip::class);
-    }
+    //     public function trips()
+    // {
+    //     return $this->hasMany(Trip::class);
+    // }
 
-        public function titles()
-    {
-        return $this->hasMany(Title::class);
-    }
+    //     public function titles()
+    // {
+    //     return $this->hasMany(Title::class);
+    // }
 
-        public function groups()
-    {
-        return $this->hasMany(Group::class);
-    }
+    //     public function groups()
+    // {
+    //     return $this->hasMany(Group::class);
+    // }
 
-        public function campaigns()
-    {
-        return $this->hasMany(Campaign::class);
-    }
+    //     public function campaigns()
+    // {
+    //     return $this->hasMany(Campaign::class);
+    // }
 
 
 
