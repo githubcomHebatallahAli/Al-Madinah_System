@@ -31,9 +31,9 @@ trait TracksChangesTrait
 // }
 
 
-   public function getChangedData(array $oldData, array $newData): array
+    public function getChangedData(array $oldData, array $newData): array
     {
-        $ignoredKeys = ['updated_at'];
+        $ignoredKeys = ['updated_at', 'created_at'];
         $changed = [];
 
         foreach ($newData as $key => $newValue) {
@@ -41,7 +41,8 @@ trait TracksChangesTrait
                 continue;
             }
 
-            if (array_key_exists($key, $oldData) && $oldData[$key] !== $newValue) {
+            // المقارنة بين القيم كـ string لتفادي الاختلافات الوهمية
+            if (array_key_exists($key, $oldData) && (string)$oldData[$key] !== (string)$newValue) {
                 $changed[$key] = [
                     'old' => $oldData[$key],
                     'new' => $newValue,
@@ -50,19 +51,19 @@ trait TracksChangesTrait
         }
 
         // بيانات من أضاف السجل
-        if (isset($oldData['added_by']) && isset($oldData['added_by_type'])) {
-            $changed['added_by'] = $this->formatAddedByData($oldData['added_by_type'], $oldData['added_by']);
+        if (isset($this->added_by, $this->added_by_type)) {
+            $changed['added_by'] = $this->formatUserData($this->added_by_type, $this->added_by);
         }
 
         // بيانات من قام بالتعديل
         if (Auth::guard('admin')->check() || Auth::guard('worker')->check()) {
-            $changed['updated_by'] = $this->formatUpdatedByData();
+            $changed['updated_by'] = $this->getCurrentUserData();
         }
 
         return $changed;
     }
 
-    protected function formatAddedByData(string $type, int $id): ?array
+    protected function formatUserData(string $type, int $id): ?array
     {
         if ($type === Admin::class) {
             $admin = Admin::with('role')->find($id);
@@ -102,7 +103,7 @@ trait TracksChangesTrait
         return null;
     }
 
-    protected function formatUpdatedByData(): ?array
+    protected function getCurrentUserData(): ?array
     {
         if (Auth::guard('admin')->check()) {
             $admin = Auth::guard('admin')->user();
