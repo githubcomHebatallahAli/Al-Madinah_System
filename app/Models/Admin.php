@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HijriDateTrait;
-use App\Traits\HasCreatorTrait;
+
 use App\Traits\TracksChangesTrait;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Admin extends Authenticatable  implements JWTSubject
 {
-    use HasFactory, Notifiable,HasCreatorTrait ,HijriDateTrait, TracksChangesTrait;
+    use HasFactory, Notifiable ,HijriDateTrait, TracksChangesTrait;
 
 
     protected $fillable = [
@@ -41,10 +41,6 @@ public function creator()
 
 
 
-        public function cities()
-    {
-        return $this->hasMany(City::class);
-    }
 
     //     public function branches()
     // {
