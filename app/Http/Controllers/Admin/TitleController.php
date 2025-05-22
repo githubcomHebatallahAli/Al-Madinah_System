@@ -22,16 +22,17 @@ class TitleController extends Controller
 
         public function showAll()
     {
-
         $this->authorize('manage_system');
-        $Title = Title::with(['creator',
-        'creator.branch'])
-        ->orderBy('created_at', 'desc')
+        $Titles = Title::
+        orderBy('created_at', 'desc')
         ->get();
+         foreach ($Titles as $title) {
+        $this->loadCreatorRelations($title); // تشحن العلاقات الصحيحة حسب النوع
+    }
 
                   return response()->json([
-                      'data' =>  TitleResource::collection($Title),
-                      'message' => "Show All Titlees."
+                      'data' =>  TitleResource::collection($Titles),
+                      'message' => "Show All Titles."
                   ]);
     }
 

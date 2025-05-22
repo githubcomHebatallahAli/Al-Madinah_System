@@ -13,12 +13,12 @@ trait LoadsCreatorRelationsTrait
 
         if ($model->added_by_type === Admin::class) {
             $relations[] = 'creator.role';
-            $relations[] = 'creator.branch';
+            // ما نحمّلوش branch، لأنه مش مرتبط
         }
 
         if ($model->added_by_type === Worker::class) {
             $relations[] = 'creator.workerLogin.role';
-            $relations[] = 'creator.branch';
+            $relations[] = 'creator.branch'; // العامل مرتبط بفرع
         }
 
         $model->loadMissing($relations);
