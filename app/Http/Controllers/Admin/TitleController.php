@@ -55,7 +55,7 @@ class TitleController extends Controller
             'added_by_type' => $addedByType,
         ]);
          $this->loadCreatorRelations($Title);
-         dd($Title->creator);
+        //  dd($Title->creator);
            return response()->json([
             'data' =>new TitleResource($Title),
             'message' => "Title Created Successfully."
