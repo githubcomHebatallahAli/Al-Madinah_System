@@ -58,6 +58,8 @@ $addedByType = $this->getAddedByType();
             'creationDateHijri' => $hijriDate,
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
+            'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
+            'updated_by_type' => $addedByType,
             'status' => 'active',
             'dashboardAccess'=>'ok'
         ]);
@@ -67,7 +69,7 @@ $addedByType = $this->getAddedByType();
             }
              $Worker->save();
              $this->loadCreatorRelations($Worker);
-            //  $this->loadUpdaterRelations($Worker);
+             $this->loadUpdaterRelations($Worker);
 
            return response()->json([
             'data' =>new WorkerResource($Worker),

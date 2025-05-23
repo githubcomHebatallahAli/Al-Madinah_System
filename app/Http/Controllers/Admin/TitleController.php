@@ -56,11 +56,11 @@ class TitleController extends Controller
             'status' => 'active',
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            // 'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
-            // 'updated_by_type' => $addedByType
+            'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
+            'updated_by_type' => $addedByType
         ]);
          $this->loadCreatorRelations($Title);
-        //  $this->loadUpdaterRelations($Title);
+         $this->loadUpdaterRelations($Title);
 
            return response()->json([
             'data' =>new TitleResource($Title),
