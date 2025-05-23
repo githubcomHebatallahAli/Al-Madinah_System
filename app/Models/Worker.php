@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Worker extends Model
 {
     use HasFactory;
-     const storageFolder= 'Workers';
+    const storageFolder= 'Workers';
     protected $fillable = [
         'title_id',
         'store_id',
@@ -40,18 +40,6 @@ class Worker extends Model
         'changed_data' => 'array',
     ];
 
-
-
-
-    // public function role()
-    // {
-    //     return $this->belongsTo(Role::class);
-    // }
-
-    // public function addedBy()
-    // {
-    //     return $this->belongsTo(Worker::class, 'added_by');
-    // }
 
 public function creator()
 {
@@ -85,27 +73,81 @@ public function updater()
         return $this->hasOneThrough(Branch::class, Title::class, 'id', 'id', 'title_id', 'branch_id');
     }
 
+    // protected static function booted()
+    // {
+    //     static::created(function ($worker) {
+    //         if ($worker->title && $worker->title->branch) {
+    //             $worker->title->branch->increment('workersCount');
+    //         }
+    //     });
+
+    //     static::updated(function ($worker) {
+    //         if ($worker->wasChanged('title_id')) {
+    //             if ($worker->title && $worker->title->branch) {
+    //                 $worker->title->branch->increment('workersCount');
+    //             }
+
+    //             $oldTitle = Title::find($worker->getOriginal('title_id'));
+    //             if ($oldTitle && $oldTitle->branch) {
+    //                 $oldTitle->branch->decrement('workersCount');
+    //             }
+    //         }
+    //     });
+    // }
+
+
     protected static function booted()
-    {
-        static::created(function ($worker) {
-            if ($worker->title && $worker->title->branch) {
+{
+    // عند إنشاء عامل جديد فقط
+    static::created(function (Worker $worker) {
+        if ($worker->title) {
+            $worker->title->increment('workersCount');
+            if ($worker->title->branch) {
                 $worker->title->branch->increment('workersCount');
             }
-        });
+        }
 
-        static::updated(function ($worker) {
-            if ($worker->wasChanged('title_id')) {
-                if ($worker->title && $worker->title->branch) {
-                    $worker->title->branch->increment('workersCount');
-                }
+        if ($worker->store) {
+            $worker->store->increment('workersCount');
+        }
+    });
 
-                $oldTitle = Title::find($worker->getOriginal('title_id'));
-                if ($oldTitle && $oldTitle->branch) {
+    // عند تحديث العامل فقط
+    static::updated(function (Worker $worker) {
+        // إذا تغير المسمى الوظيفي
+        if ($worker->wasChanged('title_id')) {
+            // تحديث المسمى القديم
+            $oldTitle = Title::find($worker->getOriginal('title_id'));
+            if ($oldTitle) {
+                $oldTitle->decrement('workersCount');
+                if ($oldTitle->branch) {
                     $oldTitle->branch->decrement('workersCount');
                 }
             }
-        });
-    }
 
+            // تحديث المسمى الجديد
+            if ($worker->title) {
+                $worker->title->increment('workersCount');
+                if ($worker->title->branch) {
+                    $worker->title->branch->increment('workersCount');
+                }
+            }
+        }
+
+        // إذا تغير المتجر
+        if ($worker->wasChanged('store_id')) {
+            // تحديث المتجر القديم
+            $oldStore = Store::find($worker->getOriginal('store_id'));
+            if ($oldStore) {
+                $oldStore->decrement('workersCount');
+            }
+
+            // تحديث المتجر الجديد
+            if ($worker->store) {
+                $worker->store->increment('workersCount');
+            }
+        }
+    });
+}
 
 }
