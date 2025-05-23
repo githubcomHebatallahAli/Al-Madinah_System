@@ -71,7 +71,7 @@ class StoreController extends Controller
         public function edit(string $id)
         {
         $this->authorize('manage_system');
-        $Store = Store::with(['workers','products'])
+        $Store = Store::with(['workers'])
         ->find($id);
         if (!$Store) {
             return response()->json([
