@@ -32,7 +32,7 @@ class CityController extends Controller
     }
 
         return response()->json([
-            'data' =>  CityResource::collection($City),
+            'data' =>  CityResource::collection($Cities),
             'message' => "Show All Cities."
         ]);
     }
