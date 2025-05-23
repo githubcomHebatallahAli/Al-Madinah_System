@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->string('updated_by_type')->nullable();
             $table->foreignId('office_id')->constrained('offices')->cascadeOnDelete();
             $table->string('name');
             $table->unsignedBigInteger('groupsCount')->default(0);

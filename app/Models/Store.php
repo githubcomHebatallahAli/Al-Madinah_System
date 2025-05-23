@@ -11,6 +11,8 @@ class Store extends Model
     protected $fillable = [
         'added_by',
         'added_by_type',
+        'updated_by',
+        'updated_by_type',
         'branch_id',
         'name',
         'address',
@@ -40,6 +42,11 @@ class Store extends Model
 public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');
+}
+
+public function updater()
+{
+    return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
 

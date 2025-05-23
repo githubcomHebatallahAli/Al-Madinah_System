@@ -28,26 +28,46 @@ class TitleRequest extends FormRequest
             'creationDateHijri'=>'nullable|string',
             'status' => 'nullable|in:active,notActive',
             'name' =>'required|string',
-            'added_by' => [
-                'nullable',
-                'integer',
-                function ($attribute, $value, $fail) {
-                    $type = $this->input('added_by_type');
+            // 'added_by' => [
+            //     'nullable',
+            //     'integer',
+            //     function ($attribute, $value, $fail) {
+            //         $type = $this->input('added_by_type');
 
-                    if ($type === 'App\Models\Admin' && !\App\Models\Admin::where('id', $value)->exists()) {
-                        $fail('المُضيف غير موجود كـ Admin.');
-                    }
+            //         if ($type === 'App\Models\Admin' && !\App\Models\Admin::where('id', $value)->exists()) {
+            //             $fail('المُضيف غير موجود كـ Admin.');
+            //         }
 
-                    if ($type === 'App\Models\Worker' && !\App\Models\Worker::where('id', $value)->exists()) {
-                        $fail('المُضيف غير موجود كـ Worker.');
-                    }
-                },
-            ],
-            'added_by_type' => [
-                'nullable',
-                'string',
-                Rule::in(['App\Models\Admin', 'App\Models\Worker']),
-            ],
+            //         if ($type === 'App\Models\Worker' && !\App\Models\Worker::where('id', $value)->exists()) {
+            //             $fail('المُضيف غير موجود كـ Worker.');
+            //         }
+            //     },
+            // ],
+            // 'added_by_type' => [
+            //     'nullable',
+            //     'string',
+            //     Rule::in(['App\Models\Admin', 'App\Models\Worker']),
+            // ],
+            // 'updated_by' => [
+            //     'nullable',
+            //     'integer',
+            //     function ($attribute, $value, $fail) {
+            //         $type = $this->input('updated_by_type');
+
+            //         if ($type === 'App\Models\Admin' && !\App\Models\Admin::where('id', $value)->exists()) {
+            //             $fail('المُضيف غير موجود كـ Admin.');
+            //         }
+
+            //         if ($type === 'App\Models\Worker' && !\App\Models\Worker::where('id', $value)->exists()) {
+            //             $fail('المُضيف غير موجود كـ Worker.');
+            //         }
+            //     },
+            // ],
+            // 'updated_by_type' => [
+            //     'nullable',
+            //     'string',
+            //     Rule::in(['App\Models\Admin', 'App\Models\Worker']),
+            // ],
         ];
 
     }

@@ -13,6 +13,7 @@ class TripResource extends JsonResource
     {
         return [
             'added_by' => $this->addedByAttribute(),
+            'updated_by' => $this->updatedByAttribute(),
         ];
     }
 }

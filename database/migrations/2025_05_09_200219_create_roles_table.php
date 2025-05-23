@@ -19,6 +19,8 @@ return new class extends Migration
             $table->json('changed_data')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->string('updated_by_type')->nullable();
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->timestamps();

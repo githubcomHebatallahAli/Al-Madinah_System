@@ -20,6 +20,7 @@ class RoleResource extends JsonResource
             'creationDate'=> $this -> creationDate,
             'creationDateHijri'=> $this -> creationDateHijri,
             'added_by' => $this->addedByAttribute(),
+            'updated_by' => $this->updatedByAttribute(),
         ];
     }
 }

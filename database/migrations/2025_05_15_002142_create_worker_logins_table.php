@@ -20,6 +20,8 @@ return new class extends Migration
             $table->foreignId('role_id')->nullable()->constrained('roles')->cascadeOnDelete();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->string('updated_by_type')->nullable();
             $table->json('changed_data')->nullable();
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();

@@ -27,8 +27,7 @@ class BranchResource extends JsonResource
             'creationDate'=> $this-> creationDate,
             'changed_data' => $this -> changed_data,
             'added_by' => $this->addedByAttribute(),
-
-
+            'updated_by' => $this->updatedByAttribute(),
         ];
     }
 }

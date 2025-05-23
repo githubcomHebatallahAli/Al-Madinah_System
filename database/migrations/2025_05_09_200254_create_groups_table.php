@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->string('updated_by_type')->nullable();
             $table->foreignId('campaign_id')->constrained('campaigns')->cascadeOnDelete();
             $table->string('groupNum')->nullable();
             $table->string('numBus')->nullable();

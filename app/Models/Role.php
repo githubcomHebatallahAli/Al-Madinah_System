@@ -16,7 +16,9 @@ class Role extends Model
         'creationDate',
         'creationDateHijri',
         'added_by',
-        'added_by_type'
+        'added_by_type',
+        'updated_by',
+        'updated_by_type',
 
 
     ];
@@ -24,6 +26,11 @@ class Role extends Model
 public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');
+}
+
+public function updater()
+{
+    return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
      public function admin()
