@@ -29,15 +29,17 @@ class Store extends Model
         return $this->hasMany(Worker::class);
     }
 
+        public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     //     public function products()
     // {
     //     return $this->hasMany(Product::class);
     // }
 
-//     public function admin()
-// {
-//     return $this->belongsTo(Admin::class, 'admin_id');
-// }
+
 
 public function creator()
 {

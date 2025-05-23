@@ -23,9 +23,6 @@ class BranchController extends Controller
 
         public function showAll()
     {
-//        if (!Gate::allows('manage_system')) {
-//     abort(403, 'Un');
-// }
         $this->authorize('manage_system');
         $Branches = Branch::orderBy('created_at', 'desc')
         ->get();
@@ -135,9 +132,8 @@ class BranchController extends Controller
      public function active(string $id)
   {
       $this->authorize('manage_users');
-      $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-      $Branch =Branch::findOrFail($id);
+
+      $Branch =Branch::find($id);
 
       if (!$Branch) {
        return response()->json([
@@ -145,6 +141,8 @@ class BranchController extends Controller
        ]);
    }
        $oldData = $Branch->toArray();
+        $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();

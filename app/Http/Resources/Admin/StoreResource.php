@@ -12,6 +12,17 @@ class StoreResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            "id" => $this -> id,
+            'branch_id' => $this->branch?->id,
+            'branch_name' => $this->branch?->name,
+            'name' => $this -> name,
+            'address' => $this -> address,
+            'workersCount' => $this-> workersCount,
+            'productsCount' => $this-> productsCount,
+            'status' => $this-> status,
+            'creationDateHijri'=> $this->creationDateHijri,
+            'creationDate'=> $this-> creationDate,
+            'changed_data' => $this -> changed_data,
             'added_by' => $this->addedByAttribute(),
             'updated_by' => $this->updatedByAttribute(),
         ];
