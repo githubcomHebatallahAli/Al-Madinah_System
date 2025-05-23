@@ -28,6 +28,7 @@ public function showAll()
         ->get();
           foreach ($Workers as $worker) {
         $this->loadCreatorRelations($worker);
+        $this->loadUpdaterRelations($worker);
     }
 
          return response()->json([
@@ -66,6 +67,7 @@ $addedByType = $this->getAddedByType();
             }
              $Worker->save();
              $this->loadCreatorRelations($Worker);
+            //  $this->loadUpdaterRelations($Worker);
 
            return response()->json([
             'data' =>new WorkerResource($Worker),
@@ -83,6 +85,7 @@ public function edit(string $id)
                 ], 404);
             }
             $this->loadCreatorRelations($Worker);
+            $this->loadUpdaterRelations($Worker);
 
             return response()->json([
                 'data' => new WorkerResource($Worker),
@@ -95,8 +98,8 @@ public function update(WorkerRequest $request, string $id)
         $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $addedById = $this->getAddedByIdOrFail();
-        $addedByType = $this->getAddedByType();
+        $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
            $Worker =Worker::findOrFail($id);
              $oldData = $Worker->toArray();
 
@@ -117,8 +120,8 @@ public function update(WorkerRequest $request, string $id)
             'creationDateHijri' => $hijriDate,
             'status'=> $request-> status ?? 'active',
             'dashboardAccess'=> $request-> dashboardAccess ?? 'notOk',
-            'added_by' => $addedById,
-            'added_by_type' => $addedByType,
+            'updated_by' => $updatedById,
+            'updated_by_type' => $updatedByType
             ]);
 
                         if ($request->hasFile('cv')) {
@@ -134,6 +137,7 @@ public function update(WorkerRequest $request, string $id)
         $Worker->changed_data = $changedData;
            $Worker->save();
            $this->loadCreatorRelations($Worker);
+           $this->loadUpdaterRelations($Worker);
            return response()->json([
             'data' =>new WorkerResource($Worker),
             'message' => " Update Worker By Id Successfully."
@@ -143,6 +147,8 @@ public function update(WorkerRequest $request, string $id)
 public function active(string $id)
   {
       $this->authorize('manage_system');
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
     $Worker =Worker::findOrFail($id);
 
       if (!$Worker) {
@@ -154,20 +160,20 @@ public function active(string $id)
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
-    $addedById = $this->getAddedByIdOrFail();
-    $addedByType = $this->getAddedByType();
+
 
     $Worker->status = 'active';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
-    $Worker->added_by = $addedById;
-    $Worker->added_by_type = $addedByType;
+    $Worker->updated_by = $updatedById;
+    $Worker->updated_by_type = $updatedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
     $this->loadCreatorRelations($Worker);
+    $this->loadUpdaterRelations($Worker);
 
       return response()->json([
           'data' => new WorkerResource($Worker),
@@ -178,6 +184,8 @@ public function active(string $id)
      public function notActive(string $id)
   {
     $this->authorize('manage_system');
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
       $Worker =Worker::findOrFail($id);
 
       if (!$Worker) {
@@ -190,20 +198,20 @@ public function active(string $id)
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
-    $addedById = $this->getAddedByIdOrFail();
-    $addedByType = $this->getAddedByType();
+
 
     $Worker->status = 'notActive';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
-    $Worker->added_by = $addedById;
-    $Worker->added_by_type = $addedByType;
+    $Worker->updated_by = $updatedById;
+    $Worker->updated_by_type = $updatedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
     $this->loadCreatorRelations($Worker);
+    $this->loadUpdaterRelations($Worker);
 
 
       return response()->json([
@@ -215,6 +223,8 @@ public function active(string $id)
      public function notOk(string $id)
   {
     $this->authorize('manage_system');
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
       $Worker =Worker::findOrFail($id);
 
       if (!$Worker) {
@@ -226,20 +236,20 @@ public function active(string $id)
     $oldData = $Worker->toArray();
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
-    $addedById = $this->getAddedByIdOrFail();
-    $addedByType = $this->getAddedByType();
+
 
     $Worker->dashboardAccess = 'notOk';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
-    $Worker->added_by = $addedById;
-    $Worker->added_by_type = $addedByType;
+    $Worker->updated_by = $updatedById;
+    $Worker->updated_by_type = $updatedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
     $this->loadCreatorRelations($Worker);
+    $this->loadUpdaterRelations($Worker);
       return response()->json([
           'data' => new WorkerResource($Worker),
           'message' => 'Worker has been notOk.'
@@ -249,6 +259,8 @@ public function active(string $id)
      public function ok(string $id)
   {
     $this->authorize('manage_system');
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
       $Worker =Worker::findOrFail($id);
 
       if (!$Worker) {
@@ -260,20 +272,20 @@ public function active(string $id)
     $oldData = $Worker->toArray();
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
-    $addedById = $this->getAddedByIdOrFail();
-    $addedByType = $this->getAddedByType();
+
 
     $Worker->dashboardAccess = 'ok';
     $Worker->creationDate = $creationDate;
     $Worker->creationDateHijri = $hijriDate;
-    $Worker->added_by = $addedById;
-    $Worker->added_by_type = $addedByType;
+    $Worker->updated_by = $updatedById;
+    $Worker->updated_by_type = $updatedByType;
     $Worker->save();
 
     $changedData = $this->getChangedData($oldData, $Worker->toArray());
     $Worker->changed_data = $changedData;
     $Worker->save();
     $this->loadCreatorRelations($Worker);
+    $this->loadUpdaterRelations($Worker);
 
       return response()->json([
           'data' => new WorkerResource($Worker),

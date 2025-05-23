@@ -56,11 +56,11 @@ class TitleController extends Controller
             'status' => 'active',
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
-            'updated_by_type' => $addedByType
+            // 'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
+            // 'updated_by_type' => $addedByType
         ]);
          $this->loadCreatorRelations($Title);
-         $this->loadUpdaterRelations($Title);
+        //  $this->loadUpdaterRelations($Title);
 
            return response()->json([
             'data' =>new TitleResource($Title),
@@ -93,8 +93,6 @@ class TitleController extends Controller
           $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        // $addedById = $this->getAddedByIdOrFail();
-        // $addedByType = $this->getAddedByType();
          $updatedById = $this->getUpdatedByIdOrFail();
         $updatedByType = $this->getUpdatedByType();
            $Title =Title::findOrFail($id);
@@ -169,7 +167,7 @@ class TitleController extends Controller
   {
      $this->authorize('manage_system');
      $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    $updatedByType = $this->getUpdatedByType();
       $Title =Title::findOrFail($id);
 
       if (!$Title) {
@@ -194,7 +192,7 @@ class TitleController extends Controller
     $Title->changed_data = $changedData;
     $Title->save();
     $this->loadCreatorRelations($Title);
-    $this->loadUpdaterRelations($title);
+    $this->loadUpdaterRelations($Title);
 
       return response()->json([
           'data' => new TitleResource($Title),
