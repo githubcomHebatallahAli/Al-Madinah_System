@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Role;
 use App\Traits\HijriDateTrait;
+use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleRequest;
@@ -15,6 +16,7 @@ class RoleController extends Controller
 {
     use HijriDateTrait;
     use TracksChangesTrait;
+    use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     public function showAll()

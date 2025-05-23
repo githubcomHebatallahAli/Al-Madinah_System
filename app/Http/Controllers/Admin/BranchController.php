@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Branch;
 use App\Traits\HijriDateTrait;
+use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
@@ -16,6 +17,7 @@ class BranchController extends Controller
 {
     use HijriDateTrait;
     use TracksChangesTrait;
+    use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
 

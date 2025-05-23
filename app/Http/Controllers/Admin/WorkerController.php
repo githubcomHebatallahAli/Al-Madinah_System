@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
+use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Resources\Admin\WorkerResource;
 
 class WorkerController extends Controller
@@ -20,6 +21,7 @@ class WorkerController extends Controller
     use TracksChangesTrait;
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
+    use LoadsUpdaterRelationsTrait;
 
 public function showAll()
     {
