@@ -112,14 +112,14 @@ class TitleController extends Controller
             'updated_by' => $updatedById,
             'updated_by_type' => $updatedByType
             ]);
-            $this->loadCreatorRelations($Title);
-             $this->loadUpdaterRelations($Title);
+            // $this->loadCreatorRelations($Title);
+            //  $this->loadUpdaterRelations($Title);
 
         $changedData = $this->getChangedData($oldData, $Title->toArray());
         $Title->changed_data = $changedData;
            $Title->save();
-            // $this->loadCreatorRelations($Title);
-            //  $this->loadUpdaterRelations($Title);
+            $this->loadCreatorRelations($Title);
+             $this->loadUpdaterRelations($Title);
            return response()->json([
             'data' =>new TitleResource($Title),
             'message' => " Update Title By Id Successfully."
