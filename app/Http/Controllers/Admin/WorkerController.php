@@ -58,7 +58,7 @@ $addedByType = $this->getAddedByType();
             'creationDateHijri' => $hijriDate,
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
+            'updated_by' => $addedById,
             'updated_by_type' => $addedByType,
             'status' => 'active',
             'dashboardAccess'=>'ok'
@@ -100,16 +100,16 @@ public function update(WorkerRequest $request, string $id)
         $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $Worker =Worker::findOrFail($id);
-             $oldData = $Worker->toArray();
 
+           $Worker =Worker::find($id);
            if (!$Worker) {
             return response()->json([
                 'message' => "Worker not found."
             ], 404);
         }
+          $oldData = $Worker->toArray();
+             $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
            $Worker->update([
             'title_id'=> $request ->title_id,
             'store_id'=> $request ->store_id,
@@ -148,10 +148,8 @@ public function update(WorkerRequest $request, string $id)
 
 public function active(string $id)
   {
-      $this->authorize('manage_system');
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $Worker =Worker::findOrFail($id);
+    $this->authorize('manage_system');
+    $Worker =Worker::find($id);
 
       if (!$Worker) {
        return response()->json([
@@ -159,6 +157,8 @@ public function active(string $id)
        ]);
    }
        $oldData = $Worker->toArray();
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
@@ -186,9 +186,8 @@ public function active(string $id)
      public function notActive(string $id)
   {
     $this->authorize('manage_system');
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-      $Worker =Worker::findOrFail($id);
+
+      $Worker =Worker::find($id);
 
       if (!$Worker) {
        return response()->json([
@@ -196,7 +195,9 @@ public function active(string $id)
        ]);
    }
 
-          $oldData = $Worker->toArray();
+    $oldData = $Worker->toArray();
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
 
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
@@ -215,7 +216,6 @@ public function active(string $id)
     $this->loadCreatorRelations($Worker);
     $this->loadUpdaterRelations($Worker);
 
-
       return response()->json([
           'data' => new WorkerResource($Worker),
           'message' => 'Worker has been notActive.'
@@ -225,9 +225,8 @@ public function active(string $id)
      public function notOk(string $id)
   {
     $this->authorize('manage_system');
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-      $Worker =Worker::findOrFail($id);
+
+      $Worker =Worker::find($id);
 
       if (!$Worker) {
        return response()->json([
@@ -236,6 +235,8 @@ public function active(string $id)
    }
 
     $oldData = $Worker->toArray();
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
 
@@ -261,10 +262,7 @@ public function active(string $id)
      public function ok(string $id)
   {
     $this->authorize('manage_system');
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-      $Worker =Worker::findOrFail($id);
-
+      $Worker =Worker::find($id);
       if (!$Worker) {
        return response()->json([
            'message' => "Worker not found."
@@ -272,6 +270,8 @@ public function active(string $id)
    }
 
     $oldData = $Worker->toArray();
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
     $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hijriDate = $this->getHijriDate();
 

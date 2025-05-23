@@ -33,10 +33,10 @@ class TitleController extends Controller
         $this->loadUpdaterRelations($title);
     }
 
-                  return response()->json([
-                      'data' =>  TitleResource::collection($Titles),
-                      'message' => "Show All Titles."
-                  ]);
+        return response()->json([
+            'data' =>  TitleResource::collection($Titles),
+            'message' => "Show All Titles."
+        ]);
     }
 
 
@@ -56,7 +56,7 @@ class TitleController extends Controller
             'status' => 'active',
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            'updated_by' => $addedById, // عند الإنشاء يكون هو نفسه added_by
+            'updated_by' => $addedById,
             'updated_by_type' => $addedByType
         ]);
          $this->loadCreatorRelations($Title);
@@ -93,16 +93,18 @@ class TitleController extends Controller
           $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-         $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $Title =Title::findOrFail($id);
-             $oldData = $Title->toArray();
+
+           $Title =Title::find($id);
+            //  $oldData = $Title->toArray();
 
            if (!$Title) {
             return response()->json([
                 'message' => "Title not found."
             ], 404);
         }
+         $oldData = $Title->toArray();
+        $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
            $Title->update([
            'branch_id'=> $request ->branch_id,
             "name" => $request->name,
@@ -112,14 +114,12 @@ class TitleController extends Controller
             'updated_by' => $updatedById,
             'updated_by_type' => $updatedByType
             ]);
-            // $this->loadCreatorRelations($Title);
-            //  $this->loadUpdaterRelations($Title);
 
         $changedData = $this->getChangedData($oldData, $Title->toArray());
         $Title->changed_data = $changedData;
            $Title->save();
             $this->loadCreatorRelations($Title);
-             $this->loadUpdaterRelations($Title);
+            $this->loadUpdaterRelations($Title);
            return response()->json([
             'data' =>new TitleResource($Title),
             'message' => " Update Title By Id Successfully."
@@ -130,7 +130,7 @@ class TitleController extends Controller
   {
       $this->authorize('manage_system');
       $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    $updatedByType = $this->getUpdatedByType();
       $Title =Title::findOrFail($id);
 
       if (!$Title) {
