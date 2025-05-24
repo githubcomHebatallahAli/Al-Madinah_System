@@ -6,7 +6,13 @@ trait TracksChangesTrait
 {
     public function getChangedData(array $oldData, array $newData): array
     {
-        $ignoredKeys = ['updated_by', 'updated_by_type', 'changed_data'];
+        $ignoredKeys = [
+            'updated_at', // سيتم تجاهل هذا الحقل
+            'updated_by',
+            'updated_by_type',
+            'changed_data'
+        ];
+
         $changed = [];
 
         foreach ($newData as $key => $newValue) {
@@ -14,7 +20,7 @@ trait TracksChangesTrait
                 continue;
             }
 
-            if (array_key_exists($key, $oldData) && $oldData[$key] !== $newValue) {
+            if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
                 $changed[$key] = [
                     'old' => $oldData[$key],
                     'new' => $newValue,
