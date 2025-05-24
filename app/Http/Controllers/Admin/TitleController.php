@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Title;
 use Illuminate\Http\Request;
+
+
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\HandlesStatusChangeTrait;
 use App\Http\Requests\Admin\TitleRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
@@ -21,6 +24,7 @@ class TitleController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
+    use HandlesStatusChangeTrait;
 
     public function showAll()
     {
@@ -101,7 +105,6 @@ class TitleController extends Controller
 
     $oldData = $title->toArray();
 
-    // التحقق من وجود تغييرات حقيقية
     $hasChanges = false;
     $fieldsToCheck = ['branch_id', 'name', 'status'];
 
@@ -149,87 +152,25 @@ class TitleController extends Controller
 }
 
 
-
     public function active(string $id)
-{
-    $this->authorize('manage_system');
-    $title = Title::findOrFail($id);
+    {
+        $this->authorize('manage_system');
+        $title = Title::findOrFail($id);
 
-    if ($title->status === 'active') {
-        $this->loadCreatorRelations($title);
-        return response()->json([
-            'data' => new TitleResource($title),
-            'message' => "Title is already active."
-        ]);
+        return $this->changeStatusSimple($title, 'active');
     }
-
-    $oldData = $title->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $hijriDate = $this->getHijriDate();
-    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-    $title->update([
-        'status' => 'active',
-        'creationDate' => $gregorianDate,
-        'creationDateHijri' => $hijriDate,
-        'updated_by' => $updatedById,
-        'updated_by_type' => $updatedByType
-    ]);
-
-    $changedData = $this->getChangedData($oldData, $title->fresh()->toArray());
-
-    $title->changed_data = $changedData;
-    $title->save();
-
-    $this->loadCreatorRelations($title);
-    $this->loadUpdaterRelations($title);
-
-    return response()->json([
-        'data' => new TitleResource($title),
-        'message' => 'Title has been activated.'
-    ]);
-}
-
 
     public function notActive(string $id)
-{
-    $this->authorize('manage_system');
-    $title = Title::findOrFail($id);
+    {
+        $this->authorize('manage_system');
+        $title = Title::findOrFail($id);
 
-    if ($title->status === 'notActive') {
-        $this->loadCreatorRelations($title);
-        return response()->json([
-            'data' => new TitleResource($title),
-            'message' => "Title is already inactive."
-        ]);
+        return $this->changeStatusSimple($title, 'notActive');
     }
 
-    $oldData = $title->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $hijriDate = $this->getHijriDate();
-    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-    $title->update([
-        'status' => 'notActive',
-        'creationDate' => $gregorianDate,
-        'creationDateHijri' => $hijriDate,
-        'updated_by' => $updatedById,
-        'updated_by_type' => $updatedByType
-    ]);
-
-    $changedData = $this->getChangedData($oldData, $title->fresh()->toArray());
-
-    $title->changed_data = $changedData;
-    $title->save();
-
-    $this->loadCreatorRelations($title);
-    $this->loadUpdaterRelations($title);
-
-    return response()->json([
-        'data' => new TitleResource($title),
-        'message' => 'Title has been deactivated.'
-    ]);
-}
+    // هنا نرجع الريسورس الخاص بالـ Title
+    protected function getResourceClass(): string
+    {
+        return TitleResource::class;
+    }
 }
