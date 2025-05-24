@@ -4,37 +4,39 @@ namespace App\Traits;
 
 trait TracksChangesTrait
 {
-    // public function getChangedData(array $oldData, array $newData): array
-    // {
-    //     $ignoredKeys = [
-    //         'updated_at', // سيتم تجاهل هذا الحقل
-    //         'updated_by',
-    //         'updated_by_type',
-    //         'changed_data'
-    //     ];
+//     public function getChangedData(array $oldData, array $newData): array
+// {
+//     $ignoredKeys = [
+//         'updated_at',
+//         'updated_by',
+//         'updated_by_type',
+//         'changed_data'
+//     ];
 
-    //     $changed = [];
+//     $changed = [];
 
-    //     foreach ($newData as $key => $newValue) {
-    //         if (in_array($key, $ignoredKeys)) {
-    //             continue;
-    //         }
+//     foreach ($newData as $key => $newValue) {
+//         if (in_array($key, $ignoredKeys)) {
+//             continue;
+//         }
 
-    //         if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
-    //             $changed[$key] = [
-    //                 'old' => $oldData[$key],
-    //                 'new' => $newValue,
-    //             ];
-    //         }
-    //     }
+//         if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
+//             $changed[$key] = [
+//                 'old' => $oldData[$key],
+//                 'new' => $newValue,
+//             ];
+//         }
+//     }
 
-    //     return $changed;
-    // }
+//     return $changed;
+// }
 
-    public function getChangedData(array $oldData, array $newData): array
+public function getChangedData(array $oldData, array $newData): array
 {
+    $alwaysTrack = ['creationDate', 'creationDateHijri'];
+
     $ignoredKeys = [
-        'updated_at', // سيتم تجاهله
+        'updated_at',
         'updated_by',
         'updated_by_type',
         'changed_data'
@@ -47,9 +49,12 @@ trait TracksChangesTrait
             continue;
         }
 
-        if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
+        $oldValue = $oldData[$key] ?? null;
+
+        // تتبع دائم للحقول المطلوبة
+        if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
             $changed[$key] = [
-                'old' => $oldData[$key],
+                'old' => $oldValue,
                 'new' => $newValue,
             ];
         }
@@ -57,6 +62,7 @@ trait TracksChangesTrait
 
     return $changed;
 }
+
 
     public function hasRealChanges(): bool
     {
