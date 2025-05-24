@@ -87,62 +87,122 @@ class TitleController extends Controller
         ]);
     }
 
+    // public function update(TitleRequest $request, string $id)
+    // {
+    //     $this->authorize('manage_system');
+    //     $title = Title::find($id);
+
+    //     if (!$title) {
+    //         return response()->json([
+    //             'message' => "Title not found."
+    //         ], 404);
+    //     }
+
+    //     $oldData = $title->toArray();
+    //     $hasChanges = false;
+
+    //     // التحقق من التغييرات بدون الحقول المهملة
+    //     foreach ($request->validated() as $key => $value) {
+    //         if (!in_array($key, $this->getIgnoredFieldsForTracking()) &&
+    //             $title->$key != $value) {
+    //             $hasChanges = true;
+    //             break;
+    //         }
+    //     }
+
+    //     if (!$hasChanges) {
+    //         $this->loadCreatorRelations($title);
+    //         return response()->json([
+    //             'data' => new TitleResource($title),
+    //             'message' => "No actual changes detected."
+    //         ]);
+    //     }
+
+    //     $hijriDate = $this->getHijriDate();
+    //     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    //     $updatedById = $this->getUpdatedByIdOrFail();
+    //     $updatedByType = $this->getUpdatedByType();
+
+    //     $title->update([
+    //         'branch_id' => $request->branch_id,
+    //         "name" => $request->name,
+    //         'status' => $request->status ?? 'active',
+    //         'updated_by' => $updatedById,
+    //         'updated_by_type' => $updatedByType
+    //     ]);
+
+    //     $changedData = $this->getChangedData($oldData, $title->toArray());
+    //     $title->changed_data = $changedData;
+    //     $title->save();
+
+    //     $this->loadCreatorRelations($title);
+    //     $this->loadUpdaterRelations($title);
+
+    //     return response()->json([
+    //         'data' => new TitleResource($title),
+    //         'message' => "Title updated successfully."
+    //     ]);
+    // }
+
     public function update(TitleRequest $request, string $id)
-    {
-        $this->authorize('manage_system');
-        $title = Title::find($id);
+{
+    $this->authorize('manage_system');
+    $title = Title::find($id);
 
-        if (!$title) {
-            return response()->json([
-                'message' => "Title not found."
-            ], 404);
+    if (!$title) {
+        return response()->json([
+            'message' => "Title not found."
+        ], 404);
+    }
+
+    $oldData = $title->toArray();
+
+    // التحقق من وجود تغييرات حقيقية
+    $hasChanges = false;
+    $fieldsToCheck = ['branch_id', 'name', 'status'];
+
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $title->$field != $request->$field) {
+            $hasChanges = true;
+            break;
         }
+    }
 
-        $oldData = $title->toArray();
-        $hasChanges = false;
-
-        // التحقق من التغييرات بدون الحقول المهملة
-        foreach ($request->validated() as $key => $value) {
-            if (!in_array($key, $this->getIgnoredFieldsForTracking()) &&
-                $title->$key != $value) {
-                $hasChanges = true;
-                break;
-            }
-        }
-
-        if (!$hasChanges) {
-            $this->loadCreatorRelations($title);
-            return response()->json([
-                'data' => new TitleResource($title),
-                'message' => "No actual changes detected."
-            ]);
-        }
-
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-
-        $title->update([
-            'branch_id' => $request->branch_id,
-            "name" => $request->name,
-            'status' => $request->status ?? 'active',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-        ]);
-
-        $changedData = $this->getChangedData($oldData, $title->toArray());
-        $title->changed_data = $changedData;
-        $title->save();
-
+    if (!$hasChanges) {
         $this->loadCreatorRelations($title);
-        $this->loadUpdaterRelations($title);
-
         return response()->json([
             'data' => new TitleResource($title),
-            'message' => "Title updated successfully."
+            'message' => "No actual changes detected."
         ]);
     }
+
+    $hijriDate = $this->getHijriDate();
+    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
+
+    $title->update([
+        'branch_id' => $request->branch_id,
+        "name" => $request->name,
+        'status' => $request->status ?? 'active',
+        'creationDate' => $gregorianDate, // يتم تحديث تاريخ التعديل هنا
+        'creationDateHijri' => $hijriDate, // يتم تحديث التاريخ الهجري للتعديل هنا
+        'updated_by' => $updatedById,
+        'updated_by_type' => $updatedByType
+    ]);
+
+    $changedData = $this->getChangedData($oldData, $title->toArray());
+    $title->changed_data = $changedData;
+    $title->save();
+
+    $this->loadCreatorRelations($title);
+    $this->loadUpdaterRelations($title);
+
+    return response()->json([
+        'data' => new TitleResource($title),
+        'message' => "Title updated successfully."
+    ]);
+}
 
     public function active(string $id)
     {
