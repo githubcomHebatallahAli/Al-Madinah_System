@@ -25,7 +25,7 @@ trait AddedByResourceTrait
         );
     }
 
-    protected function shouldShowUpdatedBy(): bool
+ protected function shouldShowUpdatedBy(): bool
     {
         // إذا كان الموديل يستخدم TracksChangesTrait
         if (method_exists($this->resource, 'hasRealChanges')) {

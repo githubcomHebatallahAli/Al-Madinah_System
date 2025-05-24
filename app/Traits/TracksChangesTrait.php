@@ -26,28 +26,23 @@ trait TracksChangesTrait
         return $changedData;
     }
 
-    /**
-     * Check if there are any real changes
-     */
-    public function hasRealChanges($model): bool
+
+    public function hasRealChanges(): bool
     {
+        // إذا كان الموديل لا يحتوي على الحقول المطلوبة
+        if (!isset($this->added_by) || !isset($this->updated_by)) {
+            return false;
+        }
+
         // إذا كان هناك changed_data غير فارغ فهناك تغييرات
-        if (!empty($model->changed_data)) {
+        if (!empty($this->changed_data)) {
             return true;
         }
 
         // إذا كان updated_by مختلف عن added_by فهناك تغيير
-        if ($model->updated_by != $model->added_by ||
-            $model->updated_by_type != $model->added_by_type) {
-            return true;
-        }
-
-        return false;
+        return $this->updated_by != $this->added_by ||
+               $this->updated_by_type != $this->added_by_type;
     }
-
-    /**
-     * Fields to ignore when tracking changes
-     */
     protected function getIgnoredFieldsForTracking(): array
     {
         return [
