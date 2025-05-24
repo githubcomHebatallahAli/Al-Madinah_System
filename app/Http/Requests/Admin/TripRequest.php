@@ -11,7 +11,7 @@ class TripRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class TripRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'branch_id' => 'required|exists:branches,id',
+            'status' => 'nullable|in:active,notActive',
+            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+            'creationDateHijri'=>'nullable|string',
+            'name' =>'required|string',
+            'description'=>'required|string'
         ];
     }
 }

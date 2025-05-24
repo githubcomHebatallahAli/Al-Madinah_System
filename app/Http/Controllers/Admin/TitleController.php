@@ -1,3 +1,4 @@
+
 <?php
 
 namespace App\Http\Controllers\Admin;
@@ -22,181 +23,197 @@ class TitleController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
 
-        public function showAll()
+    public function showAll()
     {
         $this->authorize('manage_system');
-        $Titles = Title::
-        orderBy('created_at', 'desc')
-        ->get();
-         foreach ($Titles as $title) {
-        $this->loadCreatorRelations($title);
-        $this->loadUpdaterRelations($title);
-    }
+        $titles = Title::orderBy('created_at', 'desc')->get();
+
+        foreach ($titles as $title) {
+            $this->loadCreatorRelations($title);
+            $this->loadUpdaterRelations($title);
+        }
 
         return response()->json([
-            'data' =>  TitleResource::collection($Titles),
-            'message' => "Show All Titles."
+            'data' => TitleResource::collection($titles),
+            'message' => "All titles retrieved successfully."
         ]);
     }
 
-
     public function create(TitleRequest $request)
     {
-       $this->authorize('manage_system');
+        $this->authorize('manage_system');
         $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $addedById = $this->getAddedByIdOrFail();
         $addedByType = $this->getAddedByType();
 
-        $Title = Title::create([
-            'branch_id'=> $request ->branch_id,
+        $title = Title::create([
+            'branch_id' => $request->branch_id,
             "name" => $request->name,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
             'status' => 'active',
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            'updated_by' => $addedById,
-            'updated_by_type' => $addedByType
+            'updated_by' => $addedById, // يتم تعيينه بنفس added_by
+            'updated_by_type' => $addedByType // سيظهر null في الـ Resource
         ]);
-         $this->loadCreatorRelations($Title);
-         $this->loadUpdaterRelations($Title);
 
-           return response()->json([
-            'data' =>new TitleResource($Title),
-            'message' => "Title Created Successfully."
+        $this->loadCreatorRelations($title);
+        $this->loadUpdaterRelations($title);
+
+        return response()->json([
+            'data' => new TitleResource($title),
+            'message' => "Title created successfully."
         ]);
-        }
+    }
 
-        public function edit(string $id)
-        {
-            $this->authorize('manage_system');
+    public function edit(string $id)
+    {
+        $this->authorize('manage_system');
+        $title = Title::with(['workers'])->find($id);
 
-        $Title = Title::with(['workers'])
-        ->find($id);
-            if (!$Title) {
-                return response()->json([
-                    'message' => "Title not found."
-                ], 404);
-            }
-            $this->loadCreatorRelations($Title);
-            $this->loadUpdaterRelations($Title);
-
-            return response()->json([
-                'data' => new TitleResource($Title),
-                'message' => "Edit Title By ID Successfully."
-            ]);
-        }
-
-        public function update(TitleRequest $request, string $id)
-        {
-          $this->authorize('manage_system');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-           $Title =Title::find($id);
-            //  $oldData = $Title->toArray();
-
-           if (!$Title) {
+        if (!$title) {
             return response()->json([
                 'message' => "Title not found."
             ], 404);
         }
-         $oldData = $Title->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $Title->update([
-           'branch_id'=> $request ->branch_id,
-            "name" => $request->name,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status ?? 'active',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-            ]);
 
-        $changedData = $this->getChangedData($oldData, $Title->toArray());
-        $Title->changed_data = $changedData;
-           $Title->save();
-            $this->loadCreatorRelations($Title);
-            $this->loadUpdaterRelations($Title);
-           return response()->json([
-            'data' =>new TitleResource($Title),
-            'message' => " Update Title By Id Successfully."
+        $this->loadCreatorRelations($title);
+        $this->loadUpdaterRelations($title);
+
+        return response()->json([
+            'data' => new TitleResource($title),
+            'message' => "Title retrieved for editing."
         ]);
     }
 
-     public function active(string $id)
-  {
-      $this->authorize('manage_system');
-      $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-      $Title =Title::findOrFail($id);
+    public function update(TitleRequest $request, string $id)
+    {
+        $this->authorize('manage_system');
+        $title = Title::find($id);
 
-      if (!$Title) {
-       return response()->json([
-           'message' => "Title not found."
-       ]);
-   }
-       $oldData = $Title->toArray();
+        if (!$title) {
+            return response()->json([
+                'message' => "Title not found."
+            ], 404);
+        }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+        $oldData = $title->toArray();
+        $hasChanges = false;
 
-    $Title->status = 'active';
-    $Title->creationDate = $creationDate;
-    $Title->creationDateHijri = $hijriDate;
-    $Title->updated_by = $updatedById;
-    $Title->updated_by_type = $updatedByType;
-    $Title->save();
+        // التحقق من التغييرات بدون الحقول المهملة
+        foreach ($request->validated() as $key => $value) {
+            if (!in_array($key, $this->getIgnoredFieldsForTracking()) &&
+                $title->$key != $value) {
+                $hasChanges = true;
+                break;
+            }
+        }
 
-    $changedData = $this->getChangedData($oldData, $Title->toArray());
-    $Title->changed_data = $changedData;
-    $Title->save();
-    $this->loadCreatorRelations($Title);
-     $this->loadUpdaterRelations($Title);
+        if (!$hasChanges) {
+            $this->loadCreatorRelations($title);
+            return response()->json([
+                'data' => new TitleResource($title),
+                'message' => "No actual changes detected."
+            ]);
+        }
 
+        $hijriDate = $this->getHijriDate();
+        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
 
-      return response()->json([
-          'data' => new TitleResource($Title),
-          'message' => 'Title has been active.'
-      ]);
-  }
+        $title->update([
+            'branch_id' => $request->branch_id,
+            "name" => $request->name,
+            'status' => $request->status ?? 'active',
+            'updated_by' => $updatedById,
+            'updated_by_type' => $updatedByType
+        ]);
 
-     public function notActive(string $id)
-  {
-     $this->authorize('manage_system');
-     $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-      $Title =Title::findOrFail($id);
+        $changedData = $this->getChangedData($oldData, $title->toArray());
+        $title->changed_data = $changedData;
+        $title->save();
 
-      if (!$Title) {
-       return response()->json([
-           'message' => "Title not found."
-       ]);
-   }
+        $this->loadCreatorRelations($title);
+        $this->loadUpdaterRelations($title);
 
-          $oldData = $Title->toArray();
+        return response()->json([
+            'data' => new TitleResource($title),
+            'message' => "Title updated successfully."
+        ]);
+    }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    public function active(string $id)
+    {
+        $this->authorize('manage_system');
+        $title = Title::findOrFail($id);
 
-    $Title->status = 'notActive';
-    $Title->creationDate = $creationDate;
-    $Title->creationDateHijri = $hijriDate;
-    $Title->updated_by = $updatedById;
-    $Title->updated_by_type = $updatedByType;
-    $Title->save();
+        if ($title->status === 'active') {
+            $this->loadCreatorRelations($title);
+            return response()->json([
+                'data' => new TitleResource($title),
+                'message' => "Title is already active."
+            ]);
+        }
 
-    $changedData = $this->getChangedData($oldData, $Title->toArray());
-    $Title->changed_data = $changedData;
-    $Title->save();
-    $this->loadCreatorRelations($Title);
-    $this->loadUpdaterRelations($Title);
+        $oldData = $title->toArray();
+        $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
 
-      return response()->json([
-          'data' => new TitleResource($Title),
-          'message' => 'Title has been notActive.'
-      ]);
-  }
+        $title->update([
+            'status' => 'active',
+            'updated_by' => $updatedById,
+            'updated_by_type' => $updatedByType
+        ]);
+
+        $changedData = $this->getChangedData($oldData, $title->toArray());
+        $title->changed_data = $changedData;
+        $title->save();
+
+        $this->loadCreatorRelations($title);
+        $this->loadUpdaterRelations($title);
+
+        return response()->json([
+            'data' => new TitleResource($title),
+            'message' => 'Title has been activated.'
+        ]);
+    }
+
+    public function notActive(string $id)
+    {
+        $this->authorize('manage_system');
+        $title = Title::findOrFail($id);
+
+        if ($title->status === 'notActive') {
+            $this->loadCreatorRelations($title);
+            return response()->json([
+                'data' => new TitleResource($title),
+                'message' => "Title is already inactive."
+            ]);
+        }
+
+        $oldData = $title->toArray();
+        $updatedById = $this->getUpdatedByIdOrFail();
+        $updatedByType = $this->getUpdatedByType();
+
+        $title->update([
+            'status' => 'notActive',
+            'updated_by' => $updatedById,
+            'updated_by_type' => $updatedByType
+        ]);
+
+        $changedData = $this->getChangedData($oldData, $title->toArray());
+        $title->changed_data = $changedData;
+        $title->save();
+
+        $this->loadCreatorRelations($title);
+        $this->loadUpdaterRelations($title);
+
+        return response()->json([
+            'data' => new TitleResource($title),
+            'message' => 'Title has been deactivated.'
+        ]);
+    }
 }
