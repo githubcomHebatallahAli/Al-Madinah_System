@@ -204,75 +204,189 @@ class TitleController extends Controller
     ]);
 }
 
+    // public function active(string $id)
+    // {
+    //     $this->authorize('manage_system');
+    //     $title = Title::findOrFail($id);
+
+    //     if ($title->status === 'active') {
+    //         $this->loadCreatorRelations($title);
+    //         return response()->json([
+    //             'data' => new TitleResource($title),
+    //             'message' => "Title is already active."
+    //         ]);
+    //     }
+
+    //     $oldData = $title->toArray();
+    //     $updatedById = $this->getUpdatedByIdOrFail();
+    //     $updatedByType = $this->getUpdatedByType();
+
+    //     $title->update([
+    //         'status' => 'active',
+    //         'updated_by' => $updatedById,
+    //         'updated_by_type' => $updatedByType
+    //     ]);
+
+    //     $changedData = $this->getChangedData($oldData, $title->toArray());
+    //     $title->changed_data = $changedData;
+    //     $title->save();
+
+    //     $this->loadCreatorRelations($title);
+    //     $this->loadUpdaterRelations($title);
+
+    //     return response()->json([
+    //         'data' => new TitleResource($title),
+    //         'message' => 'Title has been activated.'
+    //     ]);
+    // }
+
+
     public function active(string $id)
-    {
-        $this->authorize('manage_system');
-        $title = Title::findOrFail($id);
+{
+    $this->authorize('manage_system');
+    $title = Title::findOrFail($id);
 
-        if ($title->status === 'active') {
-            $this->loadCreatorRelations($title);
-            return response()->json([
-                'data' => new TitleResource($title),
-                'message' => "Title is already active."
-            ]);
-        }
-
-        $oldData = $title->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-
-        $title->update([
-            'status' => 'active',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-        ]);
-
-        $changedData = $this->getChangedData($oldData, $title->toArray());
-        $title->changed_data = $changedData;
-        $title->save();
-
+    if ($title->status === 'active') {
         $this->loadCreatorRelations($title);
-        $this->loadUpdaterRelations($title);
-
         return response()->json([
             'data' => new TitleResource($title),
-            'message' => 'Title has been activated.'
+            'message' => "Title is already active."
         ]);
     }
+
+    $oldData = $title->toArray();
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
+    $hijriDate = $this->getHijriDate();
+    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    $title->update([
+        'status' => 'active',
+        'creationDate' => $gregorianDate,
+        'creationDateHijri' => $hijriDate,
+        'updated_by' => $updatedById,
+        'updated_by_type' => $updatedByType
+    ]);
+
+    $changedData = $this->getChangedData($oldData, $title->fresh()->toArray());
+
+    // إضافة التغييرات يدوياً
+    if ($oldData['creationDate'] != $gregorianDate) {
+        $changedData['creationDate'] = [
+            'old' => $oldData['creationDate'],
+            'new' => $gregorianDate
+        ];
+    }
+
+    if ($oldData['creationDateHijri'] != $hijriDate) {
+        $changedData['creationDateHijri'] = [
+            'old' => $oldData['creationDateHijri'],
+            'new' => $hijriDate
+        ];
+    }
+
+    $title->changed_data = $changedData;
+    $title->save();
+
+    $this->loadCreatorRelations($title);
+    $this->loadUpdaterRelations($title);
+
+    return response()->json([
+        'data' => new TitleResource($title),
+        'message' => 'Title has been activated.'
+    ]);
+}
+
+    // public function notActive(string $id)
+    // {
+    //     $this->authorize('manage_system');
+    //     $title = Title::findOrFail($id);
+
+    //     if ($title->status === 'notActive') {
+    //         $this->loadCreatorRelations($title);
+    //         return response()->json([
+    //             'data' => new TitleResource($title),
+    //             'message' => "Title is already inactive."
+    //         ]);
+    //     }
+
+    //     $oldData = $title->toArray();
+    //     $updatedById = $this->getUpdatedByIdOrFail();
+    //     $updatedByType = $this->getUpdatedByType();
+
+    //     $title->update([
+    //         'status' => 'notActive',
+    //         'updated_by' => $updatedById,
+    //         'updated_by_type' => $updatedByType
+    //     ]);
+
+    //     $changedData = $this->getChangedData($oldData, $title->toArray());
+    //     $title->changed_data = $changedData;
+    //     $title->save();
+
+    //     $this->loadCreatorRelations($title);
+    //     $this->loadUpdaterRelations($title);
+
+    //     return response()->json([
+    //         'data' => new TitleResource($title),
+    //         'message' => 'Title has been deactivated.'
+    //     ]);
+    // }
+
 
     public function notActive(string $id)
-    {
-        $this->authorize('manage_system');
-        $title = Title::findOrFail($id);
+{
+    $this->authorize('manage_system');
+    $title = Title::findOrFail($id);
 
-        if ($title->status === 'notActive') {
-            $this->loadCreatorRelations($title);
-            return response()->json([
-                'data' => new TitleResource($title),
-                'message' => "Title is already inactive."
-            ]);
-        }
-
-        $oldData = $title->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-
-        $title->update([
-            'status' => 'notActive',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-        ]);
-
-        $changedData = $this->getChangedData($oldData, $title->toArray());
-        $title->changed_data = $changedData;
-        $title->save();
-
+    if ($title->status === 'notActive') {
         $this->loadCreatorRelations($title);
-        $this->loadUpdaterRelations($title);
-
         return response()->json([
             'data' => new TitleResource($title),
-            'message' => 'Title has been deactivated.'
+            'message' => "Title is already inactive."
         ]);
     }
+
+    $oldData = $title->toArray();
+    $updatedById = $this->getUpdatedByIdOrFail();
+    $updatedByType = $this->getUpdatedByType();
+    $hijriDate = $this->getHijriDate();
+    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    $title->update([
+        'status' => 'notActive',
+        'creationDate' => $gregorianDate, // تحديث تاريخ التعديل
+        'creationDateHijri' => $hijriDate, // تحديث التاريخ الهجري
+        'updated_by' => $updatedById,
+        'updated_by_type' => $updatedByType
+    ]);
+
+    $changedData = $this->getChangedData($oldData, $title->fresh()->toArray());
+
+    // إضافة التغييرات يدوياً إذا لم تضاف تلقائياً
+    if ($oldData['creationDate'] != $gregorianDate) {
+        $changedData['creationDate'] = [
+            'old' => $oldData['creationDate'],
+            'new' => $gregorianDate
+        ];
+    }
+
+    if ($oldData['creationDateHijri'] != $hijriDate) {
+        $changedData['creationDateHijri'] = [
+            'old' => $oldData['creationDateHijri'],
+            'new' => $hijriDate
+        ];
+    }
+
+    $title->changed_data = $changedData;
+    $title->save();
+
+    $this->loadCreatorRelations($title);
+    $this->loadUpdaterRelations($title);
+
+    return response()->json([
+        'data' => new TitleResource($title),
+        'message' => 'Title has been deactivated.'
+    ]);
+}
 }

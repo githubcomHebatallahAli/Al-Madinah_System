@@ -4,32 +4,59 @@ namespace App\Traits;
 
 trait TracksChangesTrait
 {
+    // public function getChangedData(array $oldData, array $newData): array
+    // {
+    //     $ignoredKeys = [
+    //         'updated_at', // سيتم تجاهل هذا الحقل
+    //         'updated_by',
+    //         'updated_by_type',
+    //         'changed_data'
+    //     ];
+
+    //     $changed = [];
+
+    //     foreach ($newData as $key => $newValue) {
+    //         if (in_array($key, $ignoredKeys)) {
+    //             continue;
+    //         }
+
+    //         if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
+    //             $changed[$key] = [
+    //                 'old' => $oldData[$key],
+    //                 'new' => $newValue,
+    //             ];
+    //         }
+    //     }
+
+    //     return $changed;
+    // }
+
     public function getChangedData(array $oldData, array $newData): array
-    {
-        $ignoredKeys = [
-            'updated_at', // سيتم تجاهل هذا الحقل
-            'updated_by',
-            'updated_by_type',
-            'changed_data'
-        ];
+{
+    $ignoredKeys = [
+        'updated_at', // سيتم تجاهله
+        'updated_by',
+        'updated_by_type',
+        'changed_data'
+    ];
 
-        $changed = [];
+    $changed = [];
 
-        foreach ($newData as $key => $newValue) {
-            if (in_array($key, $ignoredKeys)) {
-                continue;
-            }
-
-            if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
-                $changed[$key] = [
-                    'old' => $oldData[$key],
-                    'new' => $newValue,
-                ];
-            }
+    foreach ($newData as $key => $newValue) {
+        if (in_array($key, $ignoredKeys)) {
+            continue;
         }
 
-        return $changed;
+        if (array_key_exists($key, $oldData) && $oldData[$key] != $newValue) {
+            $changed[$key] = [
+                'old' => $oldData[$key],
+                'new' => $newValue,
+            ];
+        }
     }
+
+    return $changed;
+}
 
     public function hasRealChanges(): bool
     {
