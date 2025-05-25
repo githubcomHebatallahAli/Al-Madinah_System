@@ -70,55 +70,44 @@ public function update(CityRequest $request, string $id)
     $city = City::findOrFail($id);
 
     $oldData = $city->toArray();
-
-    // التحقق من التغييرات
-    $hasChanges = false;
     $updateData = [];
+    $hasChanges = false;
 
-    // معالجة حقل الاسم
-    if ($request->has('name') && $city->name != $request->name) {
-        $updateData['name'] = $request->name;
-        $hasChanges = true;
-    }
-
-    // معالجة حقل الحالة (مع ضمان عدم وجود قيمة null)
-    if ($request->has('status')) {
-        if ($city->status != $request->status) {
-            $updateData['status'] = $request->status;
+    // التحقق من التغييرات في الحقول الأساسية
+    $fieldsToCheck = ['name', 'status'];
+    foreach ($fieldsToCheck as $field) {
+        if ($request->filled($field) && $city->$field != $request->$field) {
+            $updateData[$field] = $request->$field;
             $hasChanges = true;
         }
     }
 
+    // إذا لم يكن هناك تغييرات فعلية
     if (!$hasChanges) {
         $this->loadCommonRelations($city);
-        return $this->respondWithResource($city, "No actual changes detected.");
+        return $this->respondWithResource($city, "لا يوجد تغييرات فعلية");
     }
 
-    // إضافة بيانات التعريف فقط إذا كان هناك تغييرات
-    $metaData = $this->prepareUpdateMeta($request);
-    $updateData = array_merge($updateData, $metaData);
+    // إضافة بيانات التعريف للتحديث
+    $updateData = array_merge($updateData, [
+        'updated_by' => $this->getUpdatedByIdOrFail(),
+        'updated_by_type' => $this->getUpdatedByType(),
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+    ]);
 
-    // تنفيذ التحديث
-    $city->update($updateData);
+    // تنفيذ التحديث مع ضمان عدم وجود قيم فارغة
+    $city->update(array_filter($updateData, function($value) {
+        return !is_null($value);
+    }));
 
-    // تسجيل البيانات المتغيرة
+    // تسجيل التغييرات
     $city->changed_data = $this->getChangedData($oldData, $city->fresh()->toArray());
     $city->save();
 
     $this->loadCommonRelations($city);
-    return $this->respondWithResource($city, "City updated successfully.");
+    return $this->respondWithResource($city, "تم تحديث المدينة بنجاح");
 }
-
-protected function prepareUpdateMeta($request): array
-{
-    return [
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
-        'updated_by' => $this->getUpdatedByIdOrFail(),
-        'updated_by_type' => $this->getUpdatedByType(),
-    ];
-}
-
 
     //         public function update(CityRequest $request, string $id)
     //     {
