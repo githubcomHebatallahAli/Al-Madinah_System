@@ -81,6 +81,19 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     return $data;
 }
 
+// ======== دمج البيانات الجديدة مع القديمة إذا لم تُرسل ========
+protected function mergeWithOld($request, $model, array $fields): array
+{
+    $result = [];
+
+    foreach ($fields as $field) {
+        $result[$field] = $request->has($field) ? $request->$field : $model->$field;
+    }
+
+    return $result;
+}
+
+
     // ======== تطبيق التحديثات وحفظ التغييرات ========
     protected function applyChangesAndSave($model, array $data, array $oldData): void
     {
