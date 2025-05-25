@@ -26,7 +26,7 @@ class WorkerController extends Controller
 public function showAll()
     {
         $this->authorize('manage_system');
-        $Workers = Worker::orderBy('created_at', 'desc');
+        $Workers = Worker::orderBy('created_at', 'desc')->get();
     $this->loadRelationsForCollection($Workers);
 
          return response()->json([
