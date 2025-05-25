@@ -67,23 +67,25 @@ class CityController extends Controller
 public function update(CityRequest $request, string $id)
 {
     $this->authorize('manage_users');
-    $city = City::find($id);
-
-    if (!$city) {
-        return response()->json(['message' => "City not found."], 404);
-    }
+    $city = City::findOrFail($id);
 
     $oldData = $city->toArray();
-    $fieldsToCheck = ['name', 'status'];
-    $hasChanges = false;
 
-    foreach ($fieldsToCheck as $field) {
-        if ($request->has($field)) {
-            $requestValue = $request->$field;
-            if ($city->$field != $requestValue) {
-                $hasChanges = true;
-                break;
-            }
+    // التحقق من التغييرات
+    $hasChanges = false;
+    $updateData = [];
+
+    // معالجة حقل الاسم
+    if ($request->has('name') && $city->name != $request->name) {
+        $updateData['name'] = $request->name;
+        $hasChanges = true;
+    }
+
+    // معالجة حقل الحالة (مع ضمان عدم وجود قيمة null)
+    if ($request->has('status')) {
+        if ($city->status != $request->status) {
+            $updateData['status'] = $request->status;
+            $hasChanges = true;
         }
     }
 
@@ -92,21 +94,18 @@ public function update(CityRequest $request, string $id)
         return $this->respondWithResource($city, "No actual changes detected.");
     }
 
-    // تحضير بيانات التحديث
-    $updateData = [
-        'name' => $request->input('name', $city->name), // استخدام القيمة الحالية إذا لم يتم إرسالها
-        'status' => $request->input('status', $city->status) // استخدام القيمة الحالية إذا لم يتم إرسالها
-    ];
+    // إضافة بيانات التعريف فقط إذا كان هناك تغييرات
+    $metaData = $this->prepareUpdateMeta($request);
+    $updateData = array_merge($updateData, $metaData);
 
-    // إضافة بيانات التعريف
-    $updateData = array_merge($updateData, $this->prepareUpdateMeta($request));
+    // تنفيذ التحديث
+    $city->update($updateData);
 
-    // إزالة الحقول التي لم تتغير
-    $updateData = array_filter($updateData, function($value, $key) use ($city) {
-        return $city->$key != $value;
-    }, ARRAY_FILTER_USE_BOTH);
+    // تسجيل البيانات المتغيرة
+    $city->changed_data = $this->getChangedData($oldData, $city->fresh()->toArray());
+    $city->save();
 
-    $this->applyChangesAndSave($city, $updateData, $oldData);
+    $this->loadCommonRelations($city);
     return $this->respondWithResource($city, "City updated successfully.");
 }
 
