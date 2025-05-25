@@ -65,7 +65,7 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     // }
 
 
-    protected function prepareUpdateMeta($request): array
+protected function prepareUpdateMeta($request): array
 {
     $data = [
         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
@@ -74,6 +74,7 @@ protected function respondWithCollection(Collection $collection, ?string $messag
         'updated_by_type' => $this->getUpdatedByType(),
     ];
 
+    // Only include status if it's being updated
     if ($request->has('status')) {
         $data['status'] = $request->status;
     }

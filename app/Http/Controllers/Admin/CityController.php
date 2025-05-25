@@ -64,39 +64,48 @@ class CityController extends Controller
         }
 
 
-        public function update(CityRequest $request, string $id)
-        {
-          $this->authorize('manage_users');
-    $City = City::find($id);
+public function update(CityRequest $request, string $id)
+{
+    $this->authorize('manage_users');
+    $city = City::find($id);
 
-    if (!$City) {
+    if (!$city) {
         return response()->json(['message' => "City not found."], 404);
     }
 
-    $oldData = $City->toArray();
+    $oldData = $city->toArray();
     $fieldsToCheck = ['name', 'status'];
     $hasChanges = false;
 
     foreach ($fieldsToCheck as $field) {
-        if ($request->has($field) && $City->$field != $request->$field) {
-            $hasChanges = true;
-            break;
+        if ($request->has($field)) {  // تم إضافة الأقواس () هنا
+            $requestValue = $request->$field;
+            if ($city->$field != $requestValue) {
+                $hasChanges = true;
+                break;
+            }
         }
     }
 
     if (!$hasChanges) {
-        $this->loadCommonRelations($City);
-        return $this->respondWithResource($City, "No actual changes detected.");
+        $this->loadCommonRelations($city);
+        return $this->respondWithResource($city, "No actual changes detected.");
     }
 
-    $updateData = array_merge(
-        $request->only(['name']),
-        $this->prepareUpdateMeta($request)
-    );
+    // Get basic update data
+    $updateData = $request->only(['name']);
 
-    $this->applyChangesAndSave($City, $updateData, $oldData);
-    return $this->respondWithResource($City, "City updated successfully.");
+    // Merge with status if provided, otherwise keep current status
+    if ($request->has('status')) {
+        $updateData['status'] = $request->status;
     }
+
+    // Add meta data
+    $updateData = array_merge($updateData, $this->prepareUpdateMeta($request));
+
+    $this->applyChangesAndSave($city, $updateData, $oldData);
+    return $this->respondWithResource($city, "City updated successfully.");
+}
 
 
 
