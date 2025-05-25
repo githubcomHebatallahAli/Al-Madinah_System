@@ -95,6 +95,7 @@ class CityController extends Controller
     );
 
     $this->applyChangesAndSave($City, $updateData, $oldData);
+     $this->loadCommonRelations($City);
     return $this->respondWithResource($City, "City updated successfully.");
     }
 
