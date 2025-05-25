@@ -7,6 +7,25 @@ use Illuminate\Http\JsonResponse;
 
 trait HandlesControllerCrudsTrait
 {
+
+    protected function respondWithResource($model): JsonResponse
+{
+    $this->loadCommonRelations($model);
+
+    return response()->json([
+        'data' => new ($this->getResourceClass())($model)
+    ]);
+}
+
+protected function respondWithCollection(Collection $collection): JsonResponse
+{
+    $this->loadRelationsForCollection($collection);
+
+    return response()->json([
+        'data' => $this->getResourceClass()::collection($collection)
+    ]);
+}
+
     // ======== تجهيز بيانات الإنشاء المشتركة ========
     protected function prepareCreationMetaData(): array
     {
