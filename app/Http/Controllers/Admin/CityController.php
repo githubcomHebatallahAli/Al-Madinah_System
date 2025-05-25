@@ -89,10 +89,16 @@ class CityController extends Controller
         return $this->respondWithResource($City, "No actual changes detected.");
     }
 
+    // $updateData = array_merge(
+    //     $request->only(['name']),
+    //     $this->prepareUpdateMeta($request)
+    // );
+
     $updateData = array_merge(
-        $request->only(['name']),
-        $this->prepareUpdateMeta($request)
-    );
+    $request->only(['name', 'status']),
+    ['status' => $request->status ?? $City->status],
+    $this->prepareUpdateMeta($request)
+);
 
     $this->applyChangesAndSave($City, $updateData, $oldData);
 
