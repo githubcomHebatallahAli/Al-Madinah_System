@@ -63,21 +63,25 @@ class BranchController extends Controller
     return $this->respondWithResource($Branch, "Branch retrieved for editing.");
         }
 
-        public function update(BranchRequest $request, string $id)
-        {
-          $this->authorize('manage_users');
-    $Branch = Branch::find($id);
-
-    if (!$Branch) {
-        return response()->json(['message' => "Branch not found."], 404);
-    }
-
+public function update(BranchRequest $request, string $id)
+{
+    $this->authorize('manage_users');
+    $Branch = Branch::findOrFail($id);
     $oldData = $Branch->toArray();
-    $fieldsToCheck = ['city_id', 'name', 'status','address'];
-    $hasChanges = false;
 
-    foreach ($fieldsToCheck as $field) {
-        if ($request->has($field) && $Branch->$field != $request->$field) {
+    // Prepare the basic update data
+    $updateData = $request->only(['name','address','city_id','status']);
+
+    // Add metadata including status fallback
+    $updateData = array_merge(
+        $updateData,
+        $this->prepareUpdateMeta($request, $Branch->status)
+    );
+
+    // Check for actual changes
+    $hasChanges = false;
+    foreach ($updateData as $key => $value) {
+        if ($Branch->$key != $value) {
             $hasChanges = true;
             break;
         }
@@ -85,17 +89,20 @@ class BranchController extends Controller
 
     if (!$hasChanges) {
         $this->loadCommonRelations($Branch);
-        return $this->respondWithResource($Branch, "No actual changes detected.");
+        return $this->respondWithResource($Branch, "لا يوجد تغييرات فعلية");
     }
 
-    $updateData = array_merge(
-        $request->only(['city_id', 'name','address']),
-        $this->prepareUpdateMeta($request)
-    );
+    // Apply updates
+    $Branch->update($updateData);
 
-    $this->applyChangesAndSave($Branch, $updateData, $oldData);
-    return $this->respondWithResource($Branch, "Branch updated successfully.");
-    }
+    // Track changes
+    $changedData = $this->getChangedData($oldData, $Branch->fresh()->toArray());
+    $Branch->changed_data = $changedData;
+    $Branch->save();
+
+    $this->loadCommonRelations($Branch);
+    return $this->respondWithResource($Branch, "تم تحديث المدينة بنجاح");
+}
 
 
         public function active(string $id)
