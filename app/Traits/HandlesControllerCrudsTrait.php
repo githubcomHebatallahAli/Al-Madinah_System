@@ -65,23 +65,16 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     // }
 
 
-protected function prepareUpdateMeta($request): array
+protected function prepareUpdateMeta($request, string $status = null): array
 {
-    $data = [
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
+    return [
         'updated_by' => $this->getUpdatedByIdOrFail(),
         'updated_by_type' => $this->getUpdatedByType(),
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+        'status' => $request->status ?? $status,
     ];
-
-    // Only include status if it's being updated
-    if ($request->has('status')) {
-        $data['status'] = $request->status;
-    }
-
-    return $data;
 }
-
 // ======== دمج البيانات الجديدة مع القديمة إذا لم تُرسل ========
 protected function mergeWithOld($request, $model, array $fields): array
 {

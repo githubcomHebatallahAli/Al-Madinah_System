@@ -68,41 +68,37 @@ public function update(CityRequest $request, string $id)
 {
     $this->authorize('manage_users');
     $city = City::findOrFail($id);
-
     $oldData = $city->toArray();
-    $updateData = [];
-    $hasChanges = false;
 
-    // التحقق من التغييرات في الحقول الأساسية
-    $fieldsToCheck = ['name', 'status'];
-    foreach ($fieldsToCheck as $field) {
-        if ($request->filled($field) && $city->$field != $request->$field) {
-            $updateData[$field] = $request->$field;
+    // Prepare the basic update data
+    $updateData = $request->only(['name', 'status']);
+
+    // Add metadata including status fallback
+    $updateData = array_merge(
+        $updateData,
+        $this->prepareUpdateMeta($request, $city->status)
+    );
+
+    // Check for actual changes
+    $hasChanges = false;
+    foreach ($updateData as $key => $value) {
+        if ($city->$key != $value) {
             $hasChanges = true;
+            break;
         }
     }
 
-    // إذا لم يكن هناك تغييرات فعلية
     if (!$hasChanges) {
         $this->loadCommonRelations($city);
         return $this->respondWithResource($city, "لا يوجد تغييرات فعلية");
     }
 
-    // إضافة بيانات التعريف للتحديث
-    $updateData = array_merge($updateData, [
-        'updated_by' => $this->getUpdatedByIdOrFail(),
-        'updated_by_type' => $this->getUpdatedByType(),
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
-    ]);
+    // Apply updates
+    $city->update($updateData);
 
-    // تنفيذ التحديث مع ضمان عدم وجود قيم فارغة
-    $city->update(array_filter($updateData, function($value) {
-        return !is_null($value);
-    }));
-
-    // تسجيل التغييرات
-    $city->changed_data = $this->getChangedData($oldData, $city->fresh()->toArray());
+    // Track changes
+    $changedData = $this->getChangedData($oldData, $city->fresh()->toArray());
+    $city->changed_data = $changedData;
     $city->save();
 
     $this->loadCommonRelations($city);

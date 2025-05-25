@@ -26,17 +26,28 @@ trait AddedByResourceTrait
         );
     }
 
- protected function shouldShowUpdatedBy(): bool
-    {
-        // إذا كان الموديل يستخدم TracksChangesTrait
-        if (method_exists($this->resource, 'hasRealChanges')) {
-            return $this->resource->hasRealChanges();
-        }
+//  protected function shouldShowUpdatedBy(): bool
+//     {
+//         // إذا كان الموديل يستخدم TracksChangesTrait
+//         if (method_exists($this->resource, 'hasRealChanges')) {
+//             return $this->resource->hasRealChanges();
+//         }
 
-        // التحقق الأساسي إذا لم يكن هناك Trait
-        return $this->resource->updated_by != $this->resource->added_by ||
-               $this->resource->updated_by_type != $this->resource->added_by_type;
+//         // التحقق الأساسي إذا لم يكن هناك Trait
+//         return $this->resource->updated_by != $this->resource->added_by ||
+//                $this->resource->updated_by_type != $this->resource->added_by_type;
+//     }
+
+protected function shouldShowUpdatedBy(): bool
+{
+    // If the model uses TracksChangesTrait, rely on its hasRealChanges method
+    if (method_exists($this->resource, 'hasRealChanges')) {
+        return $this->resource->hasRealChanges();
     }
+
+    // Basic check - always show updater if updated_by is set
+    return $this->resource->updated_by !== null;
+}
 
     protected function formatUserData($user, string $userType): ?array
     {
