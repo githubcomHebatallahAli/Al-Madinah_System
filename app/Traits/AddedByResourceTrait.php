@@ -26,14 +26,13 @@ trait AddedByResourceTrait
     //     );
     // }
 
-    public function updatedByAttribute()
+public function updatedByAttribute()
 {
-    // Return null if this is the initial creation (updated_by not set yet)
-    if (!$this->updated_by) {
+    // Return null if this is a new record or hasn't been updated yet
+    if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
         return null;
     }
 
-    // Original logic for updates
     return $this->formatUserData(
         $this->updater,
         $this->updated_by_type ?? 'unknown'

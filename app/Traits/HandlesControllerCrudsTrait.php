@@ -47,8 +47,8 @@ protected function respondWithCollection(Collection $collection, ?string $messag
             'status' => 'active',
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            'updated_by' => $addedById, // = added_by
-            'updated_by_type' => $addedByType,
+            // 'updated_by' => $addedById, // = added_by
+            // 'updated_by_type' => $addedByType,
         ];
     }
 
