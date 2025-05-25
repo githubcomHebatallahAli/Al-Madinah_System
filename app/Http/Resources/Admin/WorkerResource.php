@@ -23,7 +23,7 @@ class WorkerResource extends JsonResource
             'branchPhoNum' => $this -> branchPhoNum ,
             'salary' => $this -> salary ,
             'cv' => $this -> cv ,
-            'workersCount' => $this-> workersCount,
+            // 'workersCount' => $this-> workersCount,
             'status' => $this-> status,
             'dashboardAccess' => $this-> dashboardAccess,
             'creationDateHijri'=> $this->creationDateHijri,
