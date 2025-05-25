@@ -53,16 +53,33 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     }
 
     // ======== تجهيز بيانات التحديث المشتركة ========
+    // protected function prepareUpdateMeta($request): array
+    // {
+    //     return [
+    //         'status' => $request->status ?? 'active',
+    //         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+    //         'creationDateHijri' => $this->getHijriDate(),
+    //         'updated_by' => $this->getUpdatedByIdOrFail(),
+    //         'updated_by_type' => $this->getUpdatedByType(),
+    //     ];
+    // }
+
+
     protected function prepareUpdateMeta($request): array
-    {
-        return [
-            'status' => $request->status ?? 'active',
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
-            'updated_by' => $this->getUpdatedByIdOrFail(),
-            'updated_by_type' => $this->getUpdatedByType(),
-        ];
+{
+    $data = [
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+        'updated_by' => $this->getUpdatedByIdOrFail(),
+        'updated_by_type' => $this->getUpdatedByType(),
+    ];
+
+    if ($request->has('status')) {
+        $data['status'] = $request->status;
     }
+
+    return $data;
+}
 
     // ======== تطبيق التحديثات وحفظ التغييرات ========
     protected function applyChangesAndSave($model, array $data, array $oldData): void
