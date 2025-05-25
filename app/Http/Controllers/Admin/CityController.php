@@ -118,7 +118,7 @@ class CityController extends Controller
         $updatedById = $this->getUpdatedByIdOrFail();
         $updatedByType = $this->getUpdatedByType();
            $City->update([
-           'branch_id'=> $request ->branch_id,
+        //    'branch_id'=> $request ->branch_id,
             "name" => $request->name,
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
