@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\CityRequest;
 use App\Http\Resources\Admin\CityResource;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\HandlesControllerCrudsTrait;
 
 
 class CityController extends Controller
@@ -20,16 +21,14 @@ class CityController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
+    use HandlesControllerCrudsTrait;
 
         public function showAll()
     {
         $this->authorize('manage_users');
        $Cities = City::orderBy('created_at', 'desc')
         ->get();
-          foreach ($Cities as $City) {
-        $this->loadCreatorRelations($City);
-        $this->loadUpdaterRelations($City);
-    }
+        $this->loadRelationsForCollection($Cities);
 
         return response()->json([
             'data' =>  CityResource::collection($Cities),
@@ -41,27 +40,13 @@ class CityController extends Controller
     public function create(CityRequest $request)
     {
         $this->authorize('manage_users');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $addedById = $this->getAddedByIdOrFail();
-        $addedByType = $this->getAddedByType();
+           $data = array_merge($request->only([
+             'name'
+        ]), $this->prepareCreationMetaData());
 
-        $City = City::create([
-            "name" => $request->name,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status' => 'active',
-            'added_by' => $addedById,
-            'added_by_type' => $addedByType,
-            'updated_by' => $addedById,
-            'updated_by_type' => $addedByType
-        ]);
-        $this->loadCreatorRelations($City);
-         $this->loadUpdaterRelations($City);
-           return response()->json([
-            'data' =>new CityResource($City),
-            'message' => "City Created Successfully."
-        ]);
+        $City = City::create($data);
+
+         return $this->respondWithResource($City, "City created successfully.");
         }
 
         public function edit(string $id)
@@ -75,125 +60,62 @@ class CityController extends Controller
                     'message' => "City not found."
                 ], 404);
             }
-        $this->loadCreatorRelations($City);
-         $this->loadUpdaterRelations($City);
-
-            return response()->json([
-                'data' => new CityResource($City),
-                'message' => "Edit City By ID Successfully."
-            ]);
+    return $this->respondWithResource($City, "City retrieved for editing.");
         }
+
 
         public function update(CityRequest $request, string $id)
         {
           $this->authorize('manage_users');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-           $City =City::find($id);
+          $City = City::find($id);
 
-           if (!$City) {
-            return response()->json([
-                'message' => "City not found."
-            ], 404);
-        }
-
-        $oldData = $City->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $City->update([
-            "name" => $request->name,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status ?? 'active',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-            ]);
-
-
-        $changedData = $this->getChangedData($oldData, $City->toArray());
-        $City->changed_data = $changedData;
-
-        $City->save();
-        $this->loadCreatorRelations($City);
-         $this->loadUpdaterRelations($City);
-           return response()->json([
-            'data' =>new CityResource($City),
-            'message' => " Update City By Id Successfully."
-        ]);
+    if (!$City) {
+        return response()->json(['message' => "City not found."], 404);
     }
 
-     public function active(string $id)
-  {
-      $this->authorize('manage_users');
-      $City =City::find($id);
+    $oldData = $City->toArray();
+    $fieldsToCheck = ['name', 'status'];
+    $hasChanges = false;
 
-      if (!$City) {
-       return response()->json([
-           'message' => "City not found."
-       ]);
-   }
-        $oldData = $City->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $City->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    if (!$hasChanges) {
+        $this->loadCommonRelations($City);
+        return $this->respondWithResource($City, "No actual changes detected.");
+    }
 
-    $City->status = 'active';
-    $City->creationDate = $creationDate;
-    $City->creationDateHijri = $hijriDate;
-    $City->updated_by = $updatedById;
-    $City->updated_by_type = $updatedByType;
-    $City->save();
+    $updateData = array_merge(
+        $request->only(['name']),
+        $this->prepareUpdateMeta($request)
+    );
 
-    $changedData = $this->getChangedData($oldData, $City->toArray());
-    $City->changed_data = $changedData;
-    $City->save();
-    $this->loadCreatorRelations($City);
-    $this->loadUpdaterRelations($City);
+    $this->applyChangesAndSave($City, $updateData, $oldData);
+    return $this->respondWithResource($City, "City updated successfully.");
+    }
 
-      return response()->json([
-          'data' => new CityResource($City),
-          'message' => 'City has been active.'
-      ]);
-  }
+    public function active(string $id)
+    {
+         $this->authorize('manage_users');
+        $City = City::findOrFail($id);
 
-     public function notActive(string $id)
-  {
-      $this->authorize('manage_users');
-      $City =City::find($id);
+        return $this->changeStatusSimple($City, 'active');
+    }
 
-      if (!$City) {
-       return response()->json([
-           'message' => "City not found."
-       ]);
-   }
+    public function notActive(string $id)
+    {
+         $this->authorize('manage_users');
+        $City = City::findOrFail($id);
 
-        $oldData = $City->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+        return $this->changeStatusSimple($City, 'notActive');
+    }
 
-
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
-
-    $City->status = 'notActive';
-    $City->creationDate = $creationDate;
-    $City->creationDateHijri = $hijriDate;
-    $City->updated_by = $updatedById;
-    $City->updated_by_type = $updatedByType;
-    $City->save();
-
-    $changedData = $this->getChangedData($oldData, $City->toArray());
-    $City->changed_data = $changedData;
-    $City->save();
-    $this->loadCreatorRelations($City);
-    $this->loadUpdaterRelations($City);
-
-
-      return response()->json([
-          'data' => new CityResource($City),
-          'message' => 'City has been notActive.'
-      ]);
-  }
+    protected function getResourceClass(): string
+    {
+        return CityResource::class;
+    }
 }

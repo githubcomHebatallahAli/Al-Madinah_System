@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\BranchRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\BranchResource;
 
 class BranchController extends Controller
@@ -20,16 +21,14 @@ class BranchController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
+    use HandlesControllerCrudsTrait;
 
         public function showAll()
     {
         $this->authorize('manage_system');
         $Branches = Branch::orderBy('created_at', 'desc')
         ->get();
-           foreach ($Branches as $branch) {
-        $this->loadCreatorRelations($branch);
-        $this->loadUpdaterRelations($branch);
-    }
+        $this->loadRelationsForCollection($Branches);
 
         return response()->json([
             'data' =>  BranchResource::collection($Branches),
@@ -41,31 +40,13 @@ class BranchController extends Controller
     public function create(BranchRequest $request)
     {
         $this->authorize('manage_users');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $addedById = $this->getAddedByIdOrFail();
-        $addedByType = $this->getAddedByType();
+     $data = array_merge($request->only([
+            'city_id', 'name','address'
+        ]), $this->prepareCreationMetaData());
 
-        $Branch = Branch::create([
-            'city_id'=> $request ->city_id,
-            "name" => $request->name,
-            "address" => $request-> address,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status' => 'active',
-            // 'added_by'  => auth('admin')->id(),
-            // 'added_by_type' => 'App\Models\Admin',
-            'added_by' => $addedById,
-            'added_by_type' => $addedByType,
-            'updated_by' => $addedById,
-            'updated_by_type' => $addedByType
-        ]);
-        $this->loadCreatorRelations($Branch);
-        $this->loadUpdaterRelations($Branch);
-           return response()->json([
-            'data' =>new BranchResource($Branch),
-            'message' => "Branch Created Successfully."
-        ]);
+        $Branch = Branch::create($data);
+
+         return $this->respondWithResource($Branch, "Branch created successfully.");
         }
 
         public function edit(string $id)
@@ -78,129 +59,63 @@ class BranchController extends Controller
                 'message' => "Branch not found."
             ], 404);
             }
-        $this->loadCreatorRelations($Branch);
-        $this->loadUpdaterRelations($Branch);
 
-            return response()->json([
-                'data' => new BranchResource($Branch),
-                'message' => "Edit Branch By ID Successfully."
-            ]);
+    return $this->respondWithResource($Branch, "Branch retrieved for editing.");
         }
 
         public function update(BranchRequest $request, string $id)
         {
           $this->authorize('manage_users');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $Branch = Branch::find($id);
 
-        $Branch =Branch::find($id);
-           if (!$Branch) {
-            return response()->json([
-                'message' => "Branch not found."
-            ], 404);
-        }
-         $oldData = $Branch->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $Branch->update([
-           'city_id'=> $request ->city_id,
-            "name" => $request->name,
-            "address" => $request-> address,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status ?? 'active',
-            // 'added_by' => auth('admin')->id(),
-            // 'added_by_type' => 'App\Models\Admin',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-            ]);
-
-
-
-        $changedData = $this->getChangedData($oldData, $Branch->toArray());
-        $Branch->changed_data = $changedData;
-
-           $Branch->save();
-            $this->loadCreatorRelations($Branch);
-        $this->loadUpdaterRelations($Branch);
-           return response()->json([
-            'data' =>new BranchResource($Branch),
-            'message' => " Update Branch By Id Successfully."
-        ]);
+    if (!$Branch) {
+        return response()->json(['message' => "Branch not found."], 404);
     }
 
-     public function active(string $id)
-  {
-      $this->authorize('manage_users');
+    $oldData = $Branch->toArray();
+    $fieldsToCheck = ['city_id', 'name', 'status','address'];
+    $hasChanges = false;
 
-      $Branch =Branch::find($id);
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $Branch->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
 
-      if (!$Branch) {
-       return response()->json([
-           'message' => "Branch not found."
-       ]);
-   }
-       $oldData = $Branch->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    if (!$hasChanges) {
+        $this->loadCommonRelations($Branch);
+        return $this->respondWithResource($Branch, "No actual changes detected.");
+    }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    $updateData = array_merge(
+        $request->only(['city_id', 'name','address']),
+        $this->prepareUpdateMeta($request)
+    );
 
-    $Branch->status = 'active';
-    $Branch->creationDate = $creationDate;
-    $Branch->creationDateHijri = $hijriDate;
-    $Branch->updated_by = $updatedById;
-    $Branch->updated_by_type = $updatedByType;
-    $Branch->save();
+    $this->applyChangesAndSave($Branch, $updateData, $oldData);
+    return $this->respondWithResource($Branch, "Branch updated successfully.");
+    }
 
-    $changedData = $this->getChangedData($oldData, $Branch->toArray());
-    $Branch->changed_data = $changedData;
-    $Branch->save();
-    $this->loadCreatorRelations($Branch);
-    $this->loadUpdaterRelations($Branch);
 
-      return response()->json([
-          'data' => new BranchResource($Branch),
-          'message' => 'Branch has been active.'
-      ]);
-  }
+        public function active(string $id)
+    {
+         $this->authorize('manage_users');
+        $Branch = Branch::findOrFail($id);
 
-     public function notActive(string $id)
-  {
-      $this->authorize('manage_users');
+        return $this->changeStatusSimple($Branch, 'active');
+    }
 
-      $Branch =Branch::find($id);
+    public function notActive(string $id)
+    {
+         $this->authorize('manage_users');
+        $Branch = Branch::findOrFail($id);
 
-      if (!$Branch) {
-       return response()->json([
-           'message' => "Branch not found."
-       ]);
-   }
+        return $this->changeStatusSimple($Branch, 'notActive');
+    }
 
-          $oldData = $Branch->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
-
-    $Branch->status = 'notActive';
-    $Branch->creationDate = $creationDate;
-    $Branch->creationDateHijri = $hijriDate;
-    $Branch->updated_by = $updatedById;
-    $Branch->updated_by_type = $updatedByType;
-
-    $Branch->save();
-
-    $changedData = $this->getChangedData($oldData, $Branch->toArray());
-    $Branch->changed_data = $changedData;
-    $Branch->save();
-    $this->loadCreatorRelations($Branch);
-    $this->loadUpdaterRelations($Branch);
-      return response()->json([
-          'data' => new BranchResource($Branch),
-          'message' => 'Branch has been notActive.'
-      ]);
-  }
+    protected function getResourceClass(): string
+    {
+        return BranchResource::class;
+    }
 }

@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Worker;
-use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\WorkerRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\WorkerResource;
 
 class WorkerController extends Controller
@@ -22,16 +21,13 @@ class WorkerController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
+    use HandlesControllerCrudsTrait;
 
 public function showAll()
     {
         $this->authorize('manage_system');
-        $Workers = Worker::orderBy('created_at', 'desc')
-        ->get();
-          foreach ($Workers as $worker) {
-        $this->loadCreatorRelations($worker);
-        $this->loadUpdaterRelations($worker);
-    }
+        $Workers = Worker::orderBy('created_at', 'desc');
+    $this->loadRelationsForCollection($Workers);
 
          return response()->json([
              'data' =>  WorkerResource::collection($Workers),
@@ -42,41 +38,23 @@ public function showAll()
 public function create(WorkerRequest $request)
     {
         $this->authorize('manage_system');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $data = $request->only([
+        'Worker_id', 'store_id', 'name', 'idNum',
+        'personPhoNum', 'branchPhoNum', 'salary'
+    ]);
 
-$addedById = $this->getAddedByIdOrFail();
-$addedByType = $this->getAddedByType();
+    $data = array_merge($data, $this->prepareCreationMetaData(), [
+        'dashboardAccess' => 'ok',
+    ]);
 
-        $Worker = Worker::create([
-            'title_id'=> $request ->title_id,
-            'store_id'=> $request ->store_id,
-            "name" => $request->name,
-            "idNum" => $request->idNum,
-            "personPhoNum" => $request->personPhoNum,
-            "branchPhoNum" => $request->branchPhoNum,
-            "salary" => $request->salary,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'added_by' => $addedById,
-            'added_by_type' => $addedByType,
-            'updated_by' => $addedById,
-            'updated_by_type' => $addedByType,
-            'status' => 'active',
-            'dashboardAccess'=>'ok'
-        ]);
-             if ($request->hasFile('cv')) {
-                $cvPath = $request->file('cv')->store(Worker::storageFolder);
-                $Worker->cv = $cvPath;
-            }
-             $Worker->save();
-             $this->loadCreatorRelations($Worker);
-             $this->loadUpdaterRelations($Worker);
+    $Worker = Worker::create($data);
+    if ($request->hasFile('cv')) {
+        $cvPath = $request->file('cv')->store(Worker::storageFolder);
+        $Worker->cv = $cvPath;
+        $Worker->save();
+    }
 
-           return response()->json([
-            'data' =>new WorkerResource($Worker),
-            'message' => "Worker Created Successfully."
-        ]);
+         return $this->respondWithResource($Worker, "Worker created successfully.");
         }
 
 public function edit(string $id)
@@ -88,213 +66,106 @@ public function edit(string $id)
                     'message' => "Worker not found."
                 ], 404);
             }
-            $this->loadCreatorRelations($Worker);
-            $this->loadUpdaterRelations($Worker);
 
-            return response()->json([
-                'data' => new WorkerResource($Worker),
-                'message' => "Edit Worker By ID Successfully."
-            ]);
+    return $this->respondWithResource($Worker, "Worker retrieved for editing.");
         }
 
 public function update(WorkerRequest $request, string $id)
-    {
-        $this->authorize('manage_system');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+{
+    $this->authorize('manage_system');
 
-           $Worker =Worker::find($id);
-           if (!$Worker) {
-            return response()->json([
-                'message' => "Worker not found."
-            ], 404);
-        }
-          $oldData = $Worker->toArray();
-             $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $Worker->update([
-            'title_id'=> $request ->title_id,
-            'store_id'=> $request ->store_id,
-            "name" => $request->name,
-            "idNum" => $request->idNum,
-            "personPhoNum" => $request->personPhoNum,
-            "branchPhoNum" => $request->branchPhoNum,
-            "salary" => $request->salary,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status ?? 'active',
-            'dashboardAccess'=> $request-> dashboardAccess ?? 'notOk',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-            ]);
-
-                        if ($request->hasFile('cv')) {
-                if ($Worker->cv) {
-                    Storage::disk('public')->delete( $Worker->cv);
-                }
-                $cvPath = $request->file('cv')->store('Workers', 'public');
-                 $Worker->cv = $cvPath;
-            }
-            $Worker->save();
-
-        $changedData = $this->getChangedData($oldData, $Worker->toArray());
-        $Worker->changed_data = $changedData;
-           $Worker->save();
-           $this->loadCreatorRelations($Worker);
-           $this->loadUpdaterRelations($Worker);
-           return response()->json([
-            'data' =>new WorkerResource($Worker),
-            'message' => " Update Worker By Id Successfully."
-        ]);
+    $worker = Worker::find($id);
+    if (!$worker) {
+        return response()->json(['message' => "Worker not found."], 404);
     }
 
-public function active(string $id)
-  {
-    $this->authorize('manage_system');
-    $Worker =Worker::find($id);
+    $oldData = $worker->toArray();
+    $fieldsToCheck = ['Worker_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
+    $hasChanges = false;
 
-      if (!$Worker) {
-       return response()->json([
-           'message' => "Worker not found."
-       ]);
-   }
-       $oldData = $Worker->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $worker->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    if ($request->hasFile('cv')) {
+        $hasChanges = true;
+    }
 
+    if (!$hasChanges) {
+        $this->loadCommonRelations($worker);
+        return $this->respondWithResource($worker, "No actual changes detected.");
+    }
 
-    $Worker->status = 'active';
-    $Worker->creationDate = $creationDate;
-    $Worker->creationDateHijri = $hijriDate;
-    $Worker->updated_by = $updatedById;
-    $Worker->updated_by_type = $updatedByType;
-    $Worker->save();
+    $updateData = array_merge(
+        $request->only(['Worker_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess']),
+        $this->prepareUpdateMeta($request)
+    );
 
-    $changedData = $this->getChangedData($oldData, $Worker->toArray());
-    $Worker->changed_data = $changedData;
-    $Worker->save();
-    $this->loadCreatorRelations($Worker);
-    $this->loadUpdaterRelations($Worker);
+    $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
 
-      return response()->json([
-          'data' => new WorkerResource($Worker),
-          'message' => 'Worker has been active.'
-      ]);
-  }
+    $this->applyChangesAndSave($worker, $updateData, $oldData);
 
-     public function notActive(string $id)
-  {
-    $this->authorize('manage_system');
+    if ($request->hasFile('cv')) {
+        if ($worker->cv) {
+            Storage::disk('public')->delete($worker->cv);
+        }
+        $cvPath = $request->file('cv')->store(Worker::storageFolder, 'public');
+        $worker->cv = $cvPath;
+        $worker->save();
+    }
 
-      $Worker =Worker::find($id);
-
-      if (!$Worker) {
-       return response()->json([
-           'message' => "Worker not found."
-       ]);
-   }
-
-    $oldData = $Worker->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    return $this->respondWithResource($worker, "Worker updated successfully.");
+}
 
 
-    $Worker->status = 'notActive';
-    $Worker->creationDate = $creationDate;
-    $Worker->creationDateHijri = $hijriDate;
-    $Worker->updated_by = $updatedById;
-    $Worker->updated_by_type = $updatedByType;
-    $Worker->save();
+    public function active(string $id)
+    {
+        $this->authorize('manage_system');
+        $Worker = Worker::findOrFail($id);
 
-    $changedData = $this->getChangedData($oldData, $Worker->toArray());
-    $Worker->changed_data = $changedData;
-    $Worker->save();
-    $this->loadCreatorRelations($Worker);
-    $this->loadUpdaterRelations($Worker);
+        return $this->changeStatusSimple($Worker, 'active');
+    }
 
-      return response()->json([
-          'data' => new WorkerResource($Worker),
-          'message' => 'Worker has been notActive.'
-      ]);
-  }
+    public function notActive(string $id)
+    {
+        $this->authorize('manage_system');
+        $Worker = Worker::findOrFail($id);
 
-     public function notOk(string $id)
-  {
+        return $this->changeStatusSimple($Worker, 'notActive');
+    }
+
+    protected function getResourceClass(): string
+    {
+        return WorkerResource::class;
+    }
+
+    public function notOk(string $id)
+{
     $this->authorize('manage_system');
 
-      $Worker =Worker::find($id);
+    $worker = Worker::find($id);
+    if (!$worker) {
+        return response()->json(['message' => "Worker not found."], 404);
+    }
 
-      if (!$Worker) {
-       return response()->json([
-           'message' => "Worker not found."
-       ]);
-   }
-
-    $oldData = $Worker->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    return $this->changeStatusSimple($worker, 'notOk');
+}
 
 
-    $Worker->dashboardAccess = 'notOk';
-    $Worker->creationDate = $creationDate;
-    $Worker->creationDateHijri = $hijriDate;
-    $Worker->updated_by = $updatedById;
-    $Worker->updated_by_type = $updatedByType;
-    $Worker->save();
-
-    $changedData = $this->getChangedData($oldData, $Worker->toArray());
-    $Worker->changed_data = $changedData;
-    $Worker->save();
-    $this->loadCreatorRelations($Worker);
-    $this->loadUpdaterRelations($Worker);
-      return response()->json([
-          'data' => new WorkerResource($Worker),
-          'message' => 'Worker has been notOk.'
-      ]);
-  }
-
-     public function ok(string $id)
-  {
+public function ok(string $id)
+{
     $this->authorize('manage_system');
-      $Worker =Worker::find($id);
-      if (!$Worker) {
-       return response()->json([
-           'message' => "Worker not found."
-       ]);
-   }
 
-    $oldData = $Worker->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    $worker = Worker::find($id);
+    if (!$worker) {
+        return response()->json(['message' => "Worker not found."], 404);
+    }
 
+    return $this->changeStatusSimple($worker, 'ok');
+}
 
-    $Worker->dashboardAccess = 'ok';
-    $Worker->creationDate = $creationDate;
-    $Worker->creationDateHijri = $hijriDate;
-    $Worker->updated_by = $updatedById;
-    $Worker->updated_by_type = $updatedByType;
-    $Worker->save();
-
-    $changedData = $this->getChangedData($oldData, $Worker->toArray());
-    $Worker->changed_data = $changedData;
-    $Worker->save();
-    $this->loadCreatorRelations($Worker);
-    $this->loadUpdaterRelations($Worker);
-
-      return response()->json([
-          'data' => new WorkerResource($Worker),
-          'message' => 'Worker has been Ok.'
-      ]);
-  }
 
 }

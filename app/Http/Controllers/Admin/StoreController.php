@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Store;
-use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +11,7 @@ use App\Http\Requests\Admin\StoreRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Resources\Admin\StoreResource;
+use App\Traits\HandlesControllerCrudsTrait;
 
 class StoreController extends Controller
 {
@@ -20,16 +20,14 @@ class StoreController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
+    use HandlesControllerCrudsTrait;
 
         public function showAll()
     {
         $this->authorize('manage_system');
         $Stores = Store::orderBy('created_at', 'desc')
         ->get();
-           foreach ($Stores as $Store) {
-        $this->loadCreatorRelations($Store);
-        $this->loadUpdaterRelations($Store);
-    }
+       $this->loadRelationsForCollection($Stores);
 
         return response()->json([
             'data' =>  StoreResource::collection($Stores),
@@ -40,32 +38,14 @@ class StoreController extends Controller
 
     public function create(StoreRequest $request)
     {
-       $this->authorize('manage_system');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $addedById = $this->getAddedByIdOrFail();
-        $addedByType = $this->getAddedByType();
+        $this->authorize('manage_users');
+       $data = array_merge($request->only([
+            'branch_id', 'name', 'address'
+        ]), $this->prepareCreationMetaData());
 
-        $Store = Store::create([
-            'branch_id'=> $request ->branch_id,
-            "name" => $request->name,
-            "address" => $request-> address,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status' => 'active',
-            // 'added_by'  => auth('admin')->id(),
-            // 'added_by_type' => 'App\Models\Admin',
-            'added_by' => $addedById,
-            'added_by_type' => $addedByType,
-            'updated_by' => $addedById,
-            'updated_by_type' => $addedByType
-        ]);
-        $this->loadCreatorRelations($Store);
-        $this->loadUpdaterRelations($Store);
-           return response()->json([
-            'data' =>new StoreResource($Store),
-            'message' => "Store Created Successfully."
-        ]);
+        $Store = Store::create($data);
+
+         return $this->respondWithResource($Store, "Store created successfully.");
         }
 
         public function edit(string $id)
@@ -78,129 +58,63 @@ class StoreController extends Controller
                 'message' => "Store not found."
             ], 404);
             }
-        $this->loadCreatorRelations($Store);
-        $this->loadUpdaterRelations($Store);
 
-            return response()->json([
-                'data' => new StoreResource($Store),
-                'message' => "Edit Store By ID Successfully."
-            ]);
+    return $this->respondWithResource($Store, "Store retrieved for editing.");
         }
 
         public function update(StoreRequest $request, string $id)
         {
-        $this->authorize('manage_system');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+         $this->authorize('manage_users');
+            $Store = Store::find($id);
 
-        $Store =Store::find($id);
-           if (!$Store) {
-            return response()->json([
-                'message' => "Store not found."
-            ], 404);
-        }
-         $oldData = $Store->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $Store->update([
-           'branch_id'=> $request ->branch_id,
-            "name" => $request->name,
-            "address" => $request-> address,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status ?? 'active',
-            // 'added_by' => auth('admin')->id(),
-            // 'added_by_type' => 'App\Models\Admin',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-            ]);
-
-
-
-        $changedData = $this->getChangedData($oldData, $Store->toArray());
-        $Store->changed_data = $changedData;
-
-           $Store->save();
-            $this->loadCreatorRelations($Store);
-            $this->loadUpdaterRelations($Store);
-           return response()->json([
-            'data' =>new StoreResource($Store),
-            'message' => " Update Store By Id Successfully."
-        ]);
+    if (!$Store) {
+        return response()->json(['message' => "Store not found."], 404);
     }
 
-     public function active(string $id)
-  {
-      $this->authorize('manage_users');
+    $oldData = $Store->toArray();
+    $fieldsToCheck = ['branch_id', 'name', 'status','address'];
+    $hasChanges = false;
 
-      $Store =Store::find($id);
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $Store->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
 
-      if (!$Store) {
-       return response()->json([
-           'message' => "Store not found."
-       ]);
-   }
-       $oldData = $Store->toArray();
-       $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    if (!$hasChanges) {
+        $this->loadCommonRelations($Store);
+        return $this->respondWithResource($Store, "No actual changes detected.");
+    }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    $updateData = array_merge(
+        $request->only(['branch_id','name','address']),
+        $this->prepareUpdateMeta($request)
+    );
 
-    $Store->status = 'active';
-    $Store->creationDate = $creationDate;
-    $Store->creationDateHijri = $hijriDate;
-    $Store->updated_by = $updatedById;
-    $Store->updated_by_type = $updatedByType;
-    $Store->save();
+    $this->applyChangesAndSave($Store, $updateData, $oldData);
 
-    $changedData = $this->getChangedData($oldData, $Store->toArray());
-    $Store->changed_data = $changedData;
-    $Store->save();
-    $this->loadCreatorRelations($Store);
-    $this->loadUpdaterRelations($Store);
+    return $this->respondWithResource($Store, "Store updated successfully.");
+    }
 
-      return response()->json([
-          'data' => new StoreResource($Store),
-          'message' => 'Store has been active.'
-      ]);
-  }
+    public function active(string $id)
+    {
+         $this->authorize('manage_users');
+        $Store = Store::findOrFail($id);
 
-     public function notActive(string $id)
-  {
-      $this->authorize('manage_users');
+        return $this->changeStatusSimple($Store, 'active');
+    }
 
-      $Store =Store::find($id);
+    public function notActive(string $id)
+    {
+         $this->authorize('manage_users');
+        $Store = Store::findOrFail($id);
 
-      if (!$Store) {
-       return response()->json([
-           'message' => "Store not found."
-       ]);
-   }
+        return $this->changeStatusSimple($Store, 'notActive');
+    }
 
-          $oldData = $Store->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
-
-    $Store->status = 'notActive';
-    $Store->creationDate = $creationDate;
-    $Store->creationDateHijri = $hijriDate;
-    $Store->updated_by = $updatedById;
-    $Store->updated_by_type = $updatedByType;
-
-    $Store->save();
-
-    $changedData = $this->getChangedData($oldData, $Store->toArray());
-    $Store->changed_data = $changedData;
-    $Store->save();
-    $this->loadCreatorRelations($Store);
-    $this->loadUpdaterRelations($Store);
-      return response()->json([
-          'data' => new StoreResource($Store),
-          'message' => 'Store has been notActive.'
-      ]);
-  }
+    protected function getResourceClass(): string
+    {
+        return StoreResource::class;
+    }
 }

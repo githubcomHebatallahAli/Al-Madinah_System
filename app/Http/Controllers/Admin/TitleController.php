@@ -3,15 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Title;
-use Illuminate\Http\Request;
-
-
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Traits\HandlesStatusChangeTrait;
 use App\Http\Requests\Admin\TitleRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
@@ -25,7 +20,6 @@ class TitleController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
-    // use HandlesStatusChangeTrait;
     use HandlesControllerCrudsTrait;
 
     public function showAll()
@@ -33,10 +27,6 @@ class TitleController extends Controller
         $this->authorize('manage_system');
         $titles = Title::orderBy('created_at', 'desc')->get();
 
-        // foreach ($titles as $title) {
-        //     $this->loadCreatorRelations($title);
-        //     $this->loadUpdaterRelations($title);
-        // }
          $this->loadRelationsForCollection($titles);
 
         return response()->json([
@@ -48,47 +38,14 @@ class TitleController extends Controller
      public function create(TitleRequest $request)
     {
         $this->authorize('manage_system');
-        $data = array_merge($request->only(['branch_id', 'name']), $this->prepareCreationMetaData());
+        $data = array_merge($request->only([
+            'branch_id', 'name'
+        ]), $this->prepareCreationMetaData());
 
         $title = Title::create($data);
 
-        $this->loadCommonRelations($title);
-
-        // return response()->json([
-        //     'data' => new TitleResource($title),
-        //     'message' => "Title created successfully."
-        // ]);
          return $this->respondWithResource($title, "Title created successfully.");
     }
-
-    // public function create(TitleRequest $request)
-    // {
-    //     $this->authorize('manage_system');
-    //     $hijriDate = $this->getHijriDate();
-    //     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    //     $addedById = $this->getAddedByIdOrFail();
-    //     $addedByType = $this->getAddedByType();
-
-    //     $title = Title::create([
-    //         'branch_id' => $request->branch_id,
-    //         "name" => $request->name,
-    //         'creationDate' => $gregorianDate,
-    //         'creationDateHijri' => $hijriDate,
-    //         'status' => 'active',
-    //         'added_by' => $addedById,
-    //         'added_by_type' => $addedByType,
-    //         'updated_by' => $addedById, // يتم تعيينه بنفس added_by
-    //         'updated_by_type' => $addedByType // سيظهر null في الـ Resource
-    //     ]);
-
-    //     $this->loadCreatorRelations($title);
-    //     $this->loadUpdaterRelations($title);
-
-    //     return response()->json([
-    //         'data' => new TitleResource($title),
-    //         'message' => "Title created successfully."
-    //     ]);
-    // }
 
 
     public function update(TitleRequest $request, string $id)
@@ -122,7 +79,6 @@ class TitleController extends Controller
     );
 
     $this->applyChangesAndSave($title, $updateData, $oldData);
-    $this->loadCommonRelations($title);
 
     return $this->respondWithResource($title, "Title updated successfully.");
 }
@@ -136,90 +92,8 @@ public function edit(string $id)
         return response()->json(['message' => "Title not found."], 404);
     }
 
-    $this->loadCommonRelations($title);
-
     return $this->respondWithResource($title, "Title retrieved for editing.");
 }
-
-//     public function edit(string $id)
-//     {
-//         $this->authorize('manage_system');
-//         $title = Title::with(['workers'])->find($id);
-
-//         if (!$title) {
-//             return response()->json([
-//                 'message' => "Title not found."
-//             ], 404);
-//         }
-
-//         $this->loadCreatorRelations($title);
-//         $this->loadUpdaterRelations($title);
-
-//         return response()->json([
-//             'data' => new TitleResource($title),
-//             'message' => "Title retrieved for editing."
-//         ]);
-//     }
-
-
-//     public function update(TitleRequest $request, string $id)
-// {
-//     $this->authorize('manage_system');
-//     $title = Title::find($id);
-
-//     if (!$title) {
-//         return response()->json([
-//             'message' => "Title not found."
-//         ], 404);
-//     }
-
-//     $oldData = $title->toArray();
-
-//     $hasChanges = false;
-//     $fieldsToCheck = ['branch_id', 'name', 'status'];
-
-//     foreach ($fieldsToCheck as $field) {
-//         if ($request->has($field) && $title->$field != $request->$field) {
-//             $hasChanges = true;
-//             break;
-//         }
-//     }
-
-//     if (!$hasChanges) {
-//         $this->loadCreatorRelations($title);
-//         return response()->json([
-//             'data' => new TitleResource($title),
-//             'message' => "No actual changes detected."
-//         ]);
-//     }
-
-//     $hijriDate = $this->getHijriDate();
-//     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-//     $updatedById = $this->getUpdatedByIdOrFail();
-//     $updatedByType = $this->getUpdatedByType();
-
-//     $title->update([
-//         'branch_id' => $request->branch_id,
-//         "name" => $request->name,
-//         'status' => $request->status ?? 'active',
-//         'creationDate' => $gregorianDate, // يتم تحديث تاريخ التعديل هنا
-//         'creationDateHijri' => $hijriDate,
-//         'updated_by' => $updatedById,
-//         'updated_by_type' => $updatedByType
-//     ]);
-
-//     $changedData = $this->getChangedData($oldData, $title->toArray());
-//     $title->changed_data = $changedData;
-//     $title->save();
-
-//     $this->loadCreatorRelations($title);
-//     $this->loadUpdaterRelations($title);
-
-//     return response()->json([
-//         'data' => new TitleResource($title),
-//         'message' => "Title updated successfully."
-//     ]);
-// }
 
 
     public function active(string $id)

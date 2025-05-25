@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\RoleRequest;
 use App\Http\Resources\Admin\RoleResource;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\HandlesControllerCrudsTrait;
 
 class RoleController extends Controller
 {
@@ -19,15 +20,14 @@ class RoleController extends Controller
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
+    use HandlesControllerCrudsTrait;
+
     public function showAll()
     {
         $this->authorize('manage_users');
 
         $Roles = Role::get();
-                  foreach ($Roles as $Role) {
-        $this->loadCreatorRelations($Role);
-        $this->loadUpdaterRelations($Role);
-    }
+       $this->loadRelationsForCollection($Roles);
         return response()->json([
             'data' => RoleResource::collection($Roles),
             'message' => "Show All Roles Successfully."
@@ -38,29 +38,16 @@ class RoleController extends Controller
     public function create(RoleRequest $request)
     {
         $this->authorize('manage_users');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $addedById = $this->getAddedByIdOrFail();
-        $addedByType = $this->getAddedByType();
+           $data = $request->only([
+         'name'
+    ]);
 
-           $Role =Role::create ([
-                "name" => $request->name,
-                'creationDate' => $gregorianDate,
-                'creationDateHijri' => $hijriDate,
-                'status' => 'active',
-                'guardName'=>'worker',
-                'added_by' => $addedById,
-                'added_by_type' => $addedByType,
-                'updated_by' => $addedById,
-                'updated_by_type' => $addedByType
-            ]);
-           $Role->save();
-        $this->loadCreatorRelations($Role);
-        $this->loadUpdaterRelations($Role);
-           return response()->json([
-            'data' =>new RoleResource($Role),
-            'message' => "Role Created Successfully."
-        ]);
+    $data = array_merge($data, $this->prepareCreationMetaData(), [
+        'guardName' => 'worker',
+    ]);
+
+    $Role = Role::create($data);
+      return $this->respondWithResource($Role, "Role created successfully.");
         }
 
 
@@ -74,13 +61,7 @@ class RoleController extends Controller
                 'message' => "Role not found."
             ], 404);
         }
-        $this->loadCreatorRelations($Role);
-        $this->loadUpdaterRelations($Role);
-
-        return response()->json([
-            'data' =>new RoleResource($Role),
-            'message' => "Edit Role By ID Successfully."
-        ]);
+       return $this->respondWithResource($Role, "Role retrieved for editing.");
     }
 
 
@@ -88,184 +69,88 @@ class RoleController extends Controller
     public function update(RoleRequest $request, string $id)
     {
         $this->authorize('manage_users');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
        $Role =Role::find($id);
-
-
        if (!$Role) {
         return response()->json([
             'message' => "Role not found."
         ], 404);
     }
-      $oldData = $Role->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-       $Role->update([
-        "name" => $request->name,
-        'creationDate' => $gregorianDate,
-        'creationDateHijri' => $hijriDate,
-        'status'=> $request-> status ?? 'active',
-        'guardName'=>$request-> guardName ??'worker',
-        'updated_by' => $updatedById,
-        'updated_by_type' => $updatedByType
-        ]);
-         $changedData = $this->getChangedData($oldData, $Role->toArray());
-        $Role->changed_data = $changedData;
+          $oldData = $Role->toArray();
+    $fieldsToCheck = ['name'];
+    $hasChanges = false;
 
-       $Role->save();
-        $this->loadCreatorRelations($Role);
-        $this->loadUpdaterRelations($Role);
-       return response()->json([
-        'data' =>new RoleResource($Role),
-        'message' => " Update Role By Id Successfully."
-    ]);
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $Role->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
+
+       if (!$hasChanges) {
+        $this->loadCommonRelations($Role);
+        return $this->respondWithResource($Role, "No actual changes detected.");
+    }
+
+    $updateData = array_merge(
+        $request->only(['name', 'status', 'guardName']),
+        $this->prepareUpdateMeta($request)
+    );
+
+
+    $updateData['guardName'] = $updateData['guardName'] ?? 'worker';
+
+    $this->applyChangesAndSave($Role, $updateData, $oldData);
+return $this->respondWithResource($Role, "Role updated successfully.");
 }
 
-         public function active(string $id)
-  {
-      $this->authorize('manage_users');
-      $Role =Role::find($id);
 
-      if (!$Role) {
-       return response()->json([
-           'message' => "Role not found."
-       ]);
-   }
-       $oldData = $Role->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    public function active(string $id)
+    {
+        $this->authorize('manage_system');
+        $Role = Role::findOrFail($id);
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+        return $this->changeStatusSimple($Role, 'active');
+    }
 
-    $Role->status = 'active';
-    $Role->creationDate = $creationDate;
-    $Role->creationDateHijri = $hijriDate;
-    $Role->updated_by = $updatedById;
-    $Role->updated_by_type = $updatedByType;
-    $Role->save();
+    public function notActive(string $id)
+    {
+        $this->authorize('manage_system');
+        $Role = Role::findOrFail($id);
 
-    $changedData = $this->getChangedData($oldData, $Role->toArray());
-    $Role->changed_data = $changedData;
-    $Role->save();
-    $this->loadCreatorRelations($Role);
-    $this->loadUpdaterRelations($Role);
+        return $this->changeStatusSimple($Role, 'notActive');
+    }
 
-      return response()->json([
-          'data' => new RoleResource($Role),
-          'message' => 'Role has been active.'
-      ]);
-  }
+    protected function getResourceClass(): string
+    {
+        return RoleResource::class;
+    }
 
-     public function notActive(string $id)
-  {
-      $this->authorize('manage_users');
-      $Role =Role::find($id);
+    public function admin(string $id)
+{
+    $this->authorize('manage_system');
 
-      if (!$Role) {
-       return response()->json([
-           'message' => "Role not found."
-       ]);
-   }
+    $Role = Role::find($id);
+    if (!$Role) {
+        return response()->json(['message' => "Role not found."], 404);
+    }
 
-    $oldData = $Role->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
-
-    $Role->status = 'notActive';
-    $Role->creationDate = $creationDate;
-    $Role->creationDateHijri = $hijriDate;
-    $Role->updated_by = $updatedById;
-    $Role->updated_by_type = $updatedByType;
-    $Role->save();
-
-    $changedData = $this->getChangedData($oldData, $Role->toArray());
-    $Role->changed_data = $changedData;
-    $Role->save();
-    $this->loadCreatorRelations($Role);
-    $this->loadUpdaterRelations($Role);
-      return response()->json([
-          'data' => new RoleResource($Role),
-          'message' => 'Role has been notActive.'
-      ]);
-  }
+    return $this->changeStatusSimple($Role, 'admin');
+}
 
 
-         public function admin(string $id)
-  {
-      $this->authorize('manage_users');
-      $Role =Role::find($id);
+public function worker(string $id)
+{
+    $this->authorize('manage_system');
 
-      if (!$Role) {
-       return response()->json([
-           'message' => "Role not found."
-       ]);
-   }
-       $oldData = $Role->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
+    $Role = Role::find($id);
+    if (!$Role) {
+        return response()->json(['message' => "Role not found."], 404);
+    }
 
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
+    return $this->changeStatusSimple($Role, 'worker');
+}
 
-    $Role->guardName = 'admin';
-    $Role->creationDate = $creationDate;
-    $Role->creationDateHijri = $hijriDate;
-    $Role->updated_by = $updatedById;
-    $Role->updated_by_type = $updatedByType;
-    $Role->save();
-
-    $changedData = $this->getChangedData($oldData, $Role->toArray());
-    $Role->changed_data = $changedData;
-    $Role->save();
-    $this->loadCreatorRelations($Role);
-    $this->loadUpdaterRelations($Role);
-
-      return response()->json([
-          'data' => new RoleResource($Role),
-          'message' => 'Role has been admin.'
-      ]);
-  }
-
-     public function worker(string $id)
-  {
-      $this->authorize('manage_users');
-      $Role =Role::find($id);
-
-      if (!$Role) {
-       return response()->json([
-           'message' => "Role not found."
-       ]);
-   }
-
-    $oldData = $Role->toArray();
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hijriDate = $this->getHijriDate();
-
-    $Role->guardName = 'worker';
-    $Role->creationDate = $creationDate;
-    $Role->creationDateHijri = $hijriDate;
-    $Role->updated_by = $updatedById;
-    $Role->updated_by_type = $updatedByType;
-    $Role->save();
-
-    $changedData = $this->getChangedData($oldData, $Role->toArray());
-    $Role->changed_data = $changedData;
-    $Role->save();
-    $this->loadCreatorRelations($Role);
-    $this->loadUpdaterRelations($Role);
-
-
-      return response()->json([
-          'data' => new RoleResource($Role),
-          'message' => 'Role has been worker.'
-      ]);
-  }
 
   }
 
