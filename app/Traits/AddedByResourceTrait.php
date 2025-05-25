@@ -13,18 +13,32 @@ trait AddedByResourceTrait
         );
     }
 
-    public function updatedByAttribute()
-    {
-        // إذا لم يكن هناك تغييرات حقيقية
-        if (!$this->shouldShowUpdatedBy()) {
-            return null;
-        }
+    // public function updatedByAttribute()
+    // {
+    //     // إذا لم يكن هناك تغييرات حقيقية
+    //     if (!$this->shouldShowUpdatedBy()) {
+    //         return null;
+    //     }
 
-        return $this->formatUserData(
-            $this->updater,
-            $this->updated_by_type ?? 'unknown'
-        );
+    //     return $this->formatUserData(
+    //         $this->updater,
+    //         $this->updated_by_type ?? 'unknown'
+    //     );
+    // }
+
+    public function updatedByAttribute()
+{
+    // Return null if this is the initial creation (updated_by not set yet)
+    if (!$this->updated_by) {
+        return null;
     }
+
+    // Original logic for updates
+    return $this->formatUserData(
+        $this->updater,
+        $this->updated_by_type ?? 'unknown'
+    );
+}
 
 //  protected function shouldShowUpdatedBy(): bool
 //     {
