@@ -70,6 +70,7 @@ public function edit(string $id)
     return $this->respondWithResource($Worker, "Worker retrieved for editing.");
         }
 
+
 public function update(WorkerRequest $request, string $id)
 {
     $this->authorize('manage_system');
@@ -80,13 +81,20 @@ public function update(WorkerRequest $request, string $id)
     }
 
     $oldData = $worker->toArray();
+
+    // تأكد من وجود قيمة افتراضية لـ status
+    $request->merge(['status' => $request->status ?? $worker->status ?? 'active']);
+
     $fieldsToCheck = ['Worker_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
     $hasChanges = false;
 
     foreach ($fieldsToCheck as $field) {
-        if ($request->has($field) && $worker->$field != $request->$field) {
-            $hasChanges = true;
-            break;
+        if ($request->has($field)) {  // تم إصلاح هنا - إضافة القوس الناقص
+            $requestField = $request->$field ?? $worker->$field;
+            if ($worker->$field != $requestField) {
+                $hasChanges = true;
+                break;
+            }
         }
     }
 
@@ -100,8 +108,8 @@ public function update(WorkerRequest $request, string $id)
     }
 
     $updateData = array_merge(
-        $request->only(['Worker_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess']),
-        $this->prepareUpdateMeta($request)
+        $request->only($fieldsToCheck),
+        $this->prepareUpdateMeta($request, $worker->status) // تمرير الحالة الحالية كقيمة افتراضية
     );
 
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
@@ -119,7 +127,6 @@ public function update(WorkerRequest $request, string $id)
 
     return $this->respondWithResource($worker, "Worker updated successfully.");
 }
-
 
     public function active(string $id)
     {
