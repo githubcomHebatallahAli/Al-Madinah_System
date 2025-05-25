@@ -8,6 +8,12 @@ use Illuminate\Http\JsonResponse;
 trait HandlesControllerCrudsTrait
 {
 
+
+    protected function loadUpdaterRelations($model)
+{
+    $model->load('updater');
+}
+
 protected function respondWithResource($model, ?string $message = null): JsonResponse
 {
     $this->loadCommonRelations($model);
