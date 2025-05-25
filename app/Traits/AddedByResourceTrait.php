@@ -9,7 +9,7 @@ trait AddedByResourceTrait
 
         return $this->formatUserData(
             $this->creator,
-            $this->added_by_type ?? 'unknown'
+            $this->added_by_type 
         );
     }
 
