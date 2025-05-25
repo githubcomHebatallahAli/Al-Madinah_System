@@ -64,21 +64,47 @@ class CityController extends Controller
         }
 
 
-public function update(CityRequest $request, $id)
-{
-    $city = City::findOrFail($id);
-    $oldData = $city->toArray();
+        public function update(CityRequest $request, string $id)
+        {
+          $this->authorize('manage_users');
+          $City = City::find($id);
 
-    $updateData = array_merge(
-        $this->mergeWithOld($request, $city, ['name', 'status']),
-        $this->prepareUpdateMeta($request)
-    );
+    if (!$City) {
+        return response()->json(['message' => "City not found."], 404);
+    }
 
-    $this->applyChangesAndSave($city, $updateData, $oldData);
+    $oldData = $City->toArray();
+    $fieldsToCheck = ['name', 'status'];
+    $hasChanges = false;
 
-    return $this->respondWithResource($city, 'City updated successfully.');
-}
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $City->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
 
+    if (!$hasChanges) {
+        $this->loadCommonRelations($City);
+        return $this->respondWithResource($City, "No actual changes detected.");
+    }
+
+
+
+$updateData = array_merge(
+    [
+        'status' => $request->status ?? $City->status,
+    ],
+    $request->only(['name']),
+    $this->prepareUpdateMeta($request)
+);
+
+
+
+    $this->applyChangesAndSave($City, $updateData, $oldData);
+
+    return $this->respondWithResource($City, "City updated successfully.");
+    }
 
 
     //         public function update(CityRequest $request, string $id)
