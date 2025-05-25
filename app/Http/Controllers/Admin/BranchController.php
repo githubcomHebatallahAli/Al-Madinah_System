@@ -101,7 +101,7 @@ public function update(BranchRequest $request, string $id)
     $Branch->save();
 
     $this->loadCommonRelations($Branch);
-    return $this->respondWithResource($Branch, "تم تحديث المدينة بنجاح");
+    return $this->respondWithResource($Branch, "تم تحديث الفرع بنجاح");
 }
 
 

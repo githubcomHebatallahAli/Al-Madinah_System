@@ -48,39 +48,45 @@ class TitleController extends Controller
     }
 
 
-    public function update(TitleRequest $request, string $id)
+public function update(TitleRequest $request, string $id)
 {
-    $this->authorize('manage_system');
-    $title = Title::find($id);
+    $this->authorize('manage_users');
+    $Title = Title::findOrFail($id);
+    $oldData = $Title->toArray();
 
-    if (!$title) {
-        return response()->json(['message' => "Title not found."], 404);
-    }
+    // Prepare the basic update data
+    $updateData = $request->only(['name','branch_id','status']);
 
-    $oldData = $title->toArray();
-    $fieldsToCheck = ['branch_id', 'name', 'status'];
+    // Add metadata including status fallback
+    $updateData = array_merge(
+        $updateData,
+        $this->prepareUpdateMeta($request, $Title->status)
+    );
+
+    // Check for actual changes
     $hasChanges = false;
-
-    foreach ($fieldsToCheck as $field) {
-        if ($request->has($field) && $title->$field != $request->$field) {
+    foreach ($updateData as $key => $value) {
+        if ($Title->$key != $value) {
             $hasChanges = true;
             break;
         }
     }
 
     if (!$hasChanges) {
-        $this->loadCommonRelations($title);
-        return $this->respondWithResource($title, "No actual changes detected.");
+        $this->loadCommonRelations($Title);
+        return $this->respondWithResource($Title, "لا يوجد تغييرات فعلية");
     }
 
-    $updateData = array_merge(
-        $request->only(['branch_id', 'name']),
-        $this->prepareUpdateMeta($request)
-    );
+    // Apply updates
+    $Title->update($updateData);
 
-    $this->applyChangesAndSave($title, $updateData, $oldData);
+    // Track changes
+    $changedData = $this->getChangedData($oldData, $Title->fresh()->toArray());
+    $Title->changed_data = $changedData;
+    $Title->save();
 
-    return $this->respondWithResource($title, "Title updated successfully.");
+    $this->loadCommonRelations($Title);
+    return $this->respondWithResource($Title, "تم تحديث الوظيفه بنجاح");
 }
 
 public function edit(string $id)
