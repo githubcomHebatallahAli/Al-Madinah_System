@@ -8,23 +8,27 @@ use Illuminate\Http\JsonResponse;
 trait HandlesControllerCrudsTrait
 {
 
-    protected function respondWithResource($model): JsonResponse
+protected function respondWithResource($model, ?string $message = null): JsonResponse
 {
     $this->loadCommonRelations($model);
 
     return response()->json([
-        'data' => new ($this->getResourceClass())($model)
+        'data' => new ($this->getResourceClass())($model),
+        'message' => $message ?? 'Operation successful.',
     ]);
 }
 
-protected function respondWithCollection(Collection $collection): JsonResponse
+
+protected function respondWithCollection(Collection $collection, ?string $message = null): JsonResponse
 {
     $this->loadRelationsForCollection($collection);
 
     return response()->json([
-        'data' => $this->getResourceClass()::collection($collection)
+        'data' => $this->getResourceClass()::collection($collection),
+        'message' => $message ?? 'Data fetched successfully.',
     ]);
 }
+
 
     // ======== تجهيز بيانات الإنشاء المشتركة ========
     protected function prepareCreationMetaData(): array
