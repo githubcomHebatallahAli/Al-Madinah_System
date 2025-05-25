@@ -94,11 +94,12 @@ class CityController extends Controller
     //     $this->prepareUpdateMeta($request)
     // );
 
-    $updateData = array_merge(
-    $request->only(['name', 'status']),
-    ['status' => $request->status ?? $City->status],
+$updateData = array_merge(
+    $this->mergeWithOld($request, $City, ['status']),
+    $request->only(['name']),
     $this->prepareUpdateMeta($request)
 );
+
 
     $this->applyChangesAndSave($City, $updateData, $oldData);
 
