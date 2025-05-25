@@ -64,79 +64,79 @@ class CityController extends Controller
         }
 
 
-    //     public function update(CityRequest $request, string $id)
-    //     {
-    //       $this->authorize('manage_users');
-    //       $City = City::find($id);
-
-    // if (!$City) {
-    //     return response()->json(['message' => "City not found."], 404);
-    // }
-
-    // $oldData = $City->toArray();
-    // $fieldsToCheck = ['name', 'status'];
-    // $hasChanges = false;
-
-    // foreach ($fieldsToCheck as $field) {
-    //     if ($request->has($field) && $City->$field != $request->$field) {
-    //         $hasChanges = true;
-    //         break;
-    //     }
-    // }
-
-    // if (!$hasChanges) {
-    //     $this->loadCommonRelations($City);
-    //     return $this->respondWithResource($City, "No actual changes detected.");
-    // }
-
-    // $updateData = array_merge(
-    //     $request->only(['name']),
-    //     $this->prepareUpdateMeta($request)
-    // );
-
-    // $this->applyChangesAndSave($City, $updateData, $oldData);
-
-    // return $this->respondWithResource($City, "City updated successfully.");
-    // }
-
-
-            public function update(CityRequest $request, string $id)
+        public function update(CityRequest $request, string $id)
         {
-          $this->authorize('manage_system');
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+          $this->authorize('manage_users');
+          $City = City::find($id);
 
-           $City =City::find($id);
-            //  $oldData = $City->toArray();
-
-           if (!$City) {
-            return response()->json([
-                'message' => "City not found."
-            ], 404);
-        }
-         $oldData = $City->toArray();
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-           $City->update([
-        //    'branch_id'=> $request ->branch_id,
-            "name" => $request->name,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status'=> $request-> status ?? 'active',
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType
-            ]);
-
-        $changedData = $this->getChangedData($oldData, $City->toArray());
-        $City->changed_data = $changedData;
-           $City->save();
-            $this->loadCreatorRelations($City);
-            $this->loadUpdaterRelations($City);
-           return response()->json([
-            'data' =>new CityResource($City),
-            'message' => " Update City By Id Successfully."
-        ]);
+    if (!$City) {
+        return response()->json(['message' => "City not found."], 404);
     }
+
+    $oldData = $City->toArray();
+    $fieldsToCheck = ['name', 'status'];
+    $hasChanges = false;
+
+    foreach ($fieldsToCheck as $field) {
+        if ($request->has($field) && $City->$field != $request->$field) {
+            $hasChanges = true;
+            break;
+        }
+    }
+
+    if (!$hasChanges) {
+        $this->loadCommonRelations($City);
+        return $this->respondWithResource($City, "No actual changes detected.");
+    }
+
+    $updateData = array_merge(
+        $request->only(['name']),
+        $this->prepareUpdateMeta($request)
+    );
+
+    $this->applyChangesAndSave($City, $updateData, $oldData);
+
+    return $this->respondWithResource($City, "City updated successfully.");
+    }
+
+
+    //         public function update(CityRequest $request, string $id)
+    //     {
+    //       $this->authorize('manage_system');
+    //     $hijriDate = $this->getHijriDate();
+    //     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    //        $City =City::find($id);
+    //         //  $oldData = $City->toArray();
+
+    //        if (!$City) {
+    //         return response()->json([
+    //             'message' => "City not found."
+    //         ], 404);
+    //     }
+    //      $oldData = $City->toArray();
+    //     $updatedById = $this->getUpdatedByIdOrFail();
+    //     $updatedByType = $this->getUpdatedByType();
+    //        $City->update([
+    //     //    'branch_id'=> $request ->branch_id,
+    //         "name" => $request->name,
+    //         'creationDate' => $gregorianDate,
+    //         'creationDateHijri' => $hijriDate,
+    //         'status'=> $request-> status ?? 'active',
+    //         'updated_by' => $updatedById,
+    //         'updated_by_type' => $updatedByType
+    //         ]);
+
+    //     $changedData = $this->getChangedData($oldData, $City->toArray());
+    //     $City->changed_data = $changedData;
+    //        $City->save();
+    //         $this->loadCreatorRelations($City);
+    //         $this->loadUpdaterRelations($City);
+    //        return response()->json([
+    //         'data' =>new CityResource($City),
+    //         'message' => " Update City By Id Successfully."
+    //     ]);
+    // }
 
     public function active(string $id)
     {
