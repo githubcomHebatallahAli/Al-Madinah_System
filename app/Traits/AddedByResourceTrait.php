@@ -9,7 +9,7 @@ trait AddedByResourceTrait
 
         return $this->formatUserData(
             $this->creator,
-            $this->added_by_type 
+            $this->added_by_type
         );
     }
 
@@ -22,7 +22,7 @@ trait AddedByResourceTrait
 
         return $this->formatUserData(
             $this->updater,
-            $this->updated_by_type ?? 'unknown'
+            $this->updated_by_type
         );
     }
 
