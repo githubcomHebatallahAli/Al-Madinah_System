@@ -8,10 +8,10 @@ use App\Http\Controllers\Admin\StoreController;
 
 Route::controller(StoreController::class)->prefix('/admin')->middleware('admin')->group(
     function () {
-Route::post('/create/branch', 'create');
-Route::post('/update/branch/{id}', 'update');
-Route::patch('notActive/branch/{id}', 'notActive');
-Route::patch('active/branch/{id}', 'active');
+Route::post('/create/store', 'create');
+Route::post('/update/store/{id}', 'update');
+Route::patch('notActive/store/{id}', 'notActive');
+Route::patch('active/store/{id}', 'active');
    });
 Route::controller(StoreController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
