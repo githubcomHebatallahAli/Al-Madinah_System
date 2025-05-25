@@ -78,7 +78,7 @@ public function update(CityRequest $request, string $id)
     $hasChanges = false;
 
     foreach ($fieldsToCheck as $field) {
-        if ($request->has($field)) {  // تم إضافة الأقواس () هنا
+        if ($request->has($field)) {
             $requestValue = $request->$field;
             if ($city->$field != $requestValue) {
                 $hasChanges = true;
@@ -92,21 +92,33 @@ public function update(CityRequest $request, string $id)
         return $this->respondWithResource($city, "No actual changes detected.");
     }
 
-    // Get basic update data
-    $updateData = $request->only(['name']);
+    // تحضير بيانات التحديث
+    $updateData = [
+        'name' => $request->input('name', $city->name), // استخدام القيمة الحالية إذا لم يتم إرسالها
+        'status' => $request->input('status', $city->status) // استخدام القيمة الحالية إذا لم يتم إرسالها
+    ];
 
-    // Merge with status if provided, otherwise keep current status
-    if ($request->has('status')) {
-        $updateData['status'] = $request->status;
-    }
-
-    // Add meta data
+    // إضافة بيانات التعريف
     $updateData = array_merge($updateData, $this->prepareUpdateMeta($request));
+
+    // إزالة الحقول التي لم تتغير
+    $updateData = array_filter($updateData, function($value, $key) use ($city) {
+        return $city->$key != $value;
+    }, ARRAY_FILTER_USE_BOTH);
 
     $this->applyChangesAndSave($city, $updateData, $oldData);
     return $this->respondWithResource($city, "City updated successfully.");
 }
 
+protected function prepareUpdateMeta($request): array
+{
+    return [
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+        'updated_by' => $this->getUpdatedByIdOrFail(),
+        'updated_by_type' => $this->getUpdatedByType(),
+    ];
+}
 
 
     //         public function update(CityRequest $request, string $id)
