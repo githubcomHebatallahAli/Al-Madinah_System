@@ -40,6 +40,7 @@ class TitleController extends Controller
         $this->authorize('manage_system');
         $data = array_merge($request->only([
             'branch_id', 'name'
+
         ]), $this->prepareCreationMetaData());
 
         $title = Title::create($data);

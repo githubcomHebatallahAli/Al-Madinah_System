@@ -39,7 +39,7 @@ public function create(WorkerRequest $request)
     {
         $this->authorize('manage_system');
     $data = $request->only([
-        'Worker_id', 'store_id', 'name', 'idNum',
+        'title_id', 'store_id', 'name', 'idNum',
         'personPhoNum', 'branchPhoNum', 'salary'
     ]);
 
