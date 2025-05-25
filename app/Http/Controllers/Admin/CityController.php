@@ -67,7 +67,7 @@ class CityController extends Controller
         public function update(CityRequest $request, string $id)
         {
           $this->authorize('manage_users');
-          $City = City::find($id);
+    $City = City::find($id);
 
     if (!$City) {
         return response()->json(['message' => "City not found."], 404);
@@ -89,22 +89,15 @@ class CityController extends Controller
         return $this->respondWithResource($City, "No actual changes detected.");
     }
 
-
-
-$updateData = array_merge(
-    [
-        'status' => $request->status ?? $City->status,
-    ],
-    $request->only(['name']),
-    $this->prepareUpdateMeta($request)
-);
-
-
+    $updateData = array_merge(
+        $request->only(['name']),
+        $this->prepareUpdateMeta($request)
+    );
 
     $this->applyChangesAndSave($City, $updateData, $oldData);
-
     return $this->respondWithResource($City, "City updated successfully.");
     }
+
 
 
     //         public function update(CityRequest $request, string $id)
