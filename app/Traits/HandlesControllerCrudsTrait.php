@@ -105,44 +105,71 @@ protected function mergeWithOld($request, $model, array $fields): array
         }
     }
 
-    public function changeStatusSimple($model, string $status): JsonResponse
-    {
-        $oldStatus = $model->status;
+    // public function changeStatusSimple($model, string $status): JsonResponse
+    // {
+    //     $oldStatus = $model->status;
 
-        if ($oldStatus === $status) {
-            $this->loadCommonRelations($model);
-            return response()->json([
-                'data' => new ($this->getResourceClass())($model),
-                'message' => $this->getAlreadyStatusMessage($status),
-            ]);
-        }
+    //     if ($oldStatus === $status) {
+    //         $this->loadCommonRelations($model);
+    //         return response()->json([
+    //             'data' => new ($this->getResourceClass())($model),
+    //             'message' => $this->getAlreadyStatusMessage($status),
+    //         ]);
+    //     }
 
-        $oldData = $model->toArray();
+    //     $oldData = $model->toArray();
 
-        $updatedById = $this->getUpdatedByIdOrFail();
-        $updatedByType = $this->getUpdatedByType();
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    //     $updatedById = $this->getUpdatedByIdOrFail();
+    //     $updatedByType = $this->getUpdatedByType();
+    //     $hijriDate = $this->getHijriDate();
+    //     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
-        $model->update([
-            'status' => $status,
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'updated_by' => $updatedById,
-            'updated_by_type' => $updatedByType,
-        ]);
+    //     $model->update([
+    //         'status' => $status,
+    //         'creationDate' => $gregorianDate,
+    //         'creationDateHijri' => $hijriDate,
+    //         'updated_by' => $updatedById,
+    //         'updated_by_type' => $updatedByType,
+    //     ]);
 
-        $changedData = $this->getChangedData($oldData, $model->fresh()->toArray());
-        $model->changed_data = $changedData;
-        $model->save();
+    //     $changedData = $this->getChangedData($oldData, $model->fresh()->toArray());
+    //     $model->changed_data = $changedData;
+    //     $model->save();
 
+    //     $this->loadCommonRelations($model);
+
+    //     return response()->json([
+    //         'data' => new ($this->getResourceClass())($model),
+    //         'message' => $this->getActivatedStatusMessage($status),
+    //     ]);
+    // }
+
+    protected function changeStatusSimple($model, string $newStatus)
+{
+    $oldData = $model->toArray();
+
+    if ($model->status === $newStatus) {
         $this->loadCommonRelations($model);
-
-        return response()->json([
-            'data' => new ($this->getResourceClass())($model),
-            'message' => $this->getActivatedStatusMessage($status),
-        ]);
+        return $this->respondWithResource($model, 'لم يحدث أي تغيير');
     }
+
+    $model->status = $newStatus;
+    $model->save();
+
+    // نضيف بيانات الوقت والهجري
+    $metaForDiffOnly = [
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+    ];
+
+    $changedData = $model->getChangedData($oldData, array_merge($model->fresh()->toArray(), $metaForDiffOnly));
+    $model->changed_data = $changedData;
+    $model->save();
+
+    $this->loadCommonRelations($model);
+    return $this->respondWithResource($model, 'تم تغيير الحالة بنجاح');
+}
+
 
     protected function getActivatedStatusMessage(string $status): string
     {
