@@ -114,7 +114,12 @@ public function update(WorkerRequest $request, string $id)
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
 
 
-    $this->applyChangesAndSave($worker, $updateData, $oldData);
+    // $this->applyChangesAndSave($worker, $updateData, $oldData);
+       $worker->update($updateData);
+
+    $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
+    $worker->changed_data = $changedData;
+    $worker->save();
 
     if ($request->hasFile('cv')) {
         if ($worker->cv) {
@@ -125,7 +130,7 @@ public function update(WorkerRequest $request, string $id)
         $worker->save();
     }
      $this->loadCreatorRelations($worker);
-            $this->loadUpdaterRelations($worker);
+    $this->loadUpdaterRelations($worker);
        return response()->json([
              'data' =>new  WorkerResource($worker),
              'message' => "Worker updated successfully."

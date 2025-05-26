@@ -92,7 +92,11 @@ class StoreController extends Controller
         $this->prepareUpdateMeta($request)
     );
 
-    $this->applyChangesAndSave($Store, $updateData, $oldData);
+        $Store->update($updateData);
+
+    $changedData = $Store->getChangedData($oldData, $Store->fresh()->toArray());
+    $Store->changed_data = $changedData;
+    $Store->save();
 
     return $this->respondWithResource($Store, "Store updated successfully.");
     }

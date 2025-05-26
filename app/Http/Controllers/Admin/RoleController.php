@@ -100,7 +100,11 @@ class RoleController extends Controller
 
     $updateData['guardName'] = $updateData['guardName'] ?? 'worker';
 
-    $this->applyChangesAndSave($Role, $updateData, $oldData);
+        $Role->update($updateData);
+
+    $changedData = $Role->getChangedData($oldData, $Role->fresh()->toArray());
+    $Role->changed_data = $changedData;
+    $Role->save();
 return $this->respondWithResource($Role, "Role updated successfully.");
 }
 

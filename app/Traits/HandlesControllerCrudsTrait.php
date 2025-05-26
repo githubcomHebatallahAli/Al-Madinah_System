@@ -55,8 +55,8 @@ protected function prepareUpdateMeta($request,?string $status = null): array
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
+        // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        // 'creationDateHijri' => $this->getHijriDate(),
         'status' => $request->status ?? $status,
     ];
 }
@@ -64,26 +64,6 @@ protected function prepareUpdateMeta($request,?string $status = null): array
 
 
 
-public function getHijriDateFromDate($date)
-{
-    if (!$date) {
-        return null;
-    }
-
-    $date = Carbon::parse($date)->timezone('Asia/Riyadh');
-
-    $response = Http::get('https://api.aladhan.com/v1/gToH', [
-        'date' => $date->format('d-m-Y'),
-    ]);
-
-    if (!$response->ok() || empty($response['data']['hijri'])) {
-        return null;
-    }
-
-    $hijri = $response['data']['hijri'];
-
-    return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$date->format('H:i:s')}";
-}
 
 
 protected function mergeWithOld($request, $model, array $fields): array
@@ -104,17 +84,6 @@ protected function mergeWithOld($request, $model, array $fields): array
         $model->changed_data = $changedData;
         $model->save();
     }
-
-
-//     protected function applyChangesAndSave($model, array $data, array $oldData): void
-// {
-//     $model->update($data);
-//     $model = $model->fresh();
-//     $changedData = $this->getChangedData($oldData, $model->toArray());
-
-//     $model->changed_data = $changedData;
-//     $model->save();
-// }
 
 
     protected function loadCommonRelations($model): void

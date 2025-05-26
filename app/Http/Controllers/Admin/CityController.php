@@ -90,9 +90,10 @@ public function update(CityRequest $request, string $id)
         return $this->respondWithResource($city, "لا يوجد تغييرات فعلية");
     }
 
-    $city->update($updateData);
+      $city->update($updateData);
 
-    $changedData = $this->getChangedData($oldData, $city->fresh()->toArray());
+    $changedData = $city->getChangedData($oldData, $city->fresh()->toArray());
+
     $city->changed_data = $changedData;
     $city->save();
 

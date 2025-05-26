@@ -89,11 +89,9 @@ public function update(BranchRequest $request, string $id)
         return $this->respondWithResource($Branch, "لا يوجد تغييرات فعلية");
     }
 
-    // $Branch->load('city');
 
     $Branch->update($updateData);
 
-    // $changedData = $this->getChangedData($oldData, $Branch->fresh()->toArray());
     $changedData = $Branch->getChangedData($oldData, $Branch->fresh()->toArray());
 
     $Branch->changed_data = $changedData;
