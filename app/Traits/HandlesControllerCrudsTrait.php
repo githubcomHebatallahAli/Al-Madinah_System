@@ -48,7 +48,7 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     }
 
 
-protected function prepareUpdateMeta($request, $model, ?string $status = null): array
+protected function prepareUpdateMeta($request,?string $status = null): array
 {
     $updatedBy = $this->getUpdatedByIdOrFail();
 
