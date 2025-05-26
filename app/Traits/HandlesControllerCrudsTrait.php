@@ -8,9 +8,6 @@ use Illuminate\Http\JsonResponse;
 trait HandlesControllerCrudsTrait
 {
 
-
-
-
 protected function respondWithResource($model, ?string $message = null): JsonResponse
 {
     $this->loadCommonRelations($model);
@@ -52,20 +49,9 @@ protected function respondWithCollection(Collection $collection, ?string $messag
         ];
     }
 
-    // ======== تجهيز بيانات التحديث المشتركة ========
-    // protected function prepareUpdateMeta($request): array
-    // {
-    //     return [
-    //         'status' => $request->status ?? 'active',
-    //         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-    //         'creationDateHijri' => $this->getHijriDate(),
-    //         'updated_by' => $this->getUpdatedByIdOrFail(),
-    //         'updated_by_type' => $this->getUpdatedByType(),
-    //     ];
-    // }
 
 
-protected function prepareUpdateMeta($request, string $status = null): array
+protected function prepareUpdateMeta($request, ?string $status = null): array
 {
     return [
         'updated_by' => $this->getUpdatedByIdOrFail(),
