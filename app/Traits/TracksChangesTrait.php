@@ -5,7 +5,7 @@ namespace App\Traits;
 trait TracksChangesTrait
 {
 
-    public function getChangedData(array $oldData, array $newData): array
+public function getChangedData(array $oldData, array $newData): array
 {
     $alwaysTrack = ['creationDate', 'creationDateHijri'];
     $ignoredKeys = [
@@ -24,26 +24,30 @@ trait TracksChangesTrait
 
         $oldValue = $oldData[$key] ?? null;
 
-        // تتبع دائم أو اختلاف القيم
+        // إذا الحقل دائم التتبع أو حصل تغيير فيه
         if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
             $changed[$key] = [
                 'old' => $oldValue,
                 'new' => $newValue,
             ];
 
-            // في حالة الحقول من نوع *_id نضيف الاسم أيضاً إن وجد
+            // لو المفتاح من نوع *_id
             if (str_ends_with($key, '_id')) {
-                $relationName = str_replace('_id', '', $key);
-                try {
-                    $oldModel = $this->getOriginalModelFromId($relationName, $oldValue);
-                    $newModel = $this->$relationName;
+                $relation = str_replace('_id', '', $key); // زي city من city_id
 
-                    if ($oldModel || $newModel) {
-                        $changed[$key]['old_name'] = $oldModel?->name;
-                        $changed[$key]['new_name'] = $newModel?->name;
+                try {
+                    $oldModel = $this->getOriginalModelFromId($relation, $oldValue);
+                    $newModel = $this->getOriginalModelFromId($relation, $newValue);
+
+                    if ($oldModel) {
+                        $changed[$key]['old_name'] = $oldModel->name ?? null;
+                    }
+
+                    if ($newModel) {
+                        $changed[$key]['new_name'] = $newModel->name ?? null;
                     }
                 } catch (\Throwable $e) {
-                    // لو العلاقة مش موجودة نتجاهل بصمت
+                    // تجاهل الخطأ بدون كسر التنفيذ
                 }
             }
         }
@@ -51,6 +55,7 @@ trait TracksChangesTrait
 
     return $changed;
 }
+
 
 
 
