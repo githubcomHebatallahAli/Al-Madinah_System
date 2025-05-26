@@ -62,21 +62,23 @@ class StoreController extends Controller
     return $this->respondWithResource($Store, "Store retrieved for editing.");
         }
 
-        public function update(StoreRequest $request, string $id)
-        {
-         $this->authorize('manage_users');
-            $Store = Store::find($id);
-
-    if (!$Store) {
-        return response()->json(['message' => "Store not found."], 404);
-    }
-
+public function update(StoreRequest $request, string $id)
+{
+    $this->authorize('manage_users');
+    $Store = Store::findOrFail($id);
     $oldData = $Store->toArray();
-    $fieldsToCheck = ['branch_id', 'name', 'status','address'];
-    $hasChanges = false;
 
-    foreach ($fieldsToCheck as $field) {
-        if ($request->has($field) && $Store->$field != $request->$field) {
+    $updateData = $request->only(['name','address','branch_id','status']);
+
+    $updateData = array_merge(
+        $updateData,
+        $this->prepareUpdateMeta($request, $Store->status)
+    );
+
+
+    $hasChanges = false;
+    foreach ($updateData as $key => $value) {
+        if ($Store->$key != $value) {
             $hasChanges = true;
             break;
         }
@@ -84,22 +86,17 @@ class StoreController extends Controller
 
     if (!$hasChanges) {
         $this->loadCommonRelations($Store);
-        return $this->respondWithResource($Store, "No actual changes detected.");
+        return $this->respondWithResource($Store, "لا يوجد تغييرات فعلية");
     }
 
-    $updateData = array_merge(
-        $request->only(['branch_id','name','address']),
-        $this->prepareUpdateMeta($request)
-    );
-
-        $Store->update($updateData);
-
+    $Store->update($updateData);
     $changedData = $Store->getChangedData($oldData, $Store->fresh()->toArray());
     $Store->changed_data = $changedData;
     $Store->save();
 
-    return $this->respondWithResource($Store, "Store updated successfully.");
-    }
+    $this->loadCommonRelations($Store);
+    return $this->respondWithResource($Store, "تم تحديث المخزن بنجاح");
+}
 
     public function active(string $id)
     {
