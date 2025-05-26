@@ -89,18 +89,15 @@ public function update(BranchRequest $request, string $id)
         return $this->respondWithResource($Branch, "لا يوجد تغييرات فعلية");
     }
 
-    $Branch->load('city');
+    // $Branch->load('city');
 
-    $this->applyChangesAndSave($Branch, $updateData, $oldData);
+    $Branch->update($updateData);
 
+    // $changedData = $this->getChangedData($oldData, $Branch->fresh()->toArray());
+    $changedData = $Branch->getChangedData($oldData, $Branch->fresh()->toArray());
 
-    // $Branch->update($updateData);
-
-    // // $changedData = $this->getChangedData($oldData, $Branch->fresh()->toArray());
-    // $changedData = $Branch->getChangedData($oldData, $Branch->fresh()->toArray());
-
-    // $Branch->changed_data = $changedData;
-    // $Branch->save();
+    $Branch->changed_data = $changedData;
+    $Branch->save();
 
     $this->loadCommonRelations($Branch);
     return $this->respondWithResource($Branch, "تم تحديث الفرع بنجاح");
