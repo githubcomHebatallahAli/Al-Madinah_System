@@ -2,43 +2,38 @@
 
 namespace App\Traits;
 
+use App\Models\Admin;
+use App\Models\WorkerLogin;
+
 trait AddedByResourceTrait
 {
     public function addedByAttribute()
     {
-
         return $this->formatUserData(
             $this->creator,
             $this->added_by_type ?? 'unknown'
         );
     }
 
+    public function updatedByAttribute()
+    {
+        if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
+            return null;
+        }
 
-
-public function updatedByAttribute()
-{
-
-    if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
-        return null;
+        return $this->formatUserData(
+            $this->updater,
+            $this->updated_by_type ?? 'unknown'
+        );
     }
 
-    return $this->formatUserData(
-        $this->updater,
-        $this->updated_by_type ?? 'unknown'
-    );
-}
-
-
-
-
-protected function shouldShowUpdatedBy(): bool
-{
-
-    if (method_exists($this->resource, 'hasRealChanges')) {
-        return $this->resource->hasRealChanges();
+    protected function shouldShowUpdatedBy(): bool
+    {
+        if (method_exists($this->resource, 'hasRealChanges')) {
+            return $this->resource->hasRealChanges();
+        }
+        return $this->resource->updated_by !== null;
     }
-    return $this->resource->updated_by !== null;
-}
 
     protected function formatUserData($user, string $userType): ?array
     {
@@ -46,12 +41,13 @@ protected function shouldShowUpdatedBy(): bool
             return null;
         }
 
-        $isAdmin = $userType === \App\Models\Admin::class;
-        $isWorker = $userType === \App\Models\Worker::class;
+        $isAdmin = $userType === Admin::class;
+        $isWorkerLogin = $userType === WorkerLogin::class;
 
         $email = null;
         $roleId = null;
         $roleName = '';
+        $branch = null;
 
         if ($isAdmin) {
             $email = $user->email ?? null;
@@ -59,10 +55,14 @@ protected function shouldShowUpdatedBy(): bool
             $roleName = optional($user->role)->name ?? '';
         }
 
-        if ($isWorker) {
-            $email = optional($user->workerLogin)->email ?? null;
-            $roleId = optional($user->workerLogin)->role_id ?? null;
-            $roleName = optional(optional($user->workerLogin)->role)->name ?? '';
+        if ($isWorkerLogin) {
+            $email = $user->email ?? null;
+            $roleId = $user->role_id ?? null;
+            $roleName = optional($user->role)->name ?? '';
+            $branch = [
+                'id' => optional($user->worker)->branch->id ?? null,
+                'name' => optional($user->worker)->branch->name ?? null,
+            ];
         }
 
         return [
@@ -72,12 +72,7 @@ protected function shouldShowUpdatedBy(): bool
             'role_id' => $roleId,
             'role_name' => $roleName,
             'type' => $userType,
-            'branch' => $isWorker ? [
-                'id' => optional($user->branch)->id,
-                'name' => optional($user->branch)->name,
-            ] : null,
+            'branch' => $branch,
         ];
     }
 }
-
-
