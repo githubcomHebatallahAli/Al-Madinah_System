@@ -57,7 +57,9 @@ protected function prepareUpdateMeta($request, $model, ?string $status = null): 
         'updated_by_type' => $this->getUpdatedByType(),
         // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         // 'creationDateHijri' => $this->getHijriDate(),
-          'creationDate' => optional($model->creationDate)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDate' => $model->creationDate
+    ? Carbon::parse($model->creationDate)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s')
+    : null,
         'creationDateHijri' => $model->creationDateHijri,
         'status' => $request->status ?? $status,
     ];
