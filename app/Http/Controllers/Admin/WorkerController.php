@@ -113,7 +113,7 @@ public function update(WorkerRequest $request, string $id)
 
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
 
-     $this->ensureUpdatedBy($updateData);
+     
     $this->applyChangesAndSave($worker, $updateData, $oldData);
 
     if ($request->hasFile('cv')) {

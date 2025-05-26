@@ -29,31 +29,45 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     ]);
 }
 
-    protected function prepareCreationMetaData(): array
-    {
-        $hijriDate = $this->getHijriDate();
-        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $addedById = $this->getAddedByIdOrFail();
-        $addedByType = $this->getAddedByType();
+//     protected function prepareCreationMetaData(): array
+//     {
+//         $hijriDate = $this->getHijriDate();
+//         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+//         $addedById = $this->getAddedByIdOrFail();
+//         $addedByType = $this->getAddedByType();
 
-        return [
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'status' => 'active',
-            'added_by' => $addedById,
-            'added_by_type' => $addedByType,
-        ];
-    }
+//         return [
+//             'creationDate' => $gregorianDate,
+//             'creationDateHijri' => $hijriDate,
+//             'status' => 'active',
+//             'added_by' => $addedById,
+//             'added_by_type' => $addedByType,
+//         ];
+//     }
 
-protected function ensureUpdatedBy(&$data)
+
+protected function prepareUpdateMeta($request, ?string $status = null): array
 {
-    if (!isset($data['updated_by'])) {
-        $data['updated_by'] = $this->getUpdatedById();
-    }
-    if (!isset($data['updated_by_type'])) {
-        $data['updated_by_type'] = $this->getUpdatedByType();
-    }
+    $updatedBy = $this->getUpdatedByIdOrFail(); // دي هتعمل abort لو غير مصرح
+
+    return [
+        'updated_by' => $updatedBy,
+        'updated_by_type' => $this->getUpdatedByType(),
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+        'status' => $request->status ?? $status,
+    ];
 }
+
+// // protected function ensureUpdatedBy(&$data)
+// // {
+// //     if (!isset($data['updated_by'])) {
+// //         $data['updated_by'] = $this->getUpdatedById();
+// //     }
+// //     if (!isset($data['updated_by_type'])) {
+// //         $data['updated_by_type'] = $this->getUpdatedByType();
+// //     }
+// // }
 
 // protected function prepareUpdateMeta($request,? string $status = null): array
 // {
@@ -67,18 +81,18 @@ protected function ensureUpdatedBy(&$data)
 // }
 
 
-protected function prepareUpdateMeta($request, ?string $status = null): array
-{
-    $meta = [
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
-        'status' => $request->status ?? $status,
-    ];
+// protected function prepareUpdateMeta($request, ?string $status = null): array
+// {
+//     $meta = [
+//         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//         'creationDateHijri' => $this->getHijriDate(),
+//         'status' => $request->status ?? $status,
+//     ];
 
-    $this->ensureUpdatedBy($meta);
+//     $this->ensureUpdatedBy($meta);
 
-    return $meta;
-}
+//     return $meta;
+// }
 
 protected function mergeWithOld($request, $model, array $fields): array
 {

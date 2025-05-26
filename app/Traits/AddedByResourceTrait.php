@@ -15,30 +15,11 @@ trait AddedByResourceTrait
 
 
 
-// public function updatedByAttribute()
-// {
-
-//     if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
-//         return null;
-//     }
-
-//     return $this->formatUserData(
-//         $this->updater,
-//         $this->updated_by_type ?? 'unknown'
-//     );
-// }
-
-
 public function updatedByAttribute()
 {
-    // إذا لم يكن هناك updated_by أو لم يتم التحديث بعد الإنشاء
+
     if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
         return null;
-    }
-
-    // إذا كان التحديث بواسطة نفس المستخدم الذي أنشأ السجل
-    if ($this->updated_by == $this->added_by && $this->updated_by_type == $this->added_by_type) {
-        return $this->addedByAttribute();
     }
 
     return $this->formatUserData(
@@ -46,6 +27,9 @@ public function updatedByAttribute()
         $this->updated_by_type ?? 'unknown'
     );
 }
+
+
+
 
 protected function shouldShowUpdatedBy(): bool
 {
