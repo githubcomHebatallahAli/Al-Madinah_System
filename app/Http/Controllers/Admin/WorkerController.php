@@ -108,7 +108,7 @@ public function update(WorkerRequest $request, string $id)
 
     $updateData = array_merge(
         $request->only($fieldsToCheck),
-        $this->prepareUpdateMeta($request,$worker, $worker->status) // تمرير الحالة الحالية كقيمة افتراضية
+        $this->prepareUpdateMeta($request,$worker) // تمرير الحالة الحالية كقيمة افتراضية
     );
 
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
