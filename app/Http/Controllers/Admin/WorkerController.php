@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Carbon\Carbon;
 use App\Models\Worker;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
@@ -161,6 +162,93 @@ public function update(WorkerRequest $request, string $id)
         return WorkerResource::class;
     }
 
+// public function notOk(string $id)
+// {
+//     $this->authorize('manage_system');
+
+//     $worker = Worker::find($id);
+//     if (!$worker) {
+//         return response()->json(['message' => "Worker not found."], 404);
+//     }
+
+//     $oldData = $worker->toArray();
+
+//     if ($worker->dashboardAccess === 'notOk') {
+//         $this->loadCommonRelations($worker);
+//         return response()->json([
+//             'data' => new WorkerResource($worker),
+//             'message' => 'Worker dashboard access is already set to not OK',
+//         ]);
+//     }
+
+//     $updatedById = $this->getUpdatedByIdOrFail();
+//     $updatedByType = $this->getUpdatedByType();
+//     $hijriDate = $this->getHijriDate();
+//     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+//     $worker->update([
+//         'dashboardAccess' => 'notOk',
+//         'creationDate' => $gregorianDate,
+//         'creationDateHijri' => $hijriDate,
+//         'updated_by' => $updatedById,
+//         'updated_by_type' => $updatedByType,
+//     ]);
+
+//     $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
+//     $worker->changed_data = $changedData;
+//     $worker->save();
+
+//     $this->loadCommonRelations($worker);
+//     return response()->json([
+//         'data' => new WorkerResource($worker),
+//         'message' => 'Worker dashboard access set to not OK',
+//     ]);
+// }
+
+// public function ok(string $id)
+// {
+//     $this->authorize('manage_system');
+
+//     $worker = Worker::find($id);
+//     if (!$worker) {
+//         return response()->json(['message' => "Worker not found."], 404);
+//     }
+
+//     $oldData = $worker->toArray();
+
+//     if ($worker->dashboardAccess === 'ok') {
+//         $this->loadCommonRelations($worker);
+//         return response()->json([
+//             'data' => new WorkerResource($worker),
+//             'message' => 'Worker dashboard access is already set to OK',
+//         ]);
+//     }
+
+//     $updatedById = $this->getUpdatedByIdOrFail();
+//     $updatedByType = $this->getUpdatedByType();
+//     $hijriDate = $this->getHijriDate();
+//     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+//     $worker->update([
+//         'dashboardAccess' => 'ok',
+//         'creationDate' => $gregorianDate,
+//         'creationDateHijri' => $hijriDate,
+//         'updated_by' => $updatedById,
+//         'updated_by_type' => $updatedByType,
+//     ]);
+
+//     $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
+//     $worker->changed_data = $changedData;
+//     $worker->save();
+
+//     $this->loadCommonRelations($worker);
+
+//     return response()->json([
+//         'data' => new WorkerResource($worker),
+//         'message' => 'Worker dashboard access set to OK',
+//     ]);
+// }
+
 public function notOk(string $id)
 {
     $this->authorize('manage_system');
@@ -174,35 +262,27 @@ public function notOk(string $id)
 
     if ($worker->dashboardAccess === 'notOk') {
         $this->loadCommonRelations($worker);
-        return response()->json([
-            'data' => new WorkerResource($worker),
-            'message' => 'Worker dashboard access is already set to not OK',
-        ]);
+        return $this->respondWithResource($worker, 'Worker dashboard access is already set to not OK');
     }
 
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $hijriDate = $this->getHijriDate();
-    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $worker->dashboardAccess = 'notOk';
+    $worker->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $worker->creationDateHijri = $this->getHijriDate();
+    $worker->updated_by = $this->getUpdatedByIdOrFail();
+    $worker->updated_by_type = $this->getUpdatedByType();
+    $worker->save();
 
-    $worker->update([
-        'dashboardAccess' => 'notOk',
-        'creationDate' => $gregorianDate,
-        'creationDateHijri' => $hijriDate,
-        'updated_by' => $updatedById,
-        'updated_by_type' => $updatedByType,
-    ]);
+    $metaForDiffOnly = [
+        'creationDate' => $worker->creationDate,
+        'creationDateHijri' => $worker->creationDateHijri,
+    ];
 
-    $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
+    $changedData = $worker->getChangedData($oldData, array_merge($worker->fresh()->toArray(), $metaForDiffOnly));
     $worker->changed_data = $changedData;
     $worker->save();
 
     $this->loadCommonRelations($worker);
-
-    return response()->json([
-        'data' => new WorkerResource($worker),
-        'message' => 'Worker dashboard access set to not OK',
-    ]);
+    return $this->respondWithResource($worker, 'Worker dashboard access set to not OK');
 }
 
 public function ok(string $id)
@@ -218,35 +298,28 @@ public function ok(string $id)
 
     if ($worker->dashboardAccess === 'ok') {
         $this->loadCommonRelations($worker);
-        return response()->json([
-            'data' => new WorkerResource($worker),
-            'message' => 'Worker dashboard access is already set to OK',
-        ]);
+        return $this->respondWithResource($worker, 'Worker dashboard access is already set to OK');
     }
 
-    $updatedById = $this->getUpdatedByIdOrFail();
-    $updatedByType = $this->getUpdatedByType();
-    $hijriDate = $this->getHijriDate();
-    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $worker->dashboardAccess = 'ok';
+    $worker->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $worker->creationDateHijri = $this->getHijriDate();
+    $worker->updated_by = $this->getUpdatedByIdOrFail();
+    $worker->updated_by_type = $this->getUpdatedByType();
+    $worker->save();
 
-    $worker->update([
-        'dashboardAccess' => 'ok',
-        'creationDate' => $gregorianDate,
-        'creationDateHijri' => $hijriDate,
-        'updated_by' => $updatedById,
-        'updated_by_type' => $updatedByType,
-    ]);
+    $metaForDiffOnly = [
+        'creationDate' => $worker->creationDate,
+        'creationDateHijri' => $worker->creationDateHijri,
+    ];
 
-    $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
+    $changedData = $worker->getChangedData($oldData, array_merge($worker->fresh()->toArray(), $metaForDiffOnly));
     $worker->changed_data = $changedData;
     $worker->save();
 
     $this->loadCommonRelations($worker);
-
-    return response()->json([
-        'data' => new WorkerResource($worker),
-        'message' => 'Worker dashboard access set to OK',
-    ]);
+    return $this->respondWithResource($worker, 'Worker dashboard access set to OK');
 }
+
 
 }
