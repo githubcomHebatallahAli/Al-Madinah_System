@@ -149,29 +149,18 @@ public function update(WorkerRequest $request, string $id)
         return WorkerResource::class;
     }
 
-    public function notOk(string $id)
-{
-    $this->authorize('manage_system');
-
-    $worker = Worker::find($id);
-    if (!$worker) {
-        return response()->json(['message' => "Worker not found."], 404);
-    }
-
-    return $this->changeStatusSimple($worker, 'notOk');
-}
-
-
 public function ok(string $id)
 {
     $this->authorize('manage_system');
+    $worker = Worker::findOrFail($id);
+    return $this->changeStatusSimple($worker, 'ok', 'dashboardAccess');
+}
 
-    $worker = Worker::find($id);
-    if (!$worker) {
-        return response()->json(['message' => "Worker not found."], 404);
-    }
-
-    return $this->changeStatusSimple($worker, 'ok');
+public function notOk(string $id)
+{
+    $this->authorize('manage_system');
+    $worker = Worker::findOrFail($id);
+    return $this->changeStatusSimple($worker, 'notOk', 'dashboardAccess');
 }
 
 
