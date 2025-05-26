@@ -113,7 +113,7 @@ public function update(WorkerRequest $request, string $id)
 
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
 
-     
+
     $this->applyChangesAndSave($worker, $updateData, $oldData);
 
     if ($request->hasFile('cv')) {
@@ -124,9 +124,15 @@ public function update(WorkerRequest $request, string $id)
         $worker->cv = $cvPath;
         $worker->save();
     }
-    $this->loadCommonRelations($worker);
+     $this->loadCreatorRelations($worker);
+            $this->loadUpdaterRelations($worker);
+       return response()->json([
+             'data' =>new  WorkerResource($worker),
+             'message' => "Worker updated successfully."
+        ]);
+    // $this->loadCommonRelations($worker);
 
-    return $this->respondWithResource($worker, "Worker updated successfully.");
+    // return $this->respondWithResource($worker, "Worker updated successfully.");
 }
 
     public function active(string $id)

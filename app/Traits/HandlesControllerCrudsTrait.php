@@ -48,7 +48,7 @@ protected function respondWithCollection(Collection $collection, ?string $messag
 
 protected function prepareUpdateMeta($request, ?string $status = null): array
 {
-    $updatedBy = $this->getUpdatedByIdOrFail(); // دي هتعمل abort لو غير مصرح
+    $updatedBy = $this->getUpdatedByIdOrFail();
 
     return [
         'updated_by' => $updatedBy,
