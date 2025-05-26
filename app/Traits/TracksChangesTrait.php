@@ -7,12 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 trait TracksChangesTrait
 {
 
-public function getChangedDataFromModel(Model $model, array $oldData): array
+public function getChangedData(array $oldData, array $newData): array
 {
-    $newData = $model->toArray();
-
     $alwaysTrack = ['creationDate', 'creationDateHijri'];
-    $ignoredKeys = ['updated_at', 'updated_by', 'updated_by_type', 'changed_data'];
+
+    $ignoredKeys = [
+        'updated_at',
+        'updated_by',
+        'updated_by_type',
+        'changed_data'
+    ];
 
     $changed = [];
 
@@ -23,29 +27,24 @@ public function getChangedDataFromModel(Model $model, array $oldData): array
 
         $oldValue = $oldData[$key] ?? null;
 
+        // تحقق هل هناك تغيير أو من الحقول التي يجب تتبعها دائماً
         if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
             $changed[$key] = [
                 'old' => $oldValue,
                 'new' => $newValue,
             ];
 
+            // إذا كان الحقل هو علاقة (مثلاً ينتهي بـ _id)
             if (str_ends_with($key, '_id')) {
-                $relation = str_replace('_id', '', $key);
+                $relationName = str_replace('_id', '', $key);
 
-                try {
-                    $oldModel = $this->getOriginalModelFromId($relation, $oldValue);
-                    $newModel = $this->getOriginalModelFromId($relation, $newValue);
+                // جلب النموذج القديم المرتبط
+                $oldModel = $this->getOriginalModelFromId($relationName, $oldValue);
+                // جلب النموذج الجديد المرتبط
+                $newModel = $this->getOriginalModelFromId($relationName, $newValue);
 
-                    if ($oldModel) {
-                        $changed[$key]['old_name'] = $oldModel->name ?? null;
-                    }
-
-                    if ($newModel) {
-                        $changed[$key]['new_name'] = $newModel->name ?? null;
-                    }
-                } catch (\Throwable $e) {
-                    // تجاهل الأخطاء
-                }
+                $changed[$key]['old_name'] = $oldModel?->name ?? null;
+                $changed[$key]['new_name'] = $newModel?->name ?? null;
             }
         }
     }
@@ -122,15 +121,21 @@ public function getChangedDataFromModel(Model $model, array $oldData): array
 
 protected function getOriginalModelFromId(string $relation, $id)
 {
-    $relationMethod = $this->$relation();
-
-    if (method_exists($relationMethod, 'getRelated')) {
-        $relatedModel = $relationMethod->getRelated();
-        return $relatedModel->find($id);
+    if (!$id) {
+        return null;
     }
 
-    return null;
+    // تحقق هل علاقة موجودة في الموديل الحالي
+    if (!method_exists($this, $relation)) {
+        return null;
+    }
+
+    // استدعاء علاقة الـ Eloquent مثل city()
+    $relatedModel = $this->$relation()->getRelated();
+
+    return $relatedModel->find($id);
 }
+
 
 
 
