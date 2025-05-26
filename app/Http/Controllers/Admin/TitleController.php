@@ -86,7 +86,7 @@ public function update(TitleRequest $request, string $id)
     $Title->changed_data = $changedData;
     $Title->save();
 
-    $this->loadCommonRelations($Title);
+    // $this->loadCommonRelations($Title);
     return $this->respondWithResource($Title, "تم تحديث الوظيفه بنجاح");
 }
 
