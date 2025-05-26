@@ -42,7 +42,6 @@ class Worker extends Model
    protected $casts = [
         'salary' => 'decimal:2',
         'changed_data' => 'array',
-        'creationDate' => 'datetime',
     ];
 
 
