@@ -58,33 +58,38 @@ public function getChangedData(array $oldData, array $newData): array
 
         $oldValue = $oldData[$key] ?? null;
 
+        // تتبع دائم أو تغير فعلي
         if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
             $changed[$key] = [
                 'old' => $oldValue,
                 'new' => $newValue,
             ];
 
-            // لو المفتاح ينتهي بـ _id، أضف المفتاح المرتبط بالاسم في مفتاح مستقل
+            // لو المفتاح عبارة عن علاقة ID (مثل city_id)
             if (str_ends_with($key, '_id')) {
-                $relationName = str_replace('_id', '', $key);
-                if (method_exists($this, $relationName)) {
+                $relation = str_replace('_id', '', $key); // city
+
+                // لو العلاقة معرفة في الموديل
+                if (method_exists($this, $relation)) {
                     try {
-                        $relatedModel = $this->$relationName()->getRelated();
+                        $relatedModel = $this->$relation()->getRelated();
 
                         $oldModel = $relatedModel->find($oldValue);
                         $newModel = $relatedModel->find($newValue);
 
-                        $oldName = optional($oldModel)->name ?? optional($oldModel)->title;
-                        $newName = optional($newModel)->name ?? optional($newModel)->title;
+                        // جلب الاسم المناسب
+                        $oldName = optional($oldModel)->name ?? optional($oldModel)->title ?? null;
+                        $newName = optional($newModel)->name ?? optional($newModel)->title ?? null;
 
+                        // فقط لو الاسم تغير
                         if ($oldName != $newName) {
-                            $changed[$relationName . '_name'] = [
+                            $changed[$relation . '_name'] = [
                                 'old' => $oldName,
                                 'new' => $newName,
                             ];
                         }
                     } catch (\Throwable $e) {
-                        // لا تقطع التنفيذ لو حصلت مشكلة
+                        // تجاهل الخطأ إذا العلاقة غير موجودة أو غير معرفة
                     }
                 }
             }
@@ -93,6 +98,7 @@ public function getChangedData(array $oldData, array $newData): array
 
     return $changed;
 }
+
 
 
 
