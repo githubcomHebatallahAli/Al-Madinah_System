@@ -76,26 +76,28 @@ class RoleController extends Controller
             'message' => "Role not found."
         ], 404);
     }
-          $oldData = $Role->toArray();
-    $fieldsToCheck = ['name'];
-    $hasChanges = false;
+      $oldData = $Role->toArray();
 
-    foreach ($fieldsToCheck as $field) {
-        if ($request->has($field) && $Role->$field != $request->$field) {
+    $updateData = $request->only(['name','guardName','status']);
+
+    $updateData = array_merge(
+        $updateData,
+        $this->prepareUpdateMeta($request, $Role->status)
+    );
+
+
+    $hasChanges = false;
+    foreach ($updateData as $key => $value) {
+        if ($Role->$key != $value) {
             $hasChanges = true;
             break;
         }
     }
 
-       if (!$hasChanges) {
+    if (!$hasChanges) {
         $this->loadCommonRelations($Role);
-        return $this->respondWithResource($Role, "No actual changes detected.");
+        return $this->respondWithResource($Role, "لا يوجد تغييرات فعلية");
     }
-
-    $updateData = array_merge(
-        $request->only(['name', 'status', 'guardName']),
-        $this->prepareUpdateMeta($request)
-    );
 
 
     $updateData['guardName'] = $updateData['guardName'] ?? 'worker';
