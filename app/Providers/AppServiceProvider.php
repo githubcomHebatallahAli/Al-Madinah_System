@@ -35,25 +35,32 @@ class AppServiceProvider extends ServiceProvider
 //     }
 
 
-        public function boot(): void
-    {
-        Gate::define('manage_users', function($user) {
-            return Auth::guard('admin')->check() && $user->role_id == 1 && $user->status == 'active';
-        });
+public function boot(): void
+{
+    Gate::define('manage_users', function($user) {
+        return $user instanceof Admin &&
+               $user->role_id == 1 &&
+               $user->status == 'active';
+    });
 
-        Gate::define('manage_system', function ($user) {
-            if (!$user) return false;
+    Gate::define('manage_system', function ($user) {
+        if (!$user) return false;
 
-            if ($user instanceof Admin && $user->role_id == 1) {
-                return $user->status == 'active';
-            }
+        // تحقق من نوع الحماية المستخدمة أولاً
+        $guard = Auth::getDefaultDriver();
 
-            if ($user instanceof WorkerLogin && $user->role_id == 2) {
-                return $user->status == 'active' && $user->dashboardAccess == 'ok';
-            }
+        if ($guard === 'admin' && $user instanceof Admin) {
+            return $user->role_id == 1 && $user->status == 'active';
+        }
 
-            return false;
-        });
-    }
+        if ($guard === 'worker' && $user instanceof WorkerLogin) {
+            return $user->role_id == 2 &&
+                   $user->status == 'active' &&
+                   $user->dashboardAccess == 'ok';
+        }
+
+        return false;
+    });
+}
 
 }
