@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\TracksChangesTrait;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class WorkerLogin extends Authenticatable  implements JWTSubject
 {
-     use HasFactory, Notifiable;
+     use HasFactory, Notifiable,TracksChangesTrait;
      protected $fillable = [
         'worker_id',
         'email',

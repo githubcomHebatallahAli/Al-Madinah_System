@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Worker extends Model
 {
-    use HasFactory;
+    use HasFactory,TracksChangesTrait;
     const storageFolder= 'Workers';
     protected $fillable = [
         'title_id',

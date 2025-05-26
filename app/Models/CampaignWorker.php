@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CampaignWorker extends Model
 {
-    use HasFactory;
+    use HasFactory,TracksChangesTrait;
     protected $fillable = [
         'campaign_id',
         'worker_id',
