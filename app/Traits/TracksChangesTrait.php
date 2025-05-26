@@ -7,50 +7,68 @@ use Illuminate\Database\Eloquent\Model;
 trait TracksChangesTrait
 {
 
-public function getChangedData(array $oldData, array $newData): array
-{
-    $alwaysTrack = ['creationDate', 'creationDateHijri'];
+  protected array $alwaysTrack = ['creationDate', 'creationDateHijri'];
 
-    $ignoredKeys = [
+    protected array $ignoredKeys = [
         'updated_at',
         'updated_by',
         'updated_by_type',
         'changed_data'
     ];
 
-    $changed = [];
+    public function getChangedData(array $oldData, array $newData): array
+    {
+        $changed = [];
 
-    foreach ($newData as $key => $newValue) {
-        if (in_array($key, $ignoredKeys)) {
-            continue;
-        }
+        foreach ($newData as $key => $newValue) {
+            if (in_array($key, $this->ignoredKeys)) {
+                continue;
+            }
 
-        $oldValue = $oldData[$key] ?? null;
+            $oldValue = $oldData[$key] ?? null;
 
-        // تحقق هل هناك تغيير أو من الحقول التي يجب تتبعها دائماً
-        if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
-            $changed[$key] = [
-                'old' => $oldValue,
-                'new' => $newValue,
-            ];
+            // تحقق من التغيرات المباشرة
+            if (in_array($key, $this->alwaysTrack) || $oldValue != $newValue) {
+                $changed[$key] = ['old' => $oldValue, 'new' => $newValue];
 
-            // إذا كان الحقل هو علاقة (مثلاً ينتهي بـ _id)
-            if (str_ends_with($key, '_id')) {
-                $relationName = str_replace('_id', '', $key);
+                // إذا كان الحقل ينتهي بـ _id، حاول تلقائيًا تجيب اسم العلاقة
+                if (str_ends_with($key, '_id')) {
+                    $relationName = substr($key, 0, -3); // احذف _id
 
-                // جلب النموذج القديم المرتبط
-                $oldModel = $this->getOriginalModelFromId($relationName, $oldValue);
-                // جلب النموذج الجديد المرتبط
-                $newModel = $this->getOriginalModelFromId($relationName, $newValue);
+                    // تحقق من وجود علاقة في الموديل
+                    if (method_exists($this, $relationName)) {
 
-                $changed[$key]['old_name'] = $oldModel?->name ?? null;
-                $changed[$key]['new_name'] = $newModel?->name ?? null;
+                        // حاول تجيب القيمة القديمة للجسم المرتبط (من oldData)
+                        $oldRelatedName = $this->getRelatedNameFromOldData($oldData, $relationName);
+                        $newRelatedName = $this->getRelatedNameFromNewData($newData, $relationName);
+
+                        if ($oldRelatedName !== null || $newRelatedName !== null) {
+                            $changed[$key]['old_name'] = $oldRelatedName;
+                            $changed[$key]['new_name'] = $newRelatedName;
+                        }
+                    }
+                }
             }
         }
+
+        return $changed;
     }
 
-    return $changed;
-}
+    protected function getRelatedNameFromOldData(array $oldData, string $relationName)
+    {
+        if (isset($oldData[$relationName]) && is_array($oldData[$relationName])) {
+            return $oldData[$relationName]['name'] ?? null;
+        }
+        return null;
+    }
+
+    protected function getRelatedNameFromNewData(array $newData, string $relationName)
+    {
+        if (isset($newData[$relationName]) && is_array($newData[$relationName])) {
+            return $newData[$relationName]['name'] ?? null;
+        }
+        return null;
+    }
 
 
 
