@@ -76,6 +76,14 @@ public function update(BranchRequest $request, string $id)
         $this->prepareUpdateMeta($request, $Branch->status)
     );
 
+
+      $metaForDiffOnly = [
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+    ];
+
+    $fullDataForDiff = array_merge($updateData, $metaForDiffOnly);
+
     $hasChanges = false;
     foreach ($updateData as $key => $value) {
         if ($Branch->$key != $value) {
@@ -89,10 +97,12 @@ public function update(BranchRequest $request, string $id)
         return $this->respondWithResource($Branch, "لا يوجد تغييرات فعلية");
     }
 
+    // $Branch->update($updateData);
 
-    $Branch->update($updateData);
+    // $changedData = $Branch->getChangedData($oldData, $Branch->fresh()->toArray());
+     $Branch->update($updateData);
 
-    $changedData = $Branch->getChangedData($oldData, $Branch->fresh()->toArray());
+    $changedData = $Branch->getChangedData($oldData, array_merge($Branch->fresh()->toArray(), $metaForDiffOnly));
 
     $Branch->changed_data = $changedData;
     $Branch->save();
