@@ -19,11 +19,11 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-//     public function boot(): void
-//     {
-//         Gate::define('manage_users', function($user) {
-//             return    Auth::guard('admin')->check()&& $user->role_id == 1;
-//         });
+    public function boot(): void
+    {
+        Gate::define('manage_users', function($user) {
+            return    Auth::guard('admin')->check()&& $user->role_id == 1;
+        });
 
 // Gate::define('manage_system', function ($user) {
 //     return $user && (
@@ -32,28 +32,16 @@ class AppServiceProvider extends ServiceProvider
 //     );
 // });
 
-//     }
-
-
-public function boot(): void
-{
-    Gate::define('manage_users', function($user) {
-        return $user instanceof Admin &&
-               $user->role_id == 1 &&
-               $user->status == 'active';
-    });
-
     Gate::define('manage_system', function ($user) {
         if (!$user) return false;
 
-        // تحقق من نوع الحماية المستخدمة أولاً
-        $guard = Auth::getDefaultDriver();
-
-        if ($guard === 'admin' && $user instanceof Admin) {
+        // للـ Admin
+        if ($user instanceof \App\Models\Admin) {
             return $user->role_id == 1 && $user->status == 'active';
         }
 
-        if ($guard === 'worker' && $user instanceof WorkerLogin) {
+        // للـ WorkerLogin
+        if ($user instanceof \App\Models\WorkerLogin) {
             return $user->role_id == 2 &&
                    $user->status == 'active' &&
                    $user->dashboardAccess == 'ok';
@@ -61,6 +49,12 @@ public function boot(): void
 
         return false;
     });
-}
+
+    }
+
+
+
+
+
 
 }
