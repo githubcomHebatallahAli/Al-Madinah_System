@@ -57,8 +57,8 @@ protected function prepareUpdateMeta($request, $model, ?string $status = null): 
         'updated_by_type' => $this->getUpdatedByType(),
         // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         // 'creationDateHijri' => $this->getHijriDate(),
-        'creationDate' => optional($model->created_at)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDateFromDate($model->created_at),
+          'creationDate' => optional($model->creationDate)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $model->creationDateHijri,
         'status' => $request->status ?? $status,
     ];
 }
