@@ -2,18 +2,17 @@
 
 namespace App\Traits;
 
+use Illuminate\Database\Eloquent\Model;
+
 trait TracksChangesTrait
 {
 
-public function getChangedData(array $oldData, array $newData): array
+public function getChangedDataFromModel(Model $model, array $oldData): array
 {
+    $newData = $model->toArray();
+
     $alwaysTrack = ['creationDate', 'creationDateHijri'];
-    $ignoredKeys = [
-        'updated_at',
-        'updated_by',
-        'updated_by_type',
-        'changed_data'
-    ];
+    $ignoredKeys = ['updated_at', 'updated_by', 'updated_by_type', 'changed_data'];
 
     $changed = [];
 
@@ -24,16 +23,14 @@ public function getChangedData(array $oldData, array $newData): array
 
         $oldValue = $oldData[$key] ?? null;
 
-        // إذا الحقل دائم التتبع أو حصل تغيير فيه
         if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
             $changed[$key] = [
                 'old' => $oldValue,
                 'new' => $newValue,
             ];
 
-            // لو المفتاح من نوع *_id
             if (str_ends_with($key, '_id')) {
-                $relation = str_replace('_id', '', $key); // زي city من city_id
+                $relation = str_replace('_id', '', $key);
 
                 try {
                     $oldModel = $this->getOriginalModelFromId($relation, $oldValue);
@@ -47,7 +44,7 @@ public function getChangedData(array $oldData, array $newData): array
                         $changed[$key]['new_name'] = $newModel->name ?? null;
                     }
                 } catch (\Throwable $e) {
-                    // تجاهل الخطأ بدون كسر التنفيذ
+                    // تجاهل الأخطاء
                 }
             }
         }
@@ -55,6 +52,7 @@ public function getChangedData(array $oldData, array $newData): array
 
     return $changed;
 }
+
 
 
 

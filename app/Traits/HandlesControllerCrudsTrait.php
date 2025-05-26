@@ -97,13 +97,23 @@ protected function mergeWithOld($request, $model, array $fields): array
     return $result;
 }
 
+    // protected function applyChangesAndSave($model, array $data, array $oldData): void
+    // {
+    //     $model->update($data);
+    //     $changedData = $this->getChangedData($oldData, $model->fresh()->toArray());
+    //     $model->changed_data = $changedData;
+    //     $model->save();
+    // }
+
+
     protected function applyChangesAndSave($model, array $data, array $oldData): void
-    {
-        $model->update($data);
-        $changedData = $this->getChangedData($oldData, $model->fresh()->toArray());
-        $model->changed_data = $changedData;
-        $model->save();
-    }
+{
+    $model->update($data);
+    $model = $model->fresh(); // عشان تبقى العلاقات موجودة
+    $changedData = $this->getChangedDataFromModel($model, $oldData);
+    $model->changed_data = $changedData;
+    $model->save();
+}
 
 
     protected function loadCommonRelations($model): void

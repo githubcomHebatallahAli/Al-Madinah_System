@@ -89,7 +89,7 @@ public function update(BranchRequest $request, string $id)
         return $this->respondWithResource($Branch, "لا يوجد تغييرات فعلية");
     }
 
-    $Branch->load('city');
+    // $Branch->load('city');
 
     $this->applyChangesAndSave($Branch, $updateData, $oldData);
 
