@@ -107,6 +107,7 @@ class RoleController extends Controller
     $changedData = $Role->getChangedData($oldData, $Role->fresh()->toArray());
     $Role->changed_data = $changedData;
     $Role->save();
+    $this->loadCommonRelations($Role);
 return $this->respondWithResource($Role, "Role updated successfully.");
 }
 

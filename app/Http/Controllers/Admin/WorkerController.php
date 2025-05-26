@@ -129,15 +129,15 @@ public function update(WorkerRequest $request, string $id)
         $worker->cv = $cvPath;
         $worker->save();
     }
-     $this->loadCreatorRelations($worker);
-    $this->loadUpdaterRelations($worker);
-       return response()->json([
-             'data' =>new  WorkerResource($worker),
-             'message' => "Worker updated successfully."
-        ]);
-    // $this->loadCommonRelations($worker);
+    //  $this->loadCreatorRelations($worker);
+    // $this->loadUpdaterRelations($worker);
+    //    return response()->json([
+    //          'data' =>new  WorkerResource($worker),
+    //          'message' => "Worker updated successfully."
+    //     ]);
+    $this->loadCommonRelations($worker);
 
-    // return $this->respondWithResource($worker, "Worker updated successfully.");
+    return $this->respondWithResource($worker, "Worker updated successfully.");
 }
 
     public function active(string $id)
@@ -193,7 +193,7 @@ public function notOk(string $id)
         'updated_by_type' => $updatedByType,
     ]);
 
-    $changedData = $this->getChangedData($oldData, $worker->fresh()->toArray());
+    $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
     $worker->changed_data = $changedData;
     $worker->save();
 
@@ -237,7 +237,7 @@ public function ok(string $id)
         'updated_by_type' => $updatedByType,
     ]);
 
-    $changedData = $this->getChangedData($oldData, $worker->fresh()->toArray());
+    $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
     $worker->changed_data = $changedData;
     $worker->save();
 
