@@ -2,8 +2,10 @@
 
 namespace App\Traits;
 
-use Illuminate\Support\Collection;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
 
 trait HandlesControllerCrudsTrait
 {
@@ -46,53 +48,42 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     }
 
 
-protected function prepareUpdateMeta($request, ?string $status = null): array
+protected function prepareUpdateMeta($request, $model, ?string $status = null): array
 {
     $updatedBy = $this->getUpdatedByIdOrFail();
 
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
+        // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        // 'creationDateHijri' => $this->getHijriDate(),
+        'creationDate' => optional($model->created_at)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDateFromDate($model->created_at),
         'status' => $request->status ?? $status,
     ];
 }
 
-// // protected function ensureUpdatedBy(&$data)
-// // {
-// //     if (!isset($data['updated_by'])) {
-// //         $data['updated_by'] = $this->getUpdatedById();
-// //     }
-// //     if (!isset($data['updated_by_type'])) {
-// //         $data['updated_by_type'] = $this->getUpdatedByType();
-// //     }
-// // }
+public function getHijriDateFromDate($date)
+{
+    if (!$date) {
+        return null;
+    }
 
-// protected function prepareUpdateMeta($request,? string $status = null): array
-// {
-//     return [
-//         'updated_by' => $this->getUpdatedByIdOrFail(),
-//         'updated_by_type' => $this->getUpdatedByType(),
-//         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-//         'creationDateHijri' => $this->getHijriDate(),
-//         'status' => $request->status ?? $status,
-//     ];
-// }
+    $date = Carbon::parse($date)->timezone('Asia/Riyadh');
 
+    $response = Http::get('https://api.aladhan.com/v1/gToH', [
+        'date' => $date->format('d-m-Y'),
+    ]);
 
-// protected function prepareUpdateMeta($request, ?string $status = null): array
-// {
-//     $meta = [
-//         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-//         'creationDateHijri' => $this->getHijriDate(),
-//         'status' => $request->status ?? $status,
-//     ];
+    if (!$response->ok() || empty($response['data']['hijri'])) {
+        return null;
+    }
 
-//     $this->ensureUpdatedBy($meta);
+    $hijri = $response['data']['hijri'];
 
-//     return $meta;
-// }
+    return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$date->format('H:i:s')}";
+}
+
 
 protected function mergeWithOld($request, $model, array $fields): array
 {
