@@ -29,21 +29,21 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     ]);
 }
 
-//     protected function prepareCreationMetaData(): array
-//     {
-//         $hijriDate = $this->getHijriDate();
-//         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-//         $addedById = $this->getAddedByIdOrFail();
-//         $addedByType = $this->getAddedByType();
+    protected function prepareCreationMetaData(): array
+    {
+        $hijriDate = $this->getHijriDate();
+        $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $addedById = $this->getAddedByIdOrFail();
+        $addedByType = $this->getAddedByType();
 
-//         return [
-//             'creationDate' => $gregorianDate,
-//             'creationDateHijri' => $hijriDate,
-//             'status' => 'active',
-//             'added_by' => $addedById,
-//             'added_by_type' => $addedByType,
-//         ];
-//     }
+        return [
+            'creationDate' => $gregorianDate,
+            'creationDateHijri' => $hijriDate,
+            'status' => 'active',
+            'added_by' => $addedById,
+            'added_by_type' => $addedByType,
+        ];
+    }
 
 
 protected function prepareUpdateMeta($request, ?string $status = null): array
