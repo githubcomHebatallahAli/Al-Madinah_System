@@ -124,6 +124,7 @@ public function update(WorkerRequest $request, string $id)
         $worker->cv = $cvPath;
         $worker->save();
     }
+    $this->loadCommonRelations($worker);
 
     return $this->respondWithResource($worker, "Worker updated successfully.");
 }

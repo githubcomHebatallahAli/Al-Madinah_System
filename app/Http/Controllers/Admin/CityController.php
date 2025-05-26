@@ -70,16 +70,13 @@ public function update(CityRequest $request, string $id)
     $city = City::findOrFail($id);
     $oldData = $city->toArray();
 
-    // Prepare the basic update data
     $updateData = $request->only(['name', 'status']);
 
-    // Add metadata including status fallback
     $updateData = array_merge(
         $updateData,
         $this->prepareUpdateMeta($request, $city->status)
     );
 
-    // Check for actual changes
     $hasChanges = false;
     foreach ($updateData as $key => $value) {
         if ($city->$key != $value) {
@@ -93,10 +90,8 @@ public function update(CityRequest $request, string $id)
         return $this->respondWithResource($city, "لا يوجد تغييرات فعلية");
     }
 
-    // Apply updates
     $city->update($updateData);
 
-    // Track changes
     $changedData = $this->getChangedData($oldData, $city->fresh()->toArray());
     $city->changed_data = $changedData;
     $city->save();

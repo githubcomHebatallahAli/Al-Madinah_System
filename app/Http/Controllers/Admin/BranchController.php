@@ -69,16 +69,13 @@ public function update(BranchRequest $request, string $id)
     $Branch = Branch::findOrFail($id);
     $oldData = $Branch->toArray();
 
-    // Prepare the basic update data
     $updateData = $request->only(['name','address','city_id','status']);
 
-    // Add metadata including status fallback
     $updateData = array_merge(
         $updateData,
         $this->prepareUpdateMeta($request, $Branch->status)
     );
 
-    // Check for actual changes
     $hasChanges = false;
     foreach ($updateData as $key => $value) {
         if ($Branch->$key != $value) {
@@ -92,10 +89,8 @@ public function update(BranchRequest $request, string $id)
         return $this->respondWithResource($Branch, "لا يوجد تغييرات فعلية");
     }
 
-    // Apply updates
     $Branch->update($updateData);
 
-    // Track changes
     $changedData = $this->getChangedData($oldData, $Branch->fresh()->toArray());
     $Branch->changed_data = $changedData;
     $Branch->save();

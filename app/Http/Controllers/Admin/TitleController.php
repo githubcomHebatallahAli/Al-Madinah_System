@@ -55,16 +55,13 @@ public function update(TitleRequest $request, string $id)
     $Title = Title::findOrFail($id);
     $oldData = $Title->toArray();
 
-    // Prepare the basic update data
     $updateData = $request->only(['name','branch_id','status']);
 
-    // Add metadata including status fallback
     $updateData = array_merge(
         $updateData,
         $this->prepareUpdateMeta($request, $Title->status)
     );
 
-    // Check for actual changes
     $hasChanges = false;
     foreach ($updateData as $key => $value) {
         if ($Title->$key != $value) {
@@ -78,15 +75,13 @@ public function update(TitleRequest $request, string $id)
         return $this->respondWithResource($Title, "لا يوجد تغييرات فعلية");
     }
 
-    // Apply updates
     $Title->update($updateData);
 
-    // Track changes
     $changedData = $this->getChangedData($oldData, $Title->fresh()->toArray());
     $Title->changed_data = $changedData;
     $Title->save();
 
-    // $this->loadCommonRelations($Title);
+    $this->loadCommonRelations($Title);
     return $this->respondWithResource($Title, "تم تحديث الوظيفه بنجاح");
 }
 
