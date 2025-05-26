@@ -63,16 +63,12 @@ protected function respondWithCollection(Collection $collection, ?string $messag
 
 protected function prepareUpdateMeta($request, $model, ?string $status = null): array
 {
-    $creationDate = $model->creationDate;
 
-    if (! $creationDate instanceof \Carbon\Carbon && $creationDate !== null) {
-        $creationDate = \Carbon\Carbon::parse($creationDate);
-    }
 
     return [
         'updated_by' => $this->getUpdatedByIdOrFail(),
         'updated_by_type' => $this->getUpdatedByType(),
-        'creationDate' => $creationDate ? $creationDate->timezone('Asia/Riyadh')->format('Y-m-d H:i:s') : null,
+           'creationDate' => $model->creationDate,            // ناخدها كما هي
         'creationDateHijri' => $model->creationDateHijri, // مفترض إنها محفوظة مسبقاً
         'status' => $request->status ?? $status,
     ];
