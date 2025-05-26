@@ -19,41 +19,41 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    public function boot(): void
+//     public function boot(): void
+//     {
+//         Gate::define('manage_users', function($user) {
+//             return    Auth::guard('admin')->check()&& $user->role_id == 1;
+//         });
+
+// Gate::define('manage_system', function ($user) {
+//     return $user && (
+//         ($user instanceof Admin && $user->role_id == 1) ||
+//         ($user instanceof WorkerLogin && $user->role_id == 2)
+//     );
+// });
+
+//     }
+
+
+        public function boot(): void
     {
         Gate::define('manage_users', function($user) {
-            return    Auth::guard('admin')->check()&& $user->role_id == 1;
+            return Auth::guard('admin')->check() && $user->role_id == 1 && $user->status == 'active';
         });
 
-Gate::define('manage_system', function ($user) {
-    return $user && (
-        ($user instanceof Admin && $user->role_id == 1) ||
-        ($user instanceof WorkerLogin && $user->role_id == 2)
-    );
-});
+        Gate::define('manage_system', function ($user) {
+            if (!$user) return false;
 
+            if ($user instanceof Admin && $user->role_id == 1) {
+                return $user->status == 'active';
+            }
+
+            if ($user instanceof WorkerLogin && $user->role_id == 2) {
+                return $user->status == 'active' && $user->dashboardAccess == 'ok';
+            }
+
+            return false;
+        });
     }
-
-
-    //     public function boot(): void
-    // {
-    //     Gate::define('manage_users', function($user) {
-    //         return Auth::guard('admin')->check() && $user->role_id == 1 && $user->status == 'active';
-    //     });
-
-    //     Gate::define('manage_system', function ($user) {
-    //         if (!$user) return false;
-
-    //         if ($user instanceof Admin && $user->role_id == 1) {
-    //             return $user->status == 'active';
-    //         }
-
-    //         if ($user instanceof WorkerLogin && $user->role_id == 2) {
-    //             return $user->status == 'active' && $user->dashboardAccess == 'ok';
-    //         }
-
-    //         return false;
-    //     });
-    // }
 
 }
