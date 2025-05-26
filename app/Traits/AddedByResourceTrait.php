@@ -13,24 +13,32 @@ trait AddedByResourceTrait
         );
     }
 
-    // public function updatedByAttribute()
-    // {
-    //     // إذا لم يكن هناك تغييرات حقيقية
-    //     if (!$this->shouldShowUpdatedBy()) {
-    //         return null;
-    //     }
 
-    //     return $this->formatUserData(
-    //         $this->updater,
-    //         $this->updated_by_type ?? 'unknown'
-    //     );
-    // }
+
+// public function updatedByAttribute()
+// {
+
+//     if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
+//         return null;
+//     }
+
+//     return $this->formatUserData(
+//         $this->updater,
+//         $this->updated_by_type ?? 'unknown'
+//     );
+// }
+
 
 public function updatedByAttribute()
 {
-    // Return null if this is a new record or hasn't been updated yet
+    // إذا لم يكن هناك updated_by أو لم يتم التحديث بعد الإنشاء
     if (empty($this->updated_by) || $this->created_at->equalTo($this->updated_at)) {
         return null;
+    }
+
+    // إذا كان التحديث بواسطة نفس المستخدم الذي أنشأ السجل
+    if ($this->updated_by == $this->added_by && $this->updated_by_type == $this->added_by_type) {
+        return $this->addedByAttribute();
     }
 
     return $this->formatUserData(
@@ -39,26 +47,12 @@ public function updatedByAttribute()
     );
 }
 
-//  protected function shouldShowUpdatedBy(): bool
-//     {
-//         // إذا كان الموديل يستخدم TracksChangesTrait
-//         if (method_exists($this->resource, 'hasRealChanges')) {
-//             return $this->resource->hasRealChanges();
-//         }
-
-//         // التحقق الأساسي إذا لم يكن هناك Trait
-//         return $this->resource->updated_by != $this->resource->added_by ||
-//                $this->resource->updated_by_type != $this->resource->added_by_type;
-//     }
-
 protected function shouldShowUpdatedBy(): bool
 {
-    // If the model uses TracksChangesTrait, rely on its hasRealChanges method
+
     if (method_exists($this->resource, 'hasRealChanges')) {
         return $this->resource->hasRealChanges();
     }
-
-    // Basic check - always show updater if updated_by is set
     return $this->resource->updated_by !== null;
 }
 
@@ -102,105 +96,4 @@ protected function shouldShowUpdatedBy(): bool
     }
 }
 
-
-
-// namespace App\Traits;
-
-// use App\Models\Admin;
-// use App\Models\Worker;
-
-// trait AddedByResourceTrait
-// {
-
-// public function addedByAttribute()
-// {
-//     return $this->creator ? (function () {
-//         $creator = $this->creator;
-//         $isAdmin = $this->added_by_type === \App\Models\Admin::class;
-//         $isWorker = $this->added_by_type === \App\Models\Worker::class;
-
-//         $email = null;
-//         $roleId = null;
-//         $roleName = '';
-
-//         if ($isAdmin) {
-//             $email = $creator->email ?? null;
-//             $roleId = $creator->role_id ?? null;
-//             $roleName = optional($creator->role)->name ?? '';
-//         }
-
-//         if ($isWorker) {
-//             $email = optional($creator->workerLogin)->email ?? null;
-//             $roleId = $creator->role_id
-//                 ?? optional($creator->workerLogin)->role_id
-//                 ?? optional(optional($creator->workerLogin)->role)->id;
-
-//             $roleName = optional($creator->role)->name
-//                 ?? optional(optional($creator->workerLogin)->role)->name
-//                 ?? '';
-//         }
-
-//         return [
-//             'id' => $creator->id,
-//             'name' => $creator->name,
-//             'email' => $email,
-//             'role_id' => $roleId,
-//             'role_name' => $roleName,
-//             'type' => $this->added_by_type,
-//             'branch' => $isWorker ? [
-//                 'id' => optional($creator->branch)->id,
-//                 'name' => optional($creator->branch)->name,
-//             ] : null,
-//         ];
-//     })() : null;
-// }
-
-
-// public function updatedByAttribute()
-// {
-//     return $this->updater ? (function () {
-//         $updater = $this->updater;
-//         $isAdmin = $this->updated_by_type === \App\Models\Admin::class;
-//         $isWorker = $this->updated_by_type === \App\Models\Worker::class;
-
-//         $email = null;
-//         $roleId = null;
-//         $roleName = '';
-
-//         if ($isAdmin) {
-//             $email = $updater->email ?? null;
-//             $roleId = $updater->role_id ?? null;
-//             $roleName = optional($updater->role)->name ?? '';
-//         }
-
-//         if ($isWorker) {
-//             $email = optional($updater->workerLogin)->email ?? null;
-//             $roleId = $updater->role_id
-//                 ?? optional($updater->workerLogin)->role_id
-//                 ?? optional(optional($updater->workerLogin)->role)->id;
-
-//             $roleName = optional($updater->role)->name
-//                 ?? optional(optional($updater->workerLogin)->role)->name
-//                 ?? '';
-//         }
-
-//         return [
-//             'id' => $updater->id,
-//             'name' => $updater->name,
-//             'email' => $email,
-//             'role_id' => $roleId,
-//             'role_name' => $roleName,
-//             'type' => $this->updated_by_type,
-//             'branch' => $isWorker ? [
-//                 'id' => optional($updater->branch)->id,
-//                 'name' => optional($updater->branch)->name,
-//             ] : null,
-//         ];
-//     })() : null;
-// }
-
-
-
-
-// }
 

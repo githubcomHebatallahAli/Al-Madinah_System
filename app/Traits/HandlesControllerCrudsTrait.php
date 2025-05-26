@@ -29,8 +29,6 @@ protected function respondWithCollection(Collection $collection, ?string $messag
     ]);
 }
 
-
-    // ======== تجهيز بيانات الإنشاء المشتركة ========
     protected function prepareCreationMetaData(): array
     {
         $hijriDate = $this->getHijriDate();
@@ -44,24 +42,44 @@ protected function respondWithCollection(Collection $collection, ?string $messag
             'status' => 'active',
             'added_by' => $addedById,
             'added_by_type' => $addedByType,
-            // 'updated_by' => $addedById, // = added_by
-            // 'updated_by_type' => $addedByType,
         ];
     }
 
+protected function ensureUpdatedBy(&$data)
+{
+    if (!isset($data['updated_by'])) {
+        $data['updated_by'] = $this->getUpdatedById();
+    }
+    if (!isset($data['updated_by_type'])) {
+        $data['updated_by_type'] = $this->getUpdatedByType();
+    }
+}
+
+// protected function prepareUpdateMeta($request,? string $status = null): array
+// {
+//     return [
+//         'updated_by' => $this->getUpdatedByIdOrFail(),
+//         'updated_by_type' => $this->getUpdatedByType(),
+//         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//         'creationDateHijri' => $this->getHijriDate(),
+//         'status' => $request->status ?? $status,
+//     ];
+// }
 
 
 protected function prepareUpdateMeta($request, ?string $status = null): array
 {
-    return [
-        'updated_by' => $this->getUpdatedByIdOrFail(),
-        'updated_by_type' => $this->getUpdatedByType(),
+    $meta = [
         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         'creationDateHijri' => $this->getHijriDate(),
         'status' => $request->status ?? $status,
     ];
+
+    $this->ensureUpdatedBy($meta);
+
+    return $meta;
 }
-// ======== دمج البيانات الجديدة مع القديمة إذا لم تُرسل ========
+
 protected function mergeWithOld($request, $model, array $fields): array
 {
     $result = [];
@@ -73,8 +91,6 @@ protected function mergeWithOld($request, $model, array $fields): array
     return $result;
 }
 
-
-    // ======== تطبيق التحديثات وحفظ التغييرات ========
     protected function applyChangesAndSave($model, array $data, array $oldData): void
     {
         $model->update($data);
@@ -83,7 +99,7 @@ protected function mergeWithOld($request, $model, array $fields): array
         $model->save();
     }
 
-    // ======== تحميل العلاقات للموديل الواحد ========
+
     protected function loadCommonRelations($model): void
     {
         if (method_exists($this, 'loadCreatorRelations')) {
@@ -95,7 +111,7 @@ protected function mergeWithOld($request, $model, array $fields): array
         }
     }
 
-    // ======== تحميل العلاقات لمجموعة موديلات ========
+
     protected function loadRelationsForCollection(Collection $collection): void
     {
         foreach ($collection as $model) {
@@ -103,7 +119,6 @@ protected function mergeWithOld($request, $model, array $fields): array
         }
     }
 
-    // ======== تغيير حالة الموديل مع رسالة جاهزة ========
     public function changeStatusSimple($model, string $status): JsonResponse
     {
         $oldStatus = $model->status;
@@ -143,7 +158,6 @@ protected function mergeWithOld($request, $model, array $fields): array
         ]);
     }
 
-    // ======== رسائل حالة مفعلة ========
     protected function getActivatedStatusMessage(string $status): string
     {
         return match ($status) {
@@ -153,7 +167,6 @@ protected function mergeWithOld($request, $model, array $fields): array
         };
     }
 
-    // ======== رسائل حالة مفعلة مسبقا ========
     protected function getAlreadyStatusMessage(string $status): string
     {
         return match ($status) {
@@ -163,6 +176,5 @@ protected function mergeWithOld($request, $model, array $fields): array
         };
     }
 
-    // ======== يجب تعريف هذا في الكنترولر ليخبر التريت بأي Resource يستخدم ========
     abstract protected function getResourceClass(): string;
 }

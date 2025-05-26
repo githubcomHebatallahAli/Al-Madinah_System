@@ -82,7 +82,6 @@ public function update(WorkerRequest $request, string $id)
 
     $oldData = $worker->toArray();
 
-    // تأكد من وجود قيمة افتراضية لـ status
     $request->merge(['status' => $request->status ?? $worker->status ?? 'active']);
 
     $fieldsToCheck = ['Worker_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
@@ -114,6 +113,7 @@ public function update(WorkerRequest $request, string $id)
 
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
 
+     $this->ensureUpdatedBy($updateData);
     $this->applyChangesAndSave($worker, $updateData, $oldData);
 
     if ($request->hasFile('cv')) {
