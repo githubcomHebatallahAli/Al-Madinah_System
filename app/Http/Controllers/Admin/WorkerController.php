@@ -44,7 +44,7 @@ public function create(WorkerRequest $request)
     ]);
 
     $data = array_merge($data, $this->prepareCreationMetaData(), [
-        'dashboardAccess' => 'ok',
+        'dashboardAccess' => 'notOk',
     ]);
 
     $Worker = Worker::create($data);
