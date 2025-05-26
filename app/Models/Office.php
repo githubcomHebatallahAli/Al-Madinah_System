@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Office extends Model
 {
-    use HasFactory,TracksChangesTrait;
+    use HasFactory,TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
         'added_by',
         'added_by_type',
