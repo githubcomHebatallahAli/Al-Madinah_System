@@ -31,11 +31,6 @@ class Worker extends Model
 
 
 
-protected $attributes = [
-    'status' => 'active',
-    'dashboardAccess' => 'notOk',
-];
-
     public function workerLogin()
 {
     return $this->hasOne(WorkerLogin::class);
@@ -45,8 +40,6 @@ protected $attributes = [
    protected $casts = [
         'salary' => 'decimal:2',
         'changed_data' => 'array',
-         'status' => 'string',
-    'dashboardAccess' => 'string',
     ];
 
 
