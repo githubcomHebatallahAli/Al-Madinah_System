@@ -29,6 +29,13 @@ class Worker extends Model
         'updated_by_type',
     ];
 
+
+
+protected $attributes = [
+    'status' => 'active',
+    'dashboardAccess' => 'notOk',
+];
+
     public function workerLogin()
 {
     return $this->hasOne(WorkerLogin::class);
@@ -38,6 +45,8 @@ class Worker extends Model
    protected $casts = [
         'salary' => 'decimal:2',
         'changed_data' => 'array',
+         'status' => 'string',
+    'dashboardAccess' => 'string',
     ];
 
 
