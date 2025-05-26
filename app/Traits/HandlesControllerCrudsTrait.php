@@ -66,8 +66,8 @@ protected function prepareUpdateMeta($request, $model, ?string $status = null): 
     return [
         'updated_by' => $this->getUpdatedByIdOrFail(),
         'updated_by_type' => $this->getUpdatedByType(),
-        'creationDate' => optional($model->creationDate)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-'creationDateHijri' => $model->creationDateHijri,// مفترض إنها محفوظة مسبقاً
+          'creationDate' => optional($model->creationDate)->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $model->creationDateHijri,
         'status' => $request->status ?? $status,
     ];
 }
