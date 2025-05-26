@@ -110,7 +110,8 @@ protected function mergeWithOld($request, $model, array $fields): array
 {
     $model->update($data);
     $model = $model->fresh(); // عشان تبقى العلاقات موجودة
-    $changedData = $this->getChangedDataFromModel($model, $oldData);
+    $changedData = $this->getChangedData($oldData, $model->toArray());
+
     $model->changed_data = $changedData;
     $model->save();
 }
