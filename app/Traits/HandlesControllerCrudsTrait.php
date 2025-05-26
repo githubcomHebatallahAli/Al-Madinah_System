@@ -63,12 +63,10 @@ protected function respondWithCollection(Collection $collection, ?string $messag
 
 protected function prepareUpdateMeta($request, $model, ?string $status = null): array
 {
-
-
     return [
         'updated_by' => $this->getUpdatedByIdOrFail(),
         'updated_by_type' => $this->getUpdatedByType(),
-           'creationDate' => $model->creationDate,            // ناخدها كما هي
+        'creationDate' => $model->creationDate,            // ناخدها كما هي
         'creationDateHijri' => $model->creationDateHijri, // مفترض إنها محفوظة مسبقاً
         'status' => $request->status ?? $status,
     ];
