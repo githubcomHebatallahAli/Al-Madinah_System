@@ -51,7 +51,7 @@ class TitleController extends Controller
 
 public function update(TitleRequest $request, string $id)
 {
-    $this->authorize('manage_users');
+    $this->authorize('manage_system');
     $Title = Title::findOrFail($id);
     $oldData = $Title->toArray();
 
