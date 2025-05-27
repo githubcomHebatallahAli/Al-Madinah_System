@@ -19,7 +19,7 @@ class TripResource extends JsonResource
             'pilgrimsCount'=> $this ->pilgrimsCount,
             'status'=> $this ->status,
             'creationDate'=> $this ->creationDate,
-            'description'=> $this ->descripion,
+            'description'=> $this ->description,
             'creationDateHijri'=> $this ->creationDateHijri,
             'changed_data'=> $this ->changed_data,
             'added_by' => $this->addedByAttribute(),
