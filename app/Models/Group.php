@@ -29,10 +29,6 @@ class Group extends Model
         return $this->belongsTo(Campaign::class);
     }
 
-//             public function admin()
-// {
-//     return $this->belongsTo(Admin::class, 'admin_id');
-// }
 
 public function creator()
 {
