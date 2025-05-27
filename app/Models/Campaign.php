@@ -56,5 +56,19 @@ public function updater()
     'changed_data' => 'array',
 ];
 
+        protected static function booted()
+    {
+        static::created(function ($campaign) {
+            $campaign->office->increment('campaignsCount');
+        });
+
+        static::updated(function ($campaign) {
+            if ($campaign->wasChanged('office_id')) {
+                Office::find($campaign->getOriginal('office_id'))->decrement('campaignsCount');
+                $campaign->office->increment('campaignsCount');
+            }
+        });
+
+    }
 
 }
