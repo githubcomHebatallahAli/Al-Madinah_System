@@ -116,11 +116,9 @@ public function updater()
         }
     });
 
-    // عند تحديث العامل فقط
     static::updated(function (Worker $worker) {
-        // إذا تغير المسمى الوظيفي
         if ($worker->wasChanged('title_id')) {
-            // تحديث المسمى القديم
+
             $oldTitle = Title::find($worker->getOriginal('title_id'));
             if ($oldTitle) {
                 $oldTitle->decrement('workersCount');
@@ -129,7 +127,6 @@ public function updater()
                 }
             }
 
-            // تحديث المسمى الجديد
             if ($worker->title) {
                 $worker->title->increment('workersCount');
                 if ($worker->title->branch) {

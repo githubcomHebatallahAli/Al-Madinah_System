@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('office_id')->constrained('offices')->cascadeOnDelete();
             $table->string('name');
             $table->unsignedBigInteger('groupsCount')->default(0);
+            $table->unsignedBigInteger('workersCount')->default(0);
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
