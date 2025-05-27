@@ -43,7 +43,7 @@ class RoleController extends Controller
     ]);
 
     $data = array_merge($data, $this->prepareCreationMetaData(), [
-        'guardName' => 'worker',
+        'guardName' => 'Role',
     ]);
 
     $Role = Role::create($data);
@@ -100,7 +100,7 @@ class RoleController extends Controller
     }
 
 
-    $updateData['guardName'] = $updateData['guardName'] ?? 'worker';
+    $updateData['guardName'] = $updateData['guardName'] ?? 'Role';
 
         $Role->update($updateData);
 
@@ -133,7 +133,8 @@ return $this->respondWithResource($Role, "Role updated successfully.");
         return RoleResource::class;
     }
 
-    public function admin(string $id)
+
+public function admin(string $id)
 {
     $this->authorize('manage_system');
 
@@ -142,9 +143,32 @@ return $this->respondWithResource($Role, "Role updated successfully.");
         return response()->json(['message' => "Role not found."], 404);
     }
 
-    return $this->changeStatusSimple($Role, 'admin');
-}
+    $oldData = $Role->toArray();
 
+    if ($Role->guardName === 'admin') {
+        $this->loadCommonRelations($Role);
+        return $this->respondWithResource($Role, 'Role guardName is already set to admin');
+    }
+
+    $Role->guardName = 'admin';
+    $Role->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $Role->creationDateHijri = $this->getHijriDate();
+    $Role->updated_by = $this->getUpdatedByIdOrFail();
+    $Role->updated_by_type = $this->getUpdatedByType();
+    $Role->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $Role->creationDate,
+        'creationDateHijri' => $Role->creationDateHijri,
+    ];
+
+    $changedData = $Role->getChangedData($oldData, array_merge($Role->fresh()->toArray(), $metaForDiffOnly));
+    $Role->changed_data = $changedData;
+    $Role->save();
+
+    $this->loadCommonRelations($Role);
+    return $this->respondWithResource($Role, 'Role guardName set to admin');
+}
 
 public function worker(string $id)
 {
@@ -155,8 +179,33 @@ public function worker(string $id)
         return response()->json(['message' => "Role not found."], 404);
     }
 
-    return $this->changeStatusSimple($Role, 'worker');
+    $oldData = $Role->toArray();
+
+    if ($Role->guardName === 'worker') {
+        $this->loadCommonRelations($Role);
+        return $this->respondWithResource($Role, 'Role guardName is already set to worker');
+    }
+
+    $Role->guardName = 'worker';
+    $Role->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $Role->creationDateHijri = $this->getHijriDate();
+    $Role->updated_by = $this->getUpdatedByIdOrFail();
+    $Role->updated_by_type = $this->getUpdatedByType();
+    $Role->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $Role->creationDate,
+        'creationDateHijri' => $Role->creationDateHijri,
+    ];
+
+    $changedData = $Role->getChangedData($oldData, array_merge($Role->fresh()->toArray(), $metaForDiffOnly));
+    $Role->changed_data = $changedData;
+    $Role->save();
+
+    $this->loadCommonRelations($Role);
+    return $this->respondWithResource($Role, 'Role guardName set to worker');
 }
+
 
 
   }

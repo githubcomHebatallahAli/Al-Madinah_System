@@ -67,10 +67,10 @@ public function updater()
             }
         });
 
-        // إذا كان لديك حذف
-        static::deleted(function ($store) {
-            $store->branch->decrement('storesCount');
-        });
+        // // إذا كان لديك حذف
+        // static::deleted(function ($store) {
+        //     $store->branch->decrement('storesCount');
+        // });
     }
 
 
