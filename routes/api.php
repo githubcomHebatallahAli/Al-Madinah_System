@@ -8,4 +8,5 @@ require __DIR__ . '/Apis/Admin/worker.php';
 require __DIR__ . '/Apis/Admin/role.php';
 require __DIR__ . '/Apis/Admin/store.php';
 require __DIR__ . '/Apis/Admin/trip.php';
+require __DIR__ . '/Apis/Admin/office.php';
 

@@ -32,10 +32,11 @@ class Office extends Model
         return $this->hasMany(Campaign::class);
     }
 
-//         public function admin()
-// {
-//     return $this->belongsTo(Admin::class, 'admin_id');
-// }
+            public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
 
 public function creator()
 {
