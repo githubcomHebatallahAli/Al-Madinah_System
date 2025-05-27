@@ -40,6 +40,21 @@ public function updater()
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
+        protected static function booted()
+    {
+        static::created(function ($group) {
+            $group->campaign->increment('groupsCount');
+        });
+
+        static::updated(function ($group) {
+            if ($group->wasChanged('campaign_id')) {
+                Campaign::find($group->getOriginal('campaign_id'))->decrement('groupsCount');
+                $group->campaign->increment('groupsCount');
+            }
+        });
+
+    }
+
 
 
     protected $casts = [
