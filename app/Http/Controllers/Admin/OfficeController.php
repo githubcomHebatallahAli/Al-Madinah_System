@@ -56,12 +56,13 @@ public function update(OfficeRequest $request, string $id)
     $Office = Office::findOrFail($id);
     $oldData = $Office->toArray();
 
-    $updateData = $request->only(['branch_id','name','address','phoNum1','phoNum2','status']);
+    $updateData = $request->only(['name','address','branch_id','phoNum1','phoNum2','status']);
 
     $updateData = array_merge(
         $updateData,
         $this->prepareUpdateMeta($request, $Office->status)
     );
+
 
     $hasChanges = false;
     foreach ($updateData as $key => $value) {
@@ -77,15 +78,12 @@ public function update(OfficeRequest $request, string $id)
     }
 
     $Office->update($updateData);
-
     $changedData = $Office->getChangedData($oldData, $Office->fresh()->toArray());
     $Office->changed_data = $changedData;
     $Office->save();
 
-
-
     $this->loadCommonRelations($Office);
-    return $this->respondWithResource($Office, "تم تحديث المكاتب بنجاح");
+    return $this->respondWithResource($Office, "تم تحديث المكتب بنجاح");
 }
 
 public function edit(string $id)
@@ -100,9 +98,9 @@ public function edit(string $id)
     return $this->respondWithResource($Office, "Office retrieved for editing.");
 }
 
-    public function active(string $id)
+        public function active(string $id)
     {
-        $this->authorize('manage_users');
+         $this->authorize('manage_users');
         $Office = Office::findOrFail($id);
 
         return $this->changeStatusSimple($Office, 'active');
@@ -110,7 +108,7 @@ public function edit(string $id)
 
     public function notActive(string $id)
     {
-        $this->authorize('manage_users');
+         $this->authorize('manage_users');
         $Office = Office::findOrFail($id);
 
         return $this->changeStatusSimple($Office, 'notActive');
