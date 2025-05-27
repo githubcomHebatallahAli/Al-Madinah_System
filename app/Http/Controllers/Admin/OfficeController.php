@@ -63,7 +63,7 @@ public function update(OfficeRequest $request, string $id)
         $this->prepareUpdateMeta($request, $Office->status)
     );
 
-     dd($updateData);
+    
 
 
     $hasChanges = false;
