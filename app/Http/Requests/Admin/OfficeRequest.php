@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
 class OfficeRequest extends FormRequest
 {
@@ -22,7 +24,7 @@ class OfficeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'branch_id' => 'required|exists:branches,id',
+            'branch_id' => 'nullable|exists:branches,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
@@ -31,5 +33,14 @@ class OfficeRequest extends FormRequest
             'phoNum1' =>'nullable|string',
             'phoNum2' =>'nullable|string',
         ];
+    }
+
+      public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success'   => false,
+            'message'   => 'Validation errors',
+            'data'      => $validator->errors()
+        ]));
     }
 }

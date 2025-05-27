@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 
-class StoreRequest extends FormRequest
+class CampaignRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,16 +24,15 @@ class StoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-           'branch_id' => 'required|exists:branches,id',
+           'office_id' => 'required|exists:offices,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'name' =>'required|string',
-            'address' =>'required|string',
         ];
     }
 
-      public function failedValidation(Validator $validator)
+          public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'success'   => false,

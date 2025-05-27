@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
 class WorkerRequest extends FormRequest
 {
@@ -56,5 +57,14 @@ class WorkerRequest extends FormRequest
             //     Rule::in(['App\Models\Admin', 'App\Models\Worker']),
             // ],
         ];
+    }
+
+      public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success'   => false,
+            'message'   => 'Validation errors',
+            'data'      => $validator->errors()
+        ]));
     }
 }
