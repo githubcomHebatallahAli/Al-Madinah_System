@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\Admin;
-use App\Models\Worker;
 use App\Models\WorkerLogin;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -31,6 +30,23 @@ Gate::define('manage_system', function ($user) {
         ($user instanceof WorkerLogin && $user->role_id == 2)
     );
 });
+
+// Gate::define('manage_system', function ($user) {
+//     if ($user instanceof Admin) {
+//         return $user->role_id == 1 && $user->status === 'active';
+//     }
+
+//     if ($user instanceof WorkerLogin) {
+//         $worker = $user->worker;
+
+//         return $user->role_id == 2 &&
+//                $worker &&
+//                $worker->status === 'active' &&
+//                $worker->dashboardAccess === 'ok';
+//     }
+
+//     return false;
+// });
 
 
 

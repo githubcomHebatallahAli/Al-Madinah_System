@@ -17,62 +17,100 @@ class AdminAuthController extends Controller
     use HijriDateTrait;
     use TracksChangesTrait;
 
-       public function login(LoginRequest $request)
-    {
-        $validator = Validator::make($request->all(), $request->rules());
-
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        if (!$token = auth()->guard('admin')->attempt($validator->validated())) {
-            return response()->json([
-                'message' => 'Invalid data'
-            ], 422);
-        }
-
-        $admin = auth()->guard('admin')->user();
-
-        return $this->createNewToken($token);
-    }
-
-
-    // public function register(AdminRegisterRequest $request)
+    //    public function login(LoginRequest $request)
     // {
-    //     if (!Gate::allows('create', Admin::class)) {
-    //         return response()->json([
-    //             'message' => 'Unauthorized'
-    //         ], 403);
-    //     }
-
     //     $validator = Validator::make($request->all(), $request->rules());
 
+
     //     if ($validator->fails()) {
-    //         return response()->json($validator->errors()->toJson(), 400);
+    //         return response()->json($validator->errors(), 422);
     //     }
 
+    //     if (!$token = auth()->guard('admin')->attempt($validator->validated())) {
+    //         return response()->json([
+    //             'message' => 'Invalid data'
+    //         ], 422);
+    //     }
 
-    //     $adminData = array_merge(
-    //         $validator->validated(),
-    //         ['password' => bcrypt($request->password)],
-    //         ['status' => 'active'],
+    //     $admin = auth()->guard('admin')->user();
 
-    //     );
-
-    //     $admin = Admin::create($adminData);
-
-
-    //     $admin->save();
-
-    //     return response()->json([
-    //         'message' => 'Admin Registration successful',
-    //         'admin' =>new AdminRegisterResource($admin)
-    //     ]);
+    //     return $this->createNewToken($token);
     // }
 
-    public function register(AdminRegisterRequest $request)
+    public function login(LoginRequest $request)
 {
+    $validator = Validator::make($request->all(), $request->rules());
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    if (!$token = auth()->guard('admin')->attempt($validator->validated())) {
+        return response()->json([
+            'message' => 'Invalid data'
+        ], 422);
+    }
+
+    $admin = auth()->guard('admin')->user();
+
+    if (!$admin || $admin->status !== 'active') {
+        auth('admin')->logout();
+        return response()->json([
+            'message' => 'Your account is not active.'
+        ], 403);
+    }
+
+    return $this->createNewToken($token);
+}
+
+
+
+
+//     public function register(AdminRegisterRequest $request)
+// {
+//     if (!Gate::allows('create', Admin::class)) {
+//         return response()->json([
+//             'message' => 'Unauthorized'
+//         ], 403);
+//     }
+
+//     $validator = Validator::make($request->all(), $request->rules());
+
+//     if ($validator->fails()) {
+//         return response()->json($validator->errors()->toJson(), 400);
+//     }
+
+
+//     $hijriDate = $this->getHijriDate();
+//     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+//     $adminData = array_merge(
+//         $validator->validated(),
+//         [
+//             'password' => bcrypt($request->password),
+//             'status' => 'active',
+//             'creationDate' => $gregorianDate,
+//             'creationDateHijri' => $hijriDate,
+//         ]
+//     );
+
+//     $admin = Admin::create($adminData);
+//     return response()->json([
+//         'message' => 'Admin Registration successful',
+//         'admin' => new AdminRegisterResource($admin)
+//     ]);
+// }
+
+public function register(AdminRegisterRequest $request)
+{
+    $currentAdmin = auth('admin')->user();
+
+    if (!$currentAdmin || $currentAdmin->status !== 'active') {
+        return response()->json([
+            'message' => 'Unauthorized. Your account is not active.'
+        ], 403);
+    }
+
     if (!Gate::allows('create', Admin::class)) {
         return response()->json([
             'message' => 'Unauthorized'
@@ -85,7 +123,6 @@ class AdminAuthController extends Controller
         return response()->json($validator->errors()->toJson(), 400);
     }
 
-
     $hijriDate = $this->getHijriDate();
     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
@@ -96,16 +133,17 @@ class AdminAuthController extends Controller
             'status' => 'active',
             'creationDate' => $gregorianDate,
             'creationDateHijri' => $hijriDate,
-            
         ]
     );
 
     $admin = Admin::create($adminData);
+
     return response()->json([
         'message' => 'Admin Registration successful',
         'admin' => new AdminRegisterResource($admin)
     ]);
 }
+
 
 
 

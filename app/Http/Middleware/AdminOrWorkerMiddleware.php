@@ -33,12 +33,12 @@ class AdminOrWorkerMiddleware
 public function handle(Request $request, Closure $next): Response
 {
     if (Auth::guard('admin')->check()) {
-        Auth::shouldUse('admin'); // ⬅️ دي بتخلي auth()->user() يجيب من admin
+        Auth::shouldUse('admin'); // ⬅️ 
         return $next($request);
     }
 
     if (Auth::guard('worker')->check()) {
-        Auth::shouldUse('worker'); // ⬅️ ودي من worker
+        Auth::shouldUse('worker');
         return $next($request);
     }
 

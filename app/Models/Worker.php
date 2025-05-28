@@ -77,27 +77,7 @@ public function updater()
         return $this->hasOneThrough(Branch::class, Title::class, 'id', 'id', 'title_id', 'branch_id');
     }
 
-    // protected static function booted()
-    // {
-    //     static::created(function ($worker) {
-    //         if ($worker->title && $worker->title->branch) {
-    //             $worker->title->branch->increment('workersCount');
-    //         }
-    //     });
 
-    //     static::updated(function ($worker) {
-    //         if ($worker->wasChanged('title_id')) {
-    //             if ($worker->title && $worker->title->branch) {
-    //                 $worker->title->branch->increment('workersCount');
-    //             }
-
-    //             $oldTitle = Title::find($worker->getOriginal('title_id'));
-    //             if ($oldTitle && $oldTitle->branch) {
-    //                 $oldTitle->branch->decrement('workersCount');
-    //             }
-    //         }
-    //     });
-    // }
 
 
     protected static function booted()

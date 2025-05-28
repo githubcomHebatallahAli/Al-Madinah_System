@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\Worker;
 use App\Models\WorkerLogin;
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
@@ -16,6 +17,23 @@ class WorkerAuthController extends Controller
 {
     use HijriDateTrait;
     use TracksChangesTrait;
+// public function login(LoginRequest $request)
+// {
+//     $validator = Validator::make($request->all(), $request->rules());
+
+//     if ($validator->fails()) {
+//         return response()->json($validator->errors(), 422);
+//     }
+
+//     if (!$token = auth()->guard('worker')->attempt($validator->validated())) {
+//         return response()->json([
+//             'message' => 'Invalid data'
+//         ], 422);
+//     }
+
+//     return $this->createNewToken($token);
+// }
+
 public function login(LoginRequest $request)
 {
     $validator = Validator::make($request->all(), $request->rules());
@@ -30,60 +48,24 @@ public function login(LoginRequest $request)
         ], 422);
     }
 
+    $workerLogin = auth()->guard('worker')->user();
+    $worker = $workerLogin->worker;
+
+    if (!$worker || $worker->status !== 'active' || $worker->dashboardAccess !== 'ok') {
+        auth('worker')->logout();
+        return response()->json(['message' => 'Access denied. Worker is not active or dashboard access is not allowed.'], 403);
+    }
+
     return $this->createNewToken($token);
 }
 
 
 
-    public function register(WorkerRegisterRequest $request)
-    {
-    $admin = auth('admin')->user();
-    $branchManager= auth('worker')->user();
-
-$authorized = ($admin && $admin->role_id == 1) ||
-              ($branchManager && $branchManager->role_id == 2);
-
-    if (!$authorized) {
-        return response()->json([
-            'message' => 'Unauthorized. Only Super Admins or Branch Managers can register new workers.'
-        ], 403);
-    }
-
-        $validator = Validator::make($request->all(), $request->rules());
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
-        }
-
-    $hijriDate = $this->getHijriDate();
-    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-
-      $workerData = array_merge(
-        $validator->validated(),
-        [
-            'password' => bcrypt($request->password),
-            'creationDate' => $gregorianDate,
-            'creationDateHijri' => $hijriDate,
-            'added_by' => $admin ? $admin->id : $branchManager->id,
-            'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
-        ]
-    );
-
-        $worker = WorkerLogin::create($workerData);
-        $worker->save();
-
-        return response()->json([
-            'message' => 'worker Registration successful',
-            'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
-        ]);
-    }
-
 
 //     public function register(WorkerRegisterRequest $request)
-// {
+//     {
 //     $admin = auth('admin')->user();
-//     $branchManager = auth('worker')->user();
+//     $branchManager= auth('worker')->user();
 
 // $authorized = ($admin && $admin->role_id == 1) ||
 //               ($branchManager && $branchManager->role_id == 2);
@@ -94,43 +76,86 @@ $authorized = ($admin && $admin->role_id == 1) ||
 //         ], 403);
 //     }
 
-//     $validator = Validator::make($request->all(), $request->rules());
+//         $validator = Validator::make($request->all(), $request->rules());
 
-//     if ($validator->fails()) {
-//         return response()->json($validator->errors()->toJson(), 400);
-//     }
+//         if ($validator->fails()) {
+//             return response()->json($validator->errors()->toJson(), 400);
+//         }
 
 //     $hijriDate = $this->getHijriDate();
 //     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
-//     $addedById = $admin ? $admin->id : ($branchManager ? $branchManager->id : null);
-//     $addedByType = $admin ? get_class($admin) : ($branchManager ? get_class($branchManager) : null);
 
-//     Log::info('Registering worker with added_by info', [
-//         'added_by' => $addedById,
-//         'added_by_type' => $addedByType,
-//     ]);
-
-//     $workerData = array_merge(
+//       $workerData = array_merge(
 //         $validator->validated(),
 //         [
 //             'password' => bcrypt($request->password),
 //             'creationDate' => $gregorianDate,
 //             'creationDateHijri' => $hijriDate,
-//             'added_by' => $addedById,
-//             'added_by_type' => $addedByType,
+//             'added_by' => $admin ? $admin->id : $branchManager->id,
+//             'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
 //         ]
 //     );
 
-//     $worker = WorkerLogin::create($workerData);
+//         $worker = WorkerLogin::create($workerData);
+//         $worker->save();
 
-//     $worker->save();
+//         return response()->json([
+//             'message' => 'worker Registration successful',
+//             'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
+//         ]);
+//     }
 
-//     return response()->json([
-//         'message' => 'worker Registration successful',
-//         'worker' => new WorkerRegisterResource($worker->load(['worker','role', 'creator']))
-//     ]);
-// }
+
+public function register(WorkerRegisterRequest $request)
+{
+    $admin = auth('admin')->user();
+    $branchManager = auth('worker')->user();
+
+    $authorized = ($admin && $admin->role_id == 1) ||
+                  ($branchManager && $branchManager->role_id == 2);
+
+    if (!$authorized) {
+        return response()->json([
+            'message' => 'Unauthorized. Only Super Admins or Branch Managers can register new workers.'
+        ], 403);
+    }
+
+    $validator = Validator::make($request->all(), $request->rules());
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors()->toJson(), 400);
+    }
+
+    $worker = Worker::find($request->worker_id);
+
+    if (!$worker || $worker->status !== 'active' || $worker->dashboardAccess !== 'ok') {
+        return response()->json([
+            'message' => 'Worker is not active or dashboard access is not allowed.'
+        ], 403);
+    }
+
+    $hijriDate = $this->getHijriDate();
+    $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    $workerData = array_merge(
+        $validator->validated(),
+        [
+            'password' => bcrypt($request->password),
+            'creationDate' => $gregorianDate,
+            'creationDateHijri' => $hijriDate,
+            'added_by' => $admin ? $admin->id : $branchManager->id,
+            'added_by_type' => $admin ? get_class($admin) : get_class($branchManager),
+        ]
+    );
+
+    $workerLogin = WorkerLogin::create($workerData);
+
+    return response()->json([
+        'message' => 'Worker registration successful',
+        'worker' => new WorkerRegisterResource($workerLogin->load(['worker','role', 'creator']))
+    ]);
+}
 
 
     public function logout()
