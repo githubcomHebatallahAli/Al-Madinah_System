@@ -12,4 +12,5 @@ require __DIR__ . '/Apis/Admin/office.php';
 require __DIR__ . '/Apis/Admin/campaign.php';
 require __DIR__ . '/Apis/Admin/group.php';
 require __DIR__ . '/Apis/Admin/service.php';
+require __DIR__ . '/Apis/Admin/supply.php';
 
