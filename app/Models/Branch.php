@@ -48,6 +48,11 @@ class Branch extends Model
         return $this->hasMany(Office::class);
     }
 
+        public function services()
+    {
+        return $this->hasMany(Service::class);
+    }
+
             public function city()
     {
         return $this->belongsTo(City::class);
