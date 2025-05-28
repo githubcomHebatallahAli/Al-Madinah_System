@@ -82,7 +82,6 @@ public function updater()
 
     protected static function booted()
 {
-    // عند إنشاء عامل جديد فقط
     static::created(function (Worker $worker) {
         if ($worker->title) {
             $worker->title->increment('workersCount');

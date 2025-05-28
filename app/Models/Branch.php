@@ -24,6 +24,8 @@ class Branch extends Model
         'storesCount',
         'workersCount',
         'officesCount',
+        'titlesCount',
+        'servicesCount',
         'status',
         'changed_data'
     ];

@@ -40,9 +40,26 @@ public function updater()
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
-
-
      protected $casts = [
     'changed_data' => 'array',
 ];
+
+      protected static function booted()
+    {
+        static::created(function ($service) {
+            $service->branch->increment('servicesCount');
+        });
+
+        static::updated(function ($service) {
+            if ($service->wasChanged('branch_id')) {
+                Branch::find($service->getOriginal('branch_id'))->decrement('servicesCount');
+
+                $service->branch->increment('servicesCount');
+            }
+        });
+
+    }
+
+
+
 }

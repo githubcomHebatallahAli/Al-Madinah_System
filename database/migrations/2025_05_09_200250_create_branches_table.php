@@ -24,6 +24,8 @@ return new class extends Migration
             $table->unsignedBigInteger('storesCount')->default(0);
             $table->unsignedBigInteger('officesCount')->default(0);
             $table->unsignedBigInteger('workersCount')->default(0);
+            $table->unsignedBigInteger('titlesCount')->default(0);
+            $table->unsignedBigInteger('servicesCount')->default(0);
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');

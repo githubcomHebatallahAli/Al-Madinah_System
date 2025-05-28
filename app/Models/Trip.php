@@ -43,6 +43,10 @@ public function updater()
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
+    protected $casts = [
+    'changed_data' => 'array',
+];
+
 
       protected static function booted()
     {
@@ -58,12 +62,9 @@ public function updater()
             }
         });
 
-
     }
 
-        protected $casts = [
-    'changed_data' => 'array',
-];
+
 
 
 }

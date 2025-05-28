@@ -22,6 +22,8 @@ class BranchResource extends JsonResource
             'tripsCount' => $this-> tripsCount,
             'storesCount' => $this-> storesCount,
             'workersCount' => $this-> workersCount,
+            'titlesCount' => $this-> titlesCount,
+            'servicesCount' => $this-> servicesCount,
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,

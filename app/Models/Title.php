@@ -48,22 +48,48 @@ public function updater()
 
 
 
-        protected static function booted()
-    {
-        static::created(function ($title) {
-            $title->branch->increment('workersCount', $title->workers()->count());
-        });
+    //     protected static function booted()
+    // {
+    //     static::created(function ($title) {
+    //         $title->branch->increment('workersCount', $title->workers()->count());
 
-        static::updated(function ($title) {
-            if ($title->wasChanged('branch_id')) {
-                // حساب عدد العمال في العنوان قبل النقل
-                $workersCount = $title->workers()->count();
+    //     });
 
-                Branch::find($title->getOriginal('branch_id'))->decrement('workersCount', $workersCount);
-                $title->branch->increment('workersCount', $workersCount);
+    //     static::updated(function ($title) {
+    //         if ($title->wasChanged('branch_id')) {
+    //             $workersCount = $title->workers()->count();
+
+    //             Branch::find($title->getOriginal('branch_id'))->decrement('workersCount', $workersCount);
+    //             $title->branch->increment('workersCount', $workersCount);
+    //         }
+    //     });
+
+    // }
+
+    protected static function booted()
+{
+    static::created(function ($title) {
+        $title->branch->increment('titlesCount');
+        $title->branch->increment('workersCount', $title->workers()->count());
+    });
+
+    static::updated(function ($title) {
+        if ($title->wasChanged('branch_id')) {
+            $oldBranchId = $title->getOriginal('branch_id');
+            $newBranch = $title->branch;
+            $workersCount = $title->workers()->count();
+
+            $oldBranch = Branch::find($oldBranchId);
+            if ($oldBranch) {
+                $oldBranch->decrement('titlesCount');
+                $oldBranch->decrement('workersCount', $workersCount);
             }
-        });
 
+            $newBranch->increment('titlesCount');
+            $newBranch->increment('workersCount', $workersCount);
+        }
+
+    });
     }
 
     protected $casts = [
