@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class SupplyResource extends JsonResource
+class SupplierResource extends JsonResource
 {
     use AddedByResourceTrait;
 
@@ -14,12 +14,10 @@ class SupplyResource extends JsonResource
     {
         return [
             "id" => $this -> id,
-            'service_id' => $this->service?->id,
-            'service_name' => $this->service?->name,
+            'supply_id' => $this->supply?->id,
+            'supply_name' => $this->supply?->name,
             'name' => $this -> name,
-            'address' => $this-> address,
             'communication' => $this-> communication ,
-            'description' => $this-> description,
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,
