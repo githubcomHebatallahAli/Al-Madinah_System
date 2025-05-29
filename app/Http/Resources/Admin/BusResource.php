@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Http\Resources\Admin;
+
+use Illuminate\Http\Request;
+use App\Traits\AddedByResourceTrait;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class BusResource extends JsonResource
+{
+    use AddedByResourceTrait;
+    public function toArray(Request $request): array
+    {
+        return [
+            "id" => $this -> id,
+            'company_id' => $this->company?->id,
+            'company_name' => $this->company?->name,
+            'busNum' => $this -> busNum,
+            'busModel' => $this-> busModel,
+            'plateNum' => $this-> plateNum ,
+            'seatNum' => $this-> seatNum,
+            'quantity' => $this-> quantity,
+            'sellingPrice' => $this-> sellingPrice,
+            'purchesPrice' => $this-> purchesPrice,
+            'profit' => $this-> profit,
+            'status' => $this-> status,
+            'creationDateHijri'=> $this->creationDateHijri,
+            'creationDate'=> $this-> creationDate,
+            'changed_data' => $this -> changed_data,
+            'added_by' => $this->addedByAttribute(),
+            'updated_by' => $this->updatedByAttribute(),
+
+        ];
+    }
+}

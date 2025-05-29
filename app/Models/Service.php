@@ -29,11 +29,15 @@ class Service extends Model
     {
         return $this->belongsTo(Branch::class);
     }
-    
-        public function supplies()
+
+        public function companies()
     {
-        return $this->hasMany(Supply::class);
+        return $this->hasMany(Company::class);
     }
+    //     public function supplies()
+    // {
+    //     return $this->hasMany(Supply::class);
+    // }
 
     public function creator()
 {

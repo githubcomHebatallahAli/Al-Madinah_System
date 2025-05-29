@@ -7,7 +7,7 @@ use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Supplier extends Model
+class Shipment extends Model
 {
     use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
@@ -15,22 +15,19 @@ class Supplier extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'supply_id',
-        'name',
-        'communication',
+        'supplier_id',
+        'shipmentItemsCount',
+        'totalPrice',
+        'description',
         'status',
         'creationDate',
         'creationDateHijri',
         'changed_data'
     ];
 
-        public function supply()
+        public function supplier()
     {
-        return $this->belongsTo(Supply::class);
-    }
-        public function shipments()
-    {
-        return $this->hasMany(Shipment::class);
+        return $this->belongsTo(Supplier::class);
     }
 
         public function creator()
@@ -46,5 +43,4 @@ public function updater()
      protected $casts = [
     'changed_data' => 'array',
 ];
-
 }

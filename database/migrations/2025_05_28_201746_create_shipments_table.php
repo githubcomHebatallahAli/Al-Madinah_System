@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('suppliers', function (Blueprint $table) {
+        Schema::create('shipments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supply_id')->constrained('supplies')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('communication');
+            $table->foreignId('supplier_id')->constrained('suppliers')->cascadeOnDelete();
+            $table->unsignedBigInteger('shipmentItemsCount')->default(0);
+            $table->decimal('total_price', 15, 2)->default(0);
+            $table->text('description')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->string('creationDateHijri')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->json('changed_data')->nullable();
+
             $table->timestamps();
         });
     }
@@ -33,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('suppliers');
+        Schema::dropIfExists('shipments');
     }
 };

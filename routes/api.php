@@ -14,4 +14,7 @@ require __DIR__ . '/Apis/Admin/group.php';
 require __DIR__ . '/Apis/Admin/service.php';
 require __DIR__ . '/Apis/Admin/supply.php';
 require __DIR__ . '/Apis/Admin/supplier.php';
+require __DIR__ . '/Apis/Admin/shipment.php';
+require __DIR__ . '/Apis/Admin/company.php';
+require __DIR__ . '/Apis/Admin/bus.php';
 

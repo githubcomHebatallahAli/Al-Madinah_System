@@ -11,11 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('suppliers', function (Blueprint $table) {
+        Schema::create('buses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supply_id')->constrained('supplies')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('communication');
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
+            $table->integer('busNum');
+            $table->string('busModel');
+            $table->string('plateNum');
+            $table->integer('seatNum');
+            $table->integer('quantity')->default(0);
+            $table->decimal('sellingPrice');
+            $table->decimal('purchesPrice');
+            $table->decimal('profit')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -33,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('suppliers');
+        Schema::dropIfExists('buses');
     }
 };

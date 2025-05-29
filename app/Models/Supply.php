@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Supply extends Model
 {
-      use HasFactory, TracksChangesTrait,HijriDateTrait;
+    use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
         'added_by',
         'added_by_type',
@@ -30,7 +30,7 @@ class Supply extends Model
     {
         return $this->belongsTo(Service::class);
     }
-    
+
             public function suppliers()
     {
         return $this->hasMany(Supplier::class);
