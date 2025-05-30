@@ -26,7 +26,6 @@ class ShipmentRequest extends FormRequest
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
-            'name' =>'required|string',
             'description'=>'nullable|string',
             'totalPrice' => 'nullable|numeric|min:0|max:99999.99',
 

@@ -104,8 +104,8 @@ public function create(ShipmentRequest $request)
 
     try {
         $data = $request->only([
-            'supplier_id', 'service_id', 'company_id', 'status',
-            'creationDate', 'creationDateHijri', 'name', 'description'
+            'supplier_id', 'service_id', 'company_id',
+             'description'
         ]);
 
         $data['status'] = $data['status'] ?? 'active';
@@ -181,8 +181,7 @@ public function update(ShipmentRequest $request, Shipment $shipment)
 
     try {
         $data = $request->only([
-            'supplier_id', 'service_id', 'company_id', 'status',
-            'creationDate', 'creationDateHijri', 'name', 'description'
+            'supplier_id', 'service_id', 'company_id', 'status','description'
         ]);
 
         $this->setUpdatedBy($data);
