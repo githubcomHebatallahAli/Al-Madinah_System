@@ -6,29 +6,25 @@ use Illuminate\Http\Request;
 use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ShipmentResource extends JsonResource
+class ShipmentItemResource extends JsonResource
 {
     use AddedByResourceTrait;
     public function toArray(Request $request): array
     {
         return [
         'id'=> $this -> id,
-        'service_id' => $this->service?->id,
-        'service_name' => $this->service?->name,
-        'supplier_id' => $this->supplier?->id,
-        'supplier_name' => $this->supplier?->name,
-        'company_id' => $this->company?->id,
-        'company_name' => $this->company?->name,
-        'shipmentItemsCount'=> $this ->shipmentItemsCount,
+        'item_id'=> $this-> item_id,
+        'item_type' => class_basename($this->item_type),
+        'item_name' => $this->item?->name ?? $this->item?->model ?? '—',
+        'quantity'=> $this-> quantity,
+        'unitPrice'=> $this-> unitPrice,
         'totalPrice'=> $this ->totalPrice,
-        'description'=> $this ->description,
         'status' => $this-> status,
         'creationDate'=> $this ->creationDate,
         'creationDateHijri'=> $this ->creationDateHijri,
         'changed_data'=> $this ->changed_data,
         'added_by' => $this->addedByAttribute(),
         'updated_by' => $this->updatedByAttribute(),
-        'items' => ShipmentItemResource::collection($this->whenLoaded('items')),
         ];
     }
 }

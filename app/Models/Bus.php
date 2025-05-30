@@ -16,6 +16,7 @@ class Bus extends Model
         'updated_by',
         'updated_by_type',
         'company_id',
+        'supplier_id',
         'busNum',
         'busModel',
         'plateNum',
@@ -34,6 +35,19 @@ class Bus extends Model
     {
         return $this->belongsTo(Company::class);
     }
+
+    public function shipmentItems()
+{
+    return $this->morphMany(ShipmentItem::class, 'item');
+}
+
+
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
 
 
     public function creator()

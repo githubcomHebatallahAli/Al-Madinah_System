@@ -16,6 +16,8 @@ class Shipment extends Model
         'updated_by',
         'updated_by_type',
         'supplier_id',
+        'company_id',
+        'service_id',
         'shipmentItemsCount',
         'totalPrice',
         'description',
@@ -29,6 +31,21 @@ class Shipment extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+
+        public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+        public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    public function items()
+{
+    return $this->hasMany(ShipmentItem::class);
+}
 
         public function creator()
 {

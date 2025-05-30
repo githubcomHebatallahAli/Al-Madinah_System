@@ -34,10 +34,11 @@ class Service extends Model
     {
         return $this->hasMany(Company::class);
     }
-    //     public function supplies()
-    // {
-    //     return $this->hasMany(Supply::class);
-    // }
+    
+        public function shipments()
+    {
+        return $this->hasMany(Shipment::class);
+    }
 
     public function creator()
 {

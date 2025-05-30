@@ -41,7 +41,7 @@ class CompanyController extends Controller
     {
         $this->authorize('manage_system');
        $data = array_merge($request->only([
-            'service_id', 'name', 'address','communication','description'
+            'service_id', 'name', 'address','communication','description','type'
         ]), $this->prepareCreationMetaData());
 
         $Company = Company::create($data);
@@ -69,7 +69,7 @@ public function update(CompanyRequest $request, string $id)
     $Company = Company::findOrFail($id);
     $oldData = $Company->toArray();
 
-    $updateData = $request->only(['name','address','service_id','status','communication','description']);
+    $updateData = $request->only(['name','address','service_id','status','communication','description','type']);
 
     $updateData = array_merge(
         $updateData,

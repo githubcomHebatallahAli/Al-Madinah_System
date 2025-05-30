@@ -114,15 +114,12 @@ public function updater()
             }
         }
 
-        // إذا تغير المتجر
         if ($worker->wasChanged('store_id')) {
-            // تحديث المتجر القديم
             $oldStore = Store::find($worker->getOriginal('store_id'));
             if ($oldStore) {
                 $oldStore->decrement('workersCount');
             }
 
-            // تحديث المتجر الجديد
             if ($worker->store) {
                 $worker->store->increment('workersCount');
             }

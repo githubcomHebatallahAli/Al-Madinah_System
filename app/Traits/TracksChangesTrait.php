@@ -6,64 +6,6 @@ namespace App\Traits;
 trait TracksChangesTrait
 {
      use \App\Traits\HijriDateTrait;
-
-// public function getChangedData(array $oldData, array $newData): array
-// {
-//     $alwaysTrack = ['creationDate', 'creationDateHijri'];
-
-//     $ignoredKeys = [
-//         'updated_at',
-//         'updated_by',
-//         'updated_by_type',
-//         'changed_data'
-//     ];
-
-//     $changed = [];
-
-//     foreach ($newData as $key => $newValue) {
-//         if (in_array($key, $ignoredKeys)) {
-//             continue;
-//         }
-
-//         $oldValue = $oldData[$key] ?? null;
-
-//         if (in_array($key, $alwaysTrack) || $oldValue != $newValue) {
-//             $changed[$key] = [
-//                 'old' => $oldValue,
-//                 'new' => $newValue,
-//             ];
-
-//             if (str_ends_with($key, '_id')) {
-//                 $relation = str_replace('_id', '', $key);
-
-//                 if (method_exists($this, $relation)) {
-//                     try {
-//                         $relatedModel = $this->$relation()->getRelated();
-
-//                         $oldModel = $relatedModel->find($oldValue);
-//                         $newModel = $relatedModel->find($newValue);
-
-//                         $oldName = optional($oldModel)->name ?? optional($oldModel)->title ?? null;
-//                         $newName = optional($newModel)->name ?? optional($newModel)->title ?? null;
-
-//                         if ($oldName != $newName) {
-//                             $changed[$relation . '_name'] = [
-//                                 'old' => $oldName,
-//                                 'new' => $newName,
-//                             ];
-//                         }
-//                     } catch (\Throwable $e) {
-//                     }
-//                 }
-//             }
-//         }
-//     }
-
-
-//     return $changed;
-// }
-
-
     public function getChangedData(array $oldData, array $newData): array
     {
         $alwaysTrack = ['creationDate', 'creationDateHijri'];
@@ -139,14 +81,12 @@ trait TracksChangesTrait
     }
 protected function getOldValueForKey(string $key)
 {
-    // نحاول نجيب آخر تعديل سابق من الـ changed_data
     $lastChanges = $this->changed_data ?? [];
 
     if (isset($lastChanges[$key]['new'])) {
         return $lastChanges[$key]['new'];
     }
 
-    // fallback: القيمة الأصلية الحالية في الموديل
     return $this->$key ?? null;
 }
 

@@ -2,10 +2,9 @@
 
 namespace App\Traits;
 
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
+
 
 trait HandlesControllerCrudsTrait
 {
@@ -55,16 +54,9 @@ protected function prepareUpdateMeta($request,?string $status = null): array
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        // 'creationDateHijri' => $this->getHijriDate(),
         'status' => $request->status ?? $status,
     ];
 }
-
-
-
-
-
 
 protected function mergeWithOld($request, $model, array $fields): array
 {
@@ -105,44 +97,6 @@ protected function mergeWithOld($request, $model, array $fields): array
         }
     }
 
-    // public function changeStatusSimple($model, string $status): JsonResponse
-    // {
-    //     $oldStatus = $model->status;
-
-    //     if ($oldStatus === $status) {
-    //         $this->loadCommonRelations($model);
-    //         return response()->json([
-    //             'data' => new ($this->getResourceClass())($model),
-    //             'message' => $this->getAlreadyStatusMessage($status),
-    //         ]);
-    //     }
-
-    //     $oldData = $model->toArray();
-
-    //     $updatedById = $this->getUpdatedByIdOrFail();
-    //     $updatedByType = $this->getUpdatedByType();
-    //     $hijriDate = $this->getHijriDate();
-    //     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-    //     $model->update([
-    //         'status' => $status,
-    //         'creationDate' => $gregorianDate,
-    //         'creationDateHijri' => $hijriDate,
-    //         'updated_by' => $updatedById,
-    //         'updated_by_type' => $updatedByType,
-    //     ]);
-
-    //     $changedData = $this->getChangedData($oldData, $model->fresh()->toArray());
-    //     $model->changed_data = $changedData;
-    //     $model->save();
-
-    //     $this->loadCommonRelations($model);
-
-    //     return response()->json([
-    //         'data' => new ($this->getResourceClass())($model),
-    //         'message' => $this->getActivatedStatusMessage($status),
-    //     ]);
-    // }
 
     protected function changeStatusSimple($model, string $newStatus)
 {
@@ -156,7 +110,6 @@ protected function mergeWithOld($request, $model, array $fields): array
     $model->status = $newStatus;
     $model->save();
 
-    // نضيف بيانات الوقت والهجري
     $metaForDiffOnly = [
         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         'creationDateHijri' => $this->getHijriDate(),

@@ -20,6 +20,7 @@ class Company extends Model
         'address',
         'communication',
         'description',
+        'type',
         'status',
         'creationDate',
         'creationDateHijri',
@@ -30,10 +31,18 @@ class Company extends Model
     {
         return $this->belongsTo(Service::class);
     }
-    
+
             public function buses()
     {
         return $this->hasMany(Bus::class);
+    }
+    //         public function shipments()
+    // {
+    //     return $this->hasMany(Shipment::class);
+    // }
+            public function suppliers()
+    {
+        return $this->hasMany(Supplier::class);
     }
 
 

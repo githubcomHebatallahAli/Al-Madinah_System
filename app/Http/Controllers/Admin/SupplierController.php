@@ -41,7 +41,7 @@ class SupplierController extends Controller
     {
         $this->authorize('manage_system');
        $data = array_merge($request->only([
-            'supply_id', 'name','communication'
+            'company_id', 'name','communication'
         ]), $this->prepareCreationMetaData());
 
         $Supplier = Supplier::create($data);
@@ -69,7 +69,7 @@ public function update(SupplierRequest $request, string $id)
     $Supplier = Supplier::findOrFail($id);
     $oldData = $Supplier->toArray();
 
-    $updateData = $request->only(['name','supply_id','status','communication']);
+    $updateData = $request->only(['name','company_id','status','communication']);
 
     $updateData = array_merge(
         $updateData,

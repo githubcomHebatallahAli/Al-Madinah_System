@@ -15,22 +15,29 @@ class Supplier extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'supply_id',
+        'company_id',
         'name',
         'communication',
+        'description',
         'status',
         'creationDate',
         'creationDateHijri',
         'changed_data'
     ];
 
-        public function supply()
+        public function company()
     {
-        return $this->belongsTo(Supply::class);
+        return $this->belongsTo(Company::class);
     }
+
         public function shipments()
     {
         return $this->hasMany(Shipment::class);
+    }
+
+        public function buses()
+    {
+        return $this->hasMany(Bus::class);
     }
 
         public function creator()

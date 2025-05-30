@@ -24,7 +24,7 @@ class SupplierRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'supply_id' => 'required|exists:supplies,id',
+            'company_id' => 'required|exists:companies,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',

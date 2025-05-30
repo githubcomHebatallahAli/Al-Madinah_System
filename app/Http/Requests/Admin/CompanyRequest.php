@@ -32,6 +32,7 @@ class CompanyRequest extends FormRequest
             'address' =>'nullable|string',
             'communication' =>'required|string',
             'description' =>'nullable|string',
+            'type' => 'required|in:direct,supply',
         ];
     }
 

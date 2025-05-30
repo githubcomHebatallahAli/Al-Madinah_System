@@ -2,35 +2,40 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\ValidMorphItemRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ShipmentRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+
     public function rules(): array
     {
+          $items = $this->get('items', []);
         return [
-            'supplier_id' => 'required|exists:suppliers,id',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'service_id' => 'required|exists:services,id',
+            'company_id' => 'required|exists:companies,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'name' =>'required|string',
             'description'=>'nullable|string',
             'totalPrice' => 'nullable|numeric|min:0|max:99999.99',
+
+        'items' => 'required|array|min:1',
+        'items.*.item_id' => 'required|integer',
+        'items.*.item_type' => 'required|string|in:bus,hotel,product',
+        'items.*.quantity' => 'required|numeric|min:1',
+        'items.*.unitPrice' => 'required|numeric|min:0',
+        'items.*' => new ValidMorphItemRule($items),
         ];
     }
           public function failedValidation(Validator $validator)
