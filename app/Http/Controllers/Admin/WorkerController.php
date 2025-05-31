@@ -25,18 +25,56 @@ class WorkerController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAllWorkerLogin()
-    {
-        $this->authorize('manage_system');
-        $workersLogin = WorkerLogin::orderBy('created_at', 'desc')
-            ->get();
-        $this->loadRelationsForCollection($workersLogin);
+    //     public function showAllWorkerLogin()
+    // {
+    //     $this->authorize('manage_system');
+    //     $workersLogin = WorkerLogin::orderBy('created_at', 'desc')
+    //         ->get();
+    //     $this->loadRelationsForCollection($workersLogin);
 
-        return response()->json([
-            'data' => WorkerRegisterResource::collection($workersLogin),
-            'message' => "Show All Workers Login."
-        ]);
+    //     return response()->json([
+    //         'data' => WorkerRegisterResource::collection($workersLogin),
+    //         'message' => "Show All Workers Login."
+    //     ]);
+    // }
+
+    public function showAllWorkerLogin(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+    $roleId = $request->input('role_id');
+
+    $query = WorkerLogin::
+        orderBy('created_at', 'desc');
+
+    if ($searchTerm) {
+        $query->whereHas('worker', function($q) use ($searchTerm) {
+            $q->where('name', 'like', '%' . $searchTerm . '%');
+        });
     }
+
+    if ($roleId) {
+        $query->where('role_id', $roleId);
+    }
+
+    $workers = $query->paginate(10);
+
+    // تحميل العلاقات الإضافية إذا كانت موجودة
+    $this->loadRelationsForCollection($workers);
+
+    return response()->json([
+        'data' => WorkerRegisterResource::collection($workers),
+        'pagination' => [
+            'total' => $workers->total(),
+            'count' => $workers->count(),
+            'per_page' => $workers->perPage(),
+            'current_page' => $workers->currentPage(),
+            'total_pages' => $workers->lastPage(),
+        ],
+        'message' => "Workers data retrieved successfully."
+    ]);
+}
 
 public function showAll()
     {
