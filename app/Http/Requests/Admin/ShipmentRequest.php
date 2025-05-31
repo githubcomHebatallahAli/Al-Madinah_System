@@ -23,7 +23,7 @@ class ShipmentRequest extends FormRequest
     return [
         'supplier_id' => 'nullable|exists:suppliers,id',
         'service_id' => 'required|exists:services,id',
-        'company_id' => 'required|exists:companies,id',
+        'company_id' => 'nullable|exists:companies,id',
         'status' => 'nullable|in:active,notActive',
         'creationDate' => 'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri' => 'nullable|string',
@@ -41,7 +41,7 @@ class ShipmentRequest extends FormRequest
         'items.*.unitPrice' => 'required|numeric|min:0',
     ];
     }
-    
+
           public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
