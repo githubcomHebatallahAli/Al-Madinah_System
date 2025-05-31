@@ -67,9 +67,10 @@ public function create(ShipmentRequest $request)
                     'quantity'    => $item['quantity'],
                     'unitPrice'   => $item['unitPrice'],
                     'totalPrice'  => $itemTotal,
-                ]);$this->prepareCreationMetaData());
+                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                    'creationDateHijri' => $this->getHijriDate(),
+                ]);
             }
-
             $shipment->update(['totalPrice' => $total]);
 
             return $shipment;
@@ -90,7 +91,6 @@ public function create(ShipmentRequest $request)
 }
 
 
-
         public function edit(string $id)
         {
         $this->authorize('manage_system');
@@ -105,8 +105,7 @@ public function create(ShipmentRequest $request)
     return $this->respondWithResource($Shipment, "Shipment retrieved for editing.");
         }
 
-
-public function update(ShipmentRequest $request, string $id)
+        public function update(ShipmentRequest $request, string $id)
 {
     $this->authorize('manage_system');
 
@@ -161,6 +160,8 @@ public function update(ShipmentRequest $request, string $id)
                     'quantity'    => $item['quantity'],
                     'unitPrice'   => $item['unitPrice'],
                     'totalPrice'  => $itemTotal,
+                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                    'creationDateHijri' => $this->getHijriDate(),
                 ]);
             }
 
@@ -172,6 +173,7 @@ public function update(ShipmentRequest $request, string $id)
 
     // حساب changed_data بعد التحديث
     $changedData = $shipment->getChangedData($oldData, $shipment->toArray());
+
     $shipment->changed_data = $changedData;
     $shipment->save();
 

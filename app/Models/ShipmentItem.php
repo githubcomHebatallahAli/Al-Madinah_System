@@ -11,10 +11,10 @@ class ShipmentItem extends Model
 {
     use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
-        'added_by',
-        'added_by_type',
-        'updated_by',
-        'updated_by_type',
+        // 'added_by',
+        // 'added_by_type',
+        // 'updated_by',
+        // 'updated_by_type',
         'shipment_id',
         'item_id',
         'item_type',
@@ -36,5 +36,8 @@ public function item()
 {
     return $this->morphTo();
 }
+
+protected $hidden = ['created_at', 'updated_at'];
+
 
 }
