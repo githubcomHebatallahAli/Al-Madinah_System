@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('buses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->cascadeOnDelete();
              $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->integer('busNum');
             $table->string('busModel');
