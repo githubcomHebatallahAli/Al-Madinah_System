@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Carbon\Carbon;
 use App\Models\Worker;
+use App\Models\WorkerLogin;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -14,6 +14,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\WorkerResource;
+use App\Http\Resources\Auth\WorkerRegisterResource;
 
 class WorkerController extends Controller
 {
@@ -23,6 +24,19 @@ class WorkerController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
+
+        public function showAllWorkerLogin()
+    {
+        $this->authorize('manage_system');
+        $workersLogin = WorkerLogin::orderBy('created_at', 'desc')
+            ->get();
+        $this->loadRelationsForCollection($workersLogin);
+
+        return response()->json([
+            'data' => WorkerRegisterResource::collection($workersLogin),
+            'message' => "Show All Workers Login."
+        ]);
+    }
 
 public function showAll()
     {
@@ -146,7 +160,7 @@ public function update(WorkerRequest $request, string $id)
     }
 
     $oldData = $worker->toArray();
-    $oldCv = $worker->cv; // حفظ مسار الـ CV القديم
+    $oldCv = $worker->cv;
 
     $request->merge(['status' => $request->status ?? $worker->status ?? 'active']);
 
@@ -163,7 +177,7 @@ public function update(WorkerRequest $request, string $id)
         }
     }
 
-    // التحقق من وجود ملف CV جديد
+
     $cvChanged = $request->hasFile('cv');
     if ($cvChanged) {
         $hasChanges = true;
@@ -183,7 +197,6 @@ public function update(WorkerRequest $request, string $id)
 
     $worker->update($updateData);
 
-    // معالجة ملف الـ CV إذا كان هناك تغيير
     if ($cvChanged) {
         if ($worker->cv) {
             Storage::disk('public')->delete($worker->cv);
@@ -193,10 +206,8 @@ public function update(WorkerRequest $request, string $id)
         $worker->save();
     }
 
-    // الحصول على البيانات الجديدة بعد التحديث
     $newData = $worker->fresh()->toArray();
 
-    // إضافة تغييرات الـ CV إلى changed_data إذا كانت موجودة
     if ($cvChanged) {
         $newData['cv'] = $worker->cv;
         $oldData['cv'] = $oldCv;
@@ -231,93 +242,6 @@ public function update(WorkerRequest $request, string $id)
     {
         return WorkerResource::class;
     }
-
-// public function notOk(string $id)
-// {
-//     $this->authorize('manage_system');
-
-//     $worker = Worker::find($id);
-//     if (!$worker) {
-//         return response()->json(['message' => "Worker not found."], 404);
-//     }
-
-//     $oldData = $worker->toArray();
-
-//     if ($worker->dashboardAccess === 'notOk') {
-//         $this->loadCommonRelations($worker);
-//         return response()->json([
-//             'data' => new WorkerResource($worker),
-//             'message' => 'Worker dashboard access is already set to not OK',
-//         ]);
-//     }
-
-//     $updatedById = $this->getUpdatedByIdOrFail();
-//     $updatedByType = $this->getUpdatedByType();
-//     $hijriDate = $this->getHijriDate();
-//     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-//     $worker->update([
-//         'dashboardAccess' => 'notOk',
-//         'creationDate' => $gregorianDate,
-//         'creationDateHijri' => $hijriDate,
-//         'updated_by' => $updatedById,
-//         'updated_by_type' => $updatedByType,
-//     ]);
-
-//     $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
-//     $worker->changed_data = $changedData;
-//     $worker->save();
-
-//     $this->loadCommonRelations($worker);
-//     return response()->json([
-//         'data' => new WorkerResource($worker),
-//         'message' => 'Worker dashboard access set to not OK',
-//     ]);
-// }
-
-// public function ok(string $id)
-// {
-//     $this->authorize('manage_system');
-
-//     $worker = Worker::find($id);
-//     if (!$worker) {
-//         return response()->json(['message' => "Worker not found."], 404);
-//     }
-
-//     $oldData = $worker->toArray();
-
-//     if ($worker->dashboardAccess === 'ok') {
-//         $this->loadCommonRelations($worker);
-//         return response()->json([
-//             'data' => new WorkerResource($worker),
-//             'message' => 'Worker dashboard access is already set to OK',
-//         ]);
-//     }
-
-//     $updatedById = $this->getUpdatedByIdOrFail();
-//     $updatedByType = $this->getUpdatedByType();
-//     $hijriDate = $this->getHijriDate();
-//     $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
-//     $worker->update([
-//         'dashboardAccess' => 'ok',
-//         'creationDate' => $gregorianDate,
-//         'creationDateHijri' => $hijriDate,
-//         'updated_by' => $updatedById,
-//         'updated_by_type' => $updatedByType,
-//     ]);
-
-//     $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
-//     $worker->changed_data = $changedData;
-//     $worker->save();
-
-//     $this->loadCommonRelations($worker);
-
-//     return response()->json([
-//         'data' => new WorkerResource($worker),
-//         'message' => 'Worker dashboard access set to OK',
-//     ]);
-// }
 
 public function notOk(string $id)
 {

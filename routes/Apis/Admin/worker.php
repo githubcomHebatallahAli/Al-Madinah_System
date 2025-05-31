@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\WorkerController;
 Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
+   Route::get('/showAll/workerLogin','showAllWorkerLogin');
    Route::get('/showAll/worker','showAll');
    Route::post('/create/worker', 'create');
    Route::get('/edit/worker/{id}','edit');
