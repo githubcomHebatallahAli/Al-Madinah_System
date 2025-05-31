@@ -72,6 +72,70 @@ public function edit(string $id)
         }
 
 
+// public function update(WorkerRequest $request, string $id)
+// {
+//     $this->authorize('manage_system');
+
+//     $worker = Worker::find($id);
+//     if (!$worker) {
+//         return response()->json(['message' => "Worker not found."], 404);
+//     }
+
+//     $oldData = $worker->toArray();
+
+//     $request->merge(['status' => $request->status ?? $worker->status ?? 'active']);
+
+//     $fieldsToCheck = ['title_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
+//     $hasChanges = false;
+
+//     foreach ($fieldsToCheck as $field) {
+//         if ($request->has($field)) {  // تم إصلاح هنا - إضافة القوس الناقص
+//             $requestField = $request->$field ?? $worker->$field;
+//             if ($worker->$field != $requestField) {
+//                 $hasChanges = true;
+//                 break;
+//             }
+//         }
+//     }
+
+//     if ($request->hasFile('cv')) {
+//         $hasChanges = true;
+//     }
+
+//     if (!$hasChanges) {
+//         $this->loadCommonRelations($worker);
+//         return $this->respondWithResource($worker, "No actual changes detected.");
+//     }
+
+//     $updateData = array_merge(
+//         $request->only($fieldsToCheck),
+//         $this->prepareUpdateMeta($request, $worker->status)
+//     );
+
+//     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
+
+
+//     // $this->applyChangesAndSave($worker, $updateData, $oldData);
+//        $worker->update($updateData);
+
+//     $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
+//     $worker->changed_data = $changedData;
+//     $worker->save();
+
+//     if ($request->hasFile('cv')) {
+//         if ($worker->cv) {
+//             Storage::disk('public')->delete($worker->cv);
+//         }
+//         $cvPath = $request->file('cv')->store(Worker::storageFolder, 'public');
+//         $worker->cv = $cvPath;
+//         $worker->save();
+//     }
+
+//     $this->loadCommonRelations($worker);
+
+//     return $this->respondWithResource($worker, "Worker updated successfully.");
+// }
+
 public function update(WorkerRequest $request, string $id)
 {
     $this->authorize('manage_system');
@@ -82,14 +146,15 @@ public function update(WorkerRequest $request, string $id)
     }
 
     $oldData = $worker->toArray();
+    $oldCv = $worker->cv; // حفظ مسار الـ CV القديم
 
     $request->merge(['status' => $request->status ?? $worker->status ?? 'active']);
 
-    $fieldsToCheck = ['Worker_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
+    $fieldsToCheck = ['title_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
     $hasChanges = false;
 
     foreach ($fieldsToCheck as $field) {
-        if ($request->has($field)) {  // تم إصلاح هنا - إضافة القوس الناقص
+        if ($request->has($field)) {
             $requestField = $request->$field ?? $worker->$field;
             if ($worker->$field != $requestField) {
                 $hasChanges = true;
@@ -98,7 +163,9 @@ public function update(WorkerRequest $request, string $id)
         }
     }
 
-    if ($request->hasFile('cv')) {
+    // التحقق من وجود ملف CV جديد
+    $cvChanged = $request->hasFile('cv');
+    if ($cvChanged) {
         $hasChanges = true;
     }
 
@@ -109,20 +176,15 @@ public function update(WorkerRequest $request, string $id)
 
     $updateData = array_merge(
         $request->only($fieldsToCheck),
-        $this->prepareUpdateMeta($request, $worker->status) // تمرير الحالة الحالية كقيمة افتراضية
+        $this->prepareUpdateMeta($request, $worker->status)
     );
 
     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
 
+    $worker->update($updateData);
 
-    // $this->applyChangesAndSave($worker, $updateData, $oldData);
-       $worker->update($updateData);
-
-    $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
-    $worker->changed_data = $changedData;
-    $worker->save();
-
-    if ($request->hasFile('cv')) {
+    // معالجة ملف الـ CV إذا كان هناك تغيير
+    if ($cvChanged) {
         if ($worker->cv) {
             Storage::disk('public')->delete($worker->cv);
         }
@@ -130,12 +192,20 @@ public function update(WorkerRequest $request, string $id)
         $worker->cv = $cvPath;
         $worker->save();
     }
-    //  $this->loadCreatorRelations($worker);
-    // $this->loadUpdaterRelations($worker);
-    //    return response()->json([
-    //          'data' =>new  WorkerResource($worker),
-    //          'message' => "Worker updated successfully."
-    //     ]);
+
+    // الحصول على البيانات الجديدة بعد التحديث
+    $newData = $worker->fresh()->toArray();
+
+    // إضافة تغييرات الـ CV إلى changed_data إذا كانت موجودة
+    if ($cvChanged) {
+        $newData['cv'] = $worker->cv;
+        $oldData['cv'] = $oldCv;
+    }
+
+    $changedData = $worker->getChangedData($oldData, $newData);
+    $worker->changed_data = $changedData;
+    $worker->save();
+
     $this->loadCommonRelations($worker);
 
     return $this->respondWithResource($worker, "Worker updated successfully.");
