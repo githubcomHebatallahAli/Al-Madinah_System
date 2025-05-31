@@ -67,7 +67,7 @@ public function create(ShipmentRequest $request)
                     'quantity'    => $item['quantity'],
                     'unitPrice'   => $item['unitPrice'],
                     'totalPrice'  => $itemTotal,
-                ]);
+                ]);$this->prepareCreationMetaData());
             }
 
             $shipment->update(['totalPrice' => $total]);
@@ -106,58 +106,106 @@ public function create(ShipmentRequest $request)
         }
 
 
-public function update(ShipmentRequest $request, Shipment $shipment)
+public function update(ShipmentRequest $request, string $id)
 {
     $this->authorize('manage_system');
 
-    try {
-        $updatedShipment = DB::transaction(function () use ($request, $shipment) {
-            // استدعاء prepareUpdateMeta مع تمرير الريكوست
-            $data = array_merge(
-                $request->only(['company_id', 'supplier_id', 'service_id', 'description']),
-                $this->prepareUpdateMeta($request, $shipment->status)
-            );
+    $shipment = Shipment::with('items')->findOrFail($id);
+    $oldData = $shipment->toArray();
 
-            $shipment->update($data);
+    $updateData = $request->only([
+        'company_id', 'supplier_id', 'service_id', 'description', 'status'
+    ]);
 
-            // حذف العناصر القديمة
-            $shipment->items()->delete();
+    $updateData = array_merge(
+        $updateData,
+        $this->prepareUpdateMeta($request, $shipment->status)
+    );
+
+    $hasChanges = false;
+
+    foreach ($updateData as $key => $value) {
+        if ($shipment->$key != $value) {
+            $hasChanges = true;
+            break;
+        }
+    }
+
+    // مقارنة العناصر
+    $itemsChanged = !$this->itemsEqual($shipment, $request->items ?? []);
+
+    if (!$hasChanges && !$itemsChanged) {
+        $this->loadCommonRelations($shipment);
+        $shipment->load('items');
+        return $this->respondWithResource($shipment, "لا يوجد تغييرات فعلية.");
+    }
+
+    DB::transaction(function () use ($shipment, $updateData, $request) {
+
+        // تحديث الشحنة
+        $shipment->update($updateData);
+
+        // حذف العناصر القديمة لو اتغيرت
+        if (!$this->itemsEqual($shipment, $request->items ?? [])) {
+            ShipmentItem::where('shipment_id', $shipment->id)->delete();
 
             $total = 0;
-
-            // إعادة إضافة العناصر الجديدة
             foreach ($request->items as $item) {
                 $itemTotal = $item['quantity'] * $item['unitPrice'];
                 $total += $itemTotal;
 
-                $shipment->items()->create([
-                    'item_id'    => $item['item_id'],
-                    'item_type'  => $this->getMorphClass($item['item_type']),
-                    'quantity'   => $item['quantity'],
-                    'unitPrice'  => $item['unitPrice'],
-                    'totalPrice' => $itemTotal,
+                ShipmentItem::create([
+                    'shipment_id' => $shipment->id,
+                    'item_id'     => $item['item_id'],
+                    'item_type'   => $this->getMorphClass($item['item_type']),
+                    'quantity'    => $item['quantity'],
+                    'unitPrice'   => $item['unitPrice'],
+                    'totalPrice'  => $itemTotal,
                 ]);
             }
 
-            // تحديث إجمالي السعر
             $shipment->update(['totalPrice' => $total]);
+        }
+    });
 
-            return $shipment;
-        });
+    $shipment->refresh(); // تحديث الريليشن بعد الـ transaction
 
-        // تحميل العلاقات المشتركة (مُنشئ، مُحدّث، وعناصر)
-        $this->loadCommonRelations($updatedShipment);
-        $updatedShipment->load('items');
+    // حساب changed_data بعد التحديث
+    $changedData = $shipment->getChangedData($oldData, $shipment->toArray());
+    $shipment->changed_data = $changedData;
+    $shipment->save();
 
-        return $this->respondWithResource($updatedShipment, "Shipment updated successfully.");
+    $this->loadCommonRelations($shipment);
+    $shipment->load('items');
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'حدث خطأ أثناء تحديث الشحنة.',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
+    return $this->respondWithResource($shipment, "تم تحديث الشحنة بنجاح.");
+}
+
+
+
+protected function itemsEqual(Shipment $shipment, array $newItems): bool
+{
+    // العناصر القديمة بعد ترتيبها
+    $oldItems = $shipment->items->map(function ($item) {
+        return [
+            'item_id'   => (int) $item->item_id,
+            'item_type' => $item->item_type,
+            'quantity'  => (float) $item->quantity,
+            'unitPrice' => (float) $item->unitPrice,
+        ];
+    })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
+
+    // العناصر الجديدة بعد تحويل نوع العنصر المورف وتصفيتها
+    $newItemsNormalized = collect($newItems)->map(function ($item) {
+        return [
+            'item_id'   => (int) $item['item_id'],
+            'item_type' => $this->getMorphClass($item['item_type']),
+            'quantity'  => (float) $item['quantity'],
+            'unitPrice' => (float) $item['unitPrice'],
+        ];
+    })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
+
+    return $oldItems === $newItemsNormalized;
 }
 
 

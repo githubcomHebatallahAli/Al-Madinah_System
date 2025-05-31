@@ -22,8 +22,8 @@ class ShipmentItem extends Model
         'unitPrice',
         'totalPrice',
         // 'status',
-        // 'creationDate',
-        // 'creationDateHijri',
+        'creationDate',
+        'creationDateHijri',
         'changed_data'
     ];
 
