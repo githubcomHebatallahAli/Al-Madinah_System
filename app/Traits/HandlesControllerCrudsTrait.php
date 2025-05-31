@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 
 trait HandlesControllerCrudsTrait
@@ -78,24 +79,41 @@ protected function mergeWithOld($request, $model, array $fields): array
     }
 
 
-    protected function loadCommonRelations($model): void
-    {
-        if (method_exists($this, 'loadCreatorRelations')) {
-            $this->loadCreatorRelations($model);
-        }
+    // protected function loadCommonRelations($model): void
+    // {
+    //     if (method_exists($this, 'loadCreatorRelations')) {
+    //         $this->loadCreatorRelations($model);
+    //     }
 
-        if (method_exists($this, 'loadUpdaterRelations')) {
-            $this->loadUpdaterRelations($model);
-        }
+    //     if (method_exists($this, 'loadUpdaterRelations')) {
+    //         $this->loadUpdaterRelations($model);
+    //     }
+    // }
+
+
+    // protected function loadRelationsForCollection(Collection $collection): void
+    // {
+    //     foreach ($collection as $model) {
+    //         $this->loadCommonRelations($model);
+    //     }
+    // }
+
+    protected function loadRelationsForCollection($collection): void
+{
+    // تحويل Paginator إلى Collection إذا لزم الأمر
+    $items = $collection instanceof LengthAwarePaginator
+        ? $collection->getCollection()
+        : $collection;
+
+    foreach ($items as $model) {
+        $this->loadCommonRelations($model);
     }
 
-
-    protected function loadRelationsForCollection(Collection $collection): void
-    {
-        foreach ($collection as $model) {
-            $this->loadCommonRelations($model);
-        }
+    // إعادة تعيين Collection لل Paginator إذا كان paginated
+    if ($collection instanceof LengthAwarePaginator) {
+        $collection->setCollection($items);
     }
+}
 
 
     protected function changeStatusSimple($model, string $newStatus)
