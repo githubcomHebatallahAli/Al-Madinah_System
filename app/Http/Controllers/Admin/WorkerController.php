@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Worker;
 use App\Models\WorkerLogin;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
