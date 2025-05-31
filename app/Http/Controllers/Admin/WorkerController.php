@@ -43,7 +43,7 @@ class WorkerController extends Controller
 {
     $this->authorize('manage_system');
 
-  $query = WorkerLogin::with(['worker', 'role'])
+  $query = WorkerLogin::with(['worker', 'worker.title','role'])
                 ->orderBy('created_at', 'desc');
 
     if ($request->search) {
@@ -53,6 +53,10 @@ class WorkerController extends Controller
     if ($request->role_id) {
         $query->where('role_id', $request->role_id);
     }
+
+    if ($request->title_name) {
+    $query->whereHas('worker.title', fn($q) => $q->where('name', 'like', "%{$request->title_name}%"));
+}
 
     $workers = $query->paginate(10);
 
