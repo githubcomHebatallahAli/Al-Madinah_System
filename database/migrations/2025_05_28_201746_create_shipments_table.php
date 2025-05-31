@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->cascadeOnDelete();
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->unsignedBigInteger('shipmentItemsCount')->default(0);
-            $table->decimal('total_price', 15, 2)->default(0);
+            $table->decimal('totalPrice', 15, 2)->default(0);
             $table->text('description')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();

@@ -21,7 +21,7 @@ return new class extends Migration
             // $table->string('added_by_type')->nullable();
             // $table->unsignedBigInteger('updated_by')->nullable();
             // $table->string('updated_by_type')->nullable();
-            // $table->json('changed_data')->nullable();
+            $table->json('changed_data')->nullable();
             $table->timestamps();
         });
     }

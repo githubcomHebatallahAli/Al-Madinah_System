@@ -39,122 +39,55 @@ class ShipmentController extends Controller
         ]);
     }
 
-
-// public function create(ShipmentRequest $request)
-// {
-//     $this->authorize('manage_system');
-
-//         DB::beginTransaction();
-
-//         try {
-//             $shipment = Shipment::create([
-//                 'supplier_id'        => $request->supplier_id,
-//                 'service_id'         => $request->service_id,
-//                 'company_id'         => $request->company_id,
-//                 'status'             => $request->status ?? 'active',
-//                 'creationDate'       => $request->creationDate,
-//                 'creationDateHijri'  => $request->creationDateHijri,
-//                 'name'               => $request->name,
-//                 'description'        => $request->description,
-//                 'totalPrice'         => 0,
-//             ]);
-
-//             $total = 0;
-
-//             foreach ($request->items as $item) {
-//                 $itemTotal = $item['quantity'] * $item['unitPrice'];
-//                 $total += $itemTotal;
-
-//                 ShipmentItem::create([
-//                     'shipment_id' => $shipment->id,
-//                     'item_id'     => $item['item_id'],
-//                     'item_type'   => $this->getMorphClass($item['item_type']), // من التريت
-//                     'quantity'    => $item['quantity'],
-//                     'unitPrice'   => $item['unitPrice'],
-//                     'totalPrice'  => $itemTotal,
-//                 ]);
-//             }
-
-//             $shipment->update(['totalPrice' => $total]);
-
-//             DB::commit();
-
-//             return response()->json([
-//                 'success' => true,
-//                 'message' => 'تم إنشاء الشحنة بنجاح.',
-//                 'data'    => $shipment->load('items')
-//             ]);
-//         } catch (\Exception $e) {
-//             DB::rollBack();
-
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'حدث خطأ أثناء إنشاء الشحنة.',
-//                 'error'   => $e->getMessage(),
-//             ], 500);
-//         }
-//     }
-
-
 public function create(ShipmentRequest $request)
 {
     $this->authorize('manage_system');
 
-    DB::beginTransaction();
-
     try {
-        $data = $request->only([
-            'supplier_id', 'service_id', 'company_id',
-             'description'
-        ]);
+        $shipment = DB::transaction(function () use ($request) {
+            $data = array_merge($request->only([
+                'company_id', 'supplier_id', 'service_id', 'description'
+            ]), $this->prepareCreationMetaData());
 
-        $data['status'] = $data['status'] ?? 'active';
-        $data['totalPrice'] = 0;
+            $data['status'] = $data['status'] ?? 'active';
+            $data['totalPrice'] = 0;
 
-        $this->setAddedBy($data); // من HandleAddedByTrait
+            $shipment = Shipment::create($data);
 
-        $shipment = Shipment::create($data);
+            $total = 0;
 
-        $total = 0;
+            foreach ($request->items as $item) {
+                $itemTotal = $item['quantity'] * $item['unitPrice'];
+                $total += $itemTotal;
 
-        foreach ($request->items as $item) {
-            $itemTotal = $item['quantity'] * $item['unitPrice'];
-            $total += $itemTotal;
+                ShipmentItem::create([
+                    'shipment_id' => $shipment->id,
+                    'item_id'     => $item['item_id'],
+                    'item_type'   => $this->getMorphClass($item['item_type']),
+                    'quantity'    => $item['quantity'],
+                    'unitPrice'   => $item['unitPrice'],
+                    'totalPrice'  => $itemTotal,
+                ]);
+            }
 
-            ShipmentItem::create([
-                'shipment_id' => $shipment->id,
-                'item_id'     => $item['item_id'],
-                'item_type'   => $this->getMorphClass($item['item_type']),
-                'quantity'    => $item['quantity'],
-                'unitPrice'   => $item['unitPrice'],
-                'totalPrice'  => $itemTotal,
-            ]);
-        }
+            $shipment->update(['totalPrice' => $total]);
 
-        $shipment->update(['totalPrice' => $total]);
+            return $shipment;
+        });
 
-        DB::commit();
-
-        $this->loadCreatorRelations($shipment); // تحميل علاقات المُنشئ
+        $this->loadCommonRelations($shipment);
         $shipment->load('items');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إنشاء الشحنة بنجاح.',
-            'data'    => $shipment
-        ]);
+        return $this->respondWithResource($shipment, "Shipment created successfully.");
 
     } catch (\Exception $e) {
-        DB::rollBack();
-
         return response()->json([
             'success' => false,
             'message' => 'حدث خطأ أثناء إنشاء الشحنة.',
-            'error'   => $e->getMessage(),
+            'error' => $e->getMessage(),
         ], 500);
     }
 }
-
 
 
 
@@ -177,64 +110,57 @@ public function update(ShipmentRequest $request, Shipment $shipment)
 {
     $this->authorize('manage_system');
 
-    DB::beginTransaction();
-
     try {
-        $data = $request->only([
-            'supplier_id', 'service_id', 'company_id', 'status','description'
-        ]);
+        $updatedShipment = DB::transaction(function () use ($request, $shipment) {
+            // استدعاء prepareUpdateMeta مع تمرير الريكوست
+            $data = array_merge(
+                $request->only(['company_id', 'supplier_id', 'service_id', 'description']),
+                $this->prepareUpdateMeta($request, $shipment->status)
+            );
 
-        $this->setUpdatedBy($data);
+            $shipment->update($data);
 
-        $shipment->update($data);
+            // حذف العناصر القديمة
+            $shipment->items()->delete();
 
-        // حذف كل العناصر القديمة
-        $shipment->items()->delete();
+            $total = 0;
 
-        // إعادة إضافة العناصر الجديدة
-        $total = 0;
+            // إعادة إضافة العناصر الجديدة
+            foreach ($request->items as $item) {
+                $itemTotal = $item['quantity'] * $item['unitPrice'];
+                $total += $itemTotal;
 
-        foreach ($request->items as $item) {
-            $itemTotal = $item['quantity'] * $item['unitPrice'];
-            $total += $itemTotal;
+                $shipment->items()->create([
+                    'item_id'    => $item['item_id'],
+                    'item_type'  => $this->getMorphClass($item['item_type']),
+                    'quantity'   => $item['quantity'],
+                    'unitPrice'  => $item['unitPrice'],
+                    'totalPrice' => $itemTotal,
+                ]);
+            }
 
-            $shipment->items()->create([
-                'item_id'     => $item['item_id'],
-                'item_type'   => $this->getMorphClass($item['item_type']),
-                'quantity'    => $item['quantity'],
-                'unitPrice'   => $item['unitPrice'],
-                'totalPrice'  => $itemTotal,
-            ]);
-        }
+            // تحديث إجمالي السعر
+            $shipment->update(['totalPrice' => $total]);
 
-        // تحديث إجمالي السعر بعد تعديل العناصر
-        $shipment->update(['totalPrice' => $total]);
+            return $shipment;
+        });
 
-        DB::commit();
+        // تحميل العلاقات المشتركة (مُنشئ، مُحدّث، وعناصر)
+        $this->loadCommonRelations($updatedShipment);
+        $updatedShipment->load('items');
 
-        // تحميل العلاقات الخاصة بمن أنشأ وعدّل
-        $this->loadCreatorRelations($shipment);
-        $this->loadUpdaterRelations($shipment);
-
-        // تحميل العناصر المرتبطة
-        $shipment->load('items');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تحديث الشحنة بنجاح.',
-            'data'    => $shipment,
-        ]);
+        return $this->respondWithResource($updatedShipment, "Shipment updated successfully.");
 
     } catch (\Exception $e) {
-        DB::rollBack();
-
         return response()->json([
             'success' => false,
             'message' => 'حدث خطأ أثناء تحديث الشحنة.',
-            'error'   => $e->getMessage(),
+            'error' => $e->getMessage(),
         ], 500);
     }
 }
+
+
 
 
 

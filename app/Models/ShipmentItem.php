@@ -21,12 +21,12 @@ class ShipmentItem extends Model
         'quantity',
         'unitPrice',
         'totalPrice',
-        'status',
-        'creationDate',
-        'creationDateHijri',
+        // 'status',
+        // 'creationDate',
+        // 'creationDateHijri',
         'changed_data'
     ];
-    
+
     public function shipment()
 {
     return $this->belongsTo(Shipment::class);
