@@ -79,16 +79,16 @@ protected function mergeWithOld($request, $model, array $fields): array
     }
 
 
-    // protected function loadCommonRelations($model): void
-    // {
-    //     if (method_exists($this, 'loadCreatorRelations')) {
-    //         $this->loadCreatorRelations($model);
-    //     }
+    protected function loadCommonRelations($model): void
+    {
+        if (method_exists($this, 'loadCreatorRelations')) {
+            $this->loadCreatorRelations($model);
+        }
 
-    //     if (method_exists($this, 'loadUpdaterRelations')) {
-    //         $this->loadUpdaterRelations($model);
-    //     }
-    // }
+        if (method_exists($this, 'loadUpdaterRelations')) {
+            $this->loadUpdaterRelations($model);
+        }
+    }
 
 
     // protected function loadRelationsForCollection(Collection $collection): void
