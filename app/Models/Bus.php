@@ -35,6 +35,11 @@ class Bus extends Model
     {
         return $this->belongsTo(Company::class);
     }
+    
+        public function drivers()
+    {
+        return $this->hasMany(BusDriver::class);
+    }
 
     public function shipmentItems()
 {

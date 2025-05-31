@@ -11,18 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('buses', function (Blueprint $table) {
+        Schema::create('bus_drivers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->nullable()->constrained('companies')->cascadeOnDelete();
-            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
-            $table->integer('busNum');
-            $table->string('busModel');
-            $table->string('plateNum');
-            $table->integer('seatNum');
-            $table->integer('quantity')->default(0);
-            $table->decimal('sellingPrice');
-            $table->decimal('purchesPrice');
-            $table->decimal('profit')->nullable();
+            $table->foreignId('bus_id')->nullable()->constrained('buses')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('phoNum');
+            $table->string('idNum');
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -40,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('buses');
+        Schema::dropIfExists('bus_drivers');
     }
 };
