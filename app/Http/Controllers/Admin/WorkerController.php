@@ -43,26 +43,21 @@ class WorkerController extends Controller
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
-    $roleId = $request->input('role_id');
+  $query = WorkerLogin::with(['worker', 'role'])
+                ->orderBy('created_at', 'desc');
 
-    $query = WorkerLogin::
-        orderBy('created_at', 'desc');
-
-    if ($searchTerm) {
-        $query->whereHas('worker', function($q) use ($searchTerm) {
-            $q->where('name', 'like', '%' . $searchTerm . '%');
-        });
+    if ($request->search) {
+        $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
     }
 
-    if ($roleId) {
-        $query->where('role_id', $roleId);
+    if ($request->role_id) {
+        $query->where('role_id', $request->role_id);
     }
 
     $workers = $query->paginate(10);
 
-    // تحميل العلاقات الإضافية إذا كانت موجودة
-    $this->loadRelationsForCollection($workers);
+    // هذه السطر سيحل المشكلة:
+    $this->loadRelationsForCollection($workers->getCollection());
 
     return response()->json([
         'data' => WorkerRegisterResource::collection($workers),
