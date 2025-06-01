@@ -3,12 +3,15 @@
 namespace App\Traits;
 
 use App\Models\Bus;
+use App\Models\Hotel;
+use App\Models\Flight;
 
 trait HasMorphMapTrait
 {
     protected array $morphMap = [
         'bus'     => Bus::class,
-        // 'hotel'   => \App\Models\Hotel::class,
+        'flight'  => Flight::class,
+        'hotel'   => Hotel::class,
         // 'product' => \App\Models\Product::class,
     ];
 

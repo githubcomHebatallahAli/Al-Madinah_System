@@ -39,5 +39,9 @@ public function item()
 
 protected $hidden = ['created_at', 'updated_at'];
 
+     protected $casts = [
+    'changed_data' => 'array',
+];
+
 
 }

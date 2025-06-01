@@ -17,4 +17,6 @@ require __DIR__ . '/Apis/Admin/shipment.php';
 require __DIR__ . '/Apis/Admin/company.php';
 require __DIR__ . '/Apis/Admin/bus.php';
 require __DIR__ . '/Apis/Admin/busDriver.php';
+require __DIR__ . '/Apis/Admin/flight.php';
+require __DIR__ . '/Apis/Admin/hotel.php';
 

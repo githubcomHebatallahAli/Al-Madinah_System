@@ -7,7 +7,7 @@ use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Flight extends Model
+class Hotel extends Model
 {
     use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
@@ -17,10 +17,11 @@ class Flight extends Model
         'updated_by_type',
         'company_id',
         'supplier_id',
-        'direction',
+        'name',
+        'place',
+        'address',
+        'communication',
         'description',
-        'DateTimeTrip',
-        'DateTimeTripHijri',
         'quantity',
         'sellingPrice',
         'purchesPrice',
@@ -30,20 +31,20 @@ class Flight extends Model
         'creationDateHijri',
         'changed_data'
     ];
-
-        public function company()
+    
+            public function company()
     {
         return $this->belongsTo(Company::class);
     }
 
-        public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
         public function shipmentItems()
 {
     return $this->morphMany(ShipmentItem::class, 'item');
 }
+        public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 
 
 
