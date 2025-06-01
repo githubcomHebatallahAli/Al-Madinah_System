@@ -24,8 +24,7 @@ class FlightRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id' => 'nullable|exists:companies,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            'service_id' => 'required|exists:services,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',

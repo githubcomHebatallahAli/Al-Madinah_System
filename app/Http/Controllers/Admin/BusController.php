@@ -40,7 +40,7 @@ class BusController extends Controller
     {
         $this->authorize('manage_system');
        $data = array_merge($request->only([
-            'company_id','supplier_id', 'busNum', 'busModel','plateNum'
+            'service_id', 'busNum', 'busModel','plateNum'
             ,'seatNum','quantity','sellingPrice','purchesPrice'
         ]), $this->prepareCreationMetaData());
 
@@ -69,7 +69,7 @@ public function update(BusRequest $request, string $id)
     $Bus = Bus::findOrFail($id);
     $oldData = $Bus->toArray();
 
-    $updateData = $request->only(['status', 'company_id','supplier_id', 'busNum', 'busModel','plateNum'
+    $updateData = $request->only(['status','service_id', 'busNum', 'busModel','plateNum'
             ,'seatNum','quantity','sellingPrice','purchesPrice']);
 
     $updateData = array_merge(

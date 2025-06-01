@@ -35,15 +35,7 @@ class Supplier extends Model
         return $this->hasMany(Shipment::class);
     }
 
-        public function buses()
-    {
-        return $this->hasMany(Bus::class);
-    }
 
-        public function flights()
-    {
-        return $this->hasMany(Flight::class);
-    }
 
         public function creator()
 {

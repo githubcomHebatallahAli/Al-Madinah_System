@@ -15,8 +15,7 @@ class Bus extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'company_id',
-        'supplier_id',
+        'service_id',
         'busNum',
         'busModel',
         'plateNum',
@@ -31,11 +30,11 @@ class Bus extends Model
         'changed_data'
     ];
 
-        public function company()
+            public function service()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Service::class);
     }
-    
+
         public function drivers()
     {
         return $this->hasMany(BusDriver::class);
@@ -45,14 +44,6 @@ class Bus extends Model
 {
     return $this->morphMany(ShipmentItem::class, 'item');
 }
-
-
-
-    public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
-
 
 
     public function creator()

@@ -15,8 +15,7 @@ class Flight extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'company_id',
-        'supplier_id',
+        'service_id',
         'direction',
         'description',
         'DateTimeTrip',
@@ -31,15 +30,11 @@ class Flight extends Model
         'changed_data'
     ];
 
-        public function company()
+            public function service()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Service::class);
     }
-
-        public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
+    
         public function shipmentItems()
 {
     return $this->morphMany(ShipmentItem::class, 'item');

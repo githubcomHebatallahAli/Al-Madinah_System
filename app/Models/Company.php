@@ -32,15 +32,6 @@ class Company extends Model
         return $this->belongsTo(Service::class);
     }
 
-            public function buses()
-    {
-        return $this->hasMany(Bus::class);
-    }
-
-            public function flights()
-    {
-        return $this->hasMany(Flight::class);
-    }
 
             public function suppliers()
     {

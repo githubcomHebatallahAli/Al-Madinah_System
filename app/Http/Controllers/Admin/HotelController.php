@@ -41,7 +41,7 @@ class HotelController extends Controller
     {
         $this->authorize('manage_system');
        $data = array_merge($request->only([
-            'company_id','supplier_id', 'name','place','address',
+            'service_id', 'name','place','address',
             'description','communication','quantity','sellingPrice','purchesPrice'
         ]), $this->prepareCreationMetaData());
 
@@ -70,7 +70,7 @@ public function update(HotelRequest $request, string $id)
     $Hotel = Hotel::findOrFail($id);
     $oldData = $Hotel->toArray();
 
-    $updateData = $request->only(['status', 'company_id','supplier_id','name','place','address',
+    $updateData = $request->only(['status', 'service_id','name','place','address',
             'description','communication','quantity','sellingPrice','purchesPrice'
             ]);
 

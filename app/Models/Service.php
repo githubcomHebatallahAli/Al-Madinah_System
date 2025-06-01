@@ -34,10 +34,24 @@ class Service extends Model
     {
         return $this->hasMany(Company::class);
     }
-    
+
         public function shipments()
     {
         return $this->hasMany(Shipment::class);
+    }
+
+            public function buses()
+    {
+        return $this->hasMany(Bus::class);
+    }
+
+        public function flights()
+    {
+        return $this->hasMany(Flight::class);
+    }
+        public function hotels()
+    {
+        return $this->hasMany(Hotel::class);
     }
 
     public function creator()

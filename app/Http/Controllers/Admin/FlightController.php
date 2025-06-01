@@ -40,7 +40,7 @@ class FlightController extends Controller
     {
         $this->authorize('manage_system');
        $data = array_merge($request->only([
-            'company_id','supplier_id', 'direction', 'description'
+            'service_id', 'direction', 'description'
             ,'quantity','sellingPrice','purchesPrice','DateTimeTrip','DateTimeTripHijri'
         ]), $this->prepareCreationMetaData());
 
@@ -69,7 +69,7 @@ public function update(FlightRequest $request, string $id)
     $Flight = Flight::findOrFail($id);
     $oldData = $Flight->toArray();
 
-    $updateData = $request->only(['status','company_id','supplier_id', 'direction', 'description'
+    $updateData = $request->only(['status','service_id','direction', 'description'
             ,'quantity','sellingPrice','purchesPrice','DateTimeTrip','DateTimeTripHijri'
             ]);
 

@@ -15,8 +15,7 @@ class Hotel extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'company_id',
-        'supplier_id',
+        'service_id',
         'name',
         'place',
         'address',
@@ -31,21 +30,16 @@ class Hotel extends Model
         'creationDateHijri',
         'changed_data'
     ];
-    
-            public function company()
+
+            public function service()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Service::class);
     }
 
         public function shipmentItems()
 {
     return $this->morphMany(ShipmentItem::class, 'item');
 }
-        public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
-
 
 
     public function creator()

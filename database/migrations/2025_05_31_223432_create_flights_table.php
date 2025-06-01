@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('flights', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->nullable()->constrained('companies')->cascadeOnDelete();
-            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
+            $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
             $table->dateTime('DateTimeTrip')->nullable();
             $table->string('DateTimeTripHijri')->nullable();
             $table->string('direction');
