@@ -40,6 +40,11 @@ class Supplier extends Model
         return $this->hasMany(Bus::class);
     }
 
+        public function flights()
+    {
+        return $this->hasMany(Flight::class);
+    }
+
         public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');

@@ -6,9 +6,10 @@ use Illuminate\Http\Request;
 use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BusResource extends JsonResource
+class FlightResource extends JsonResource
 {
-    use AddedByResourceTrait;
+     use AddedByResourceTrait;
+
     public function toArray(Request $request): array
     {
         return [
@@ -17,10 +18,10 @@ class BusResource extends JsonResource
             'company_name' => $this->company?->name,
             'supplier_id' => $this->supplier?->id,
             'supplier_name' => $this->supplier?->name,
-            'busNum' => $this -> busNum,
-            'busModel' => $this-> busModel,
-            'plateNum' => $this-> plateNum ,
-            'seatNum' => $this-> seatNum,
+            'direction' => $this->direction ,
+            'DateTimeTrip'=> $this->DateTimeTrip,
+            'DateTimeTripHijri'=> $this->DateTimeTripHijri,
+            'description' => $this->description,
             'quantity' => $this-> quantity,
             'sellingPrice' => $this-> sellingPrice,
             'purchesPrice' => $this-> purchesPrice,
