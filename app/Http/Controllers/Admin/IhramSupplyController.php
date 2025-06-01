@@ -66,7 +66,6 @@ class IhramSupplyController extends Controller
 
 public function update(IhramSupplyRequest $request, string $id)
 {
-    $this->authorize('manage_system');
     $IhramSupply = IhramSupply::findOrFail($id);
     $this->authorize('update',$IhramSupply);
     $oldData = $IhramSupply->toArray();
