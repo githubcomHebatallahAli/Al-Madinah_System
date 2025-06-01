@@ -36,10 +36,10 @@ class Store extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    //     public function products()
-    // {
-    //     return $this->hasMany(Product::class);
-    // }
+        public function ihramSupplies()
+    {
+        return $this->hasMany(IhramSupply::class);
+    }
 
 
 

@@ -9,31 +9,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminOrWorkerMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-
-// public function handle(Request $request, Closure $next): Response
-// {
-//     if (Auth::guard('admin')->check()) {
-//         Auth::setUser(Auth::guard('admin')->user());
-//         return $next($request);
-//     }
-
-//     if (Auth::guard('worker')->check()) {
-//         Auth::setUser(Auth::guard('worker')->user());
-//         return $next($request);
-//     }
-
-//     return response()->json(['message' => 'Unauthenticated.'], 401);
-// }
 
 public function handle(Request $request, Closure $next): Response
 {
     if (Auth::guard('admin')->check()) {
-        Auth::shouldUse('admin'); // ⬅️ 
+        Auth::shouldUse('admin');
         return $next($request);
     }
 
@@ -44,8 +24,6 @@ public function handle(Request $request, Closure $next): Response
 
     return response()->json(['message' => 'Unauthenticated.'], 401);
 }
-
-
 
     }
 

@@ -5,6 +5,7 @@ namespace App\Traits;
 use App\Models\Bus;
 use App\Models\Hotel;
 use App\Models\Flight;
+use App\Models\IhramSupply;
 
 trait HasMorphMapTrait
 {
@@ -12,7 +13,7 @@ trait HasMorphMapTrait
         'bus'     => Bus::class,
         'flight'  => Flight::class,
         'hotel'   => Hotel::class,
-        // 'product' => \App\Models\Product::class,
+        'ihramSupply' => IhramSupply::class,
     ];
 
     public function getMorphMap(): array

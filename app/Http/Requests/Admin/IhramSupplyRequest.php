@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 
-class HotelRequest extends FormRequest
+class IhramSupplyRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,13 +25,12 @@ class HotelRequest extends FormRequest
     {
         return [
             'service_id' => 'required|exists:services,id',
+            'store_id' => 'required|exists:stores,id',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'name'=>'required|string',
-            'place' => 'required|in:Mecca,Almadinah',
-            'address'=>'nullable|string',
-            'communication'=>'nullable|string',
+            'size' => 'nullable|in:child,adult',
             'quantity'=>'required|string',
             'description'=>'nullable|string',
             'sellingPrice'=> 'required|numeric|min:0|max:99999.99',
@@ -39,7 +38,7 @@ class HotelRequest extends FormRequest
         ];
     }
 
-              public function failedValidation(Validator $validator)
+                  public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'success'   => false,

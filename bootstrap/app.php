@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Admin;
+use App\Models\IhramSupply;
 use App\Policies\AdminPolicy;
+use App\Policies\IhramSupplyPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
 
-            'worker' => \App\Http\Middleware\AuthenticateMiddleware::class,
+            'worker' => \App\Http\Middleware\WorkerMiddleware::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'adminOrWorker' => \App\Http\Middleware\AdminOrWorkerMiddleware::class,
         ]);
@@ -25,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
       ->withExceptions(function (Exceptions $exceptions) {
         Gate::policy(Admin::class, AdminPolicy::class);
+        Gate::policy(IhramSupply::class, IhramSupplyPolicy::class);
 
 
     })->create();

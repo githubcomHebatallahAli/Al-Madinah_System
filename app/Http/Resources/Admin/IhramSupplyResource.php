@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class HotelResource extends JsonResource
+class IhramSupplyResource extends JsonResource
 {
-      use AddedByResourceTrait;
+    use AddedByResourceTrait;
 
     public function toArray(Request $request): array
     {
@@ -16,10 +16,10 @@ class HotelResource extends JsonResource
             "id" => $this -> id,
             'service_id' => $this->service?->id,
             'service_name' => $this->service?->name,
+            'store_id' => $this->store?->id,
+            'store_name' => $this->store?->name,
             'name'=> $this-> name,
-            'place'=> $this-> place,
-            'address'=> $this-> address,
-            'communication'=> $this-> communication,
+            'size'=> $this-> size,
             'description' => $this->description,
             'quantity' => $this-> quantity,
             'sellingPrice' => $this-> sellingPrice,

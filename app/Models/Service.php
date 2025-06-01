@@ -49,9 +49,15 @@ class Service extends Model
     {
         return $this->hasMany(Flight::class);
     }
+
         public function hotels()
     {
         return $this->hasMany(Hotel::class);
+    }
+    
+        public function ihramSupplies()
+    {
+        return $this->hasMany(IhramSupply::class);
     }
 
     public function creator()
