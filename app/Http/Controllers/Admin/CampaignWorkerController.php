@@ -95,9 +95,13 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
 
     DB::transaction(function () use ($request, $campaign, $updateData) {
 
-        $campaign->workers()
-            ->whereIn('worker_id', $request->worker_ids)
-            ->update($updateData);
+       DB::table('campaign_workers')
+    ->where('campaign_id', $campaign->id)
+    ->whereIn('worker_id', $request->worker_ids)
+    ->update(array_merge($updateData, [
+        'updated_at' => now()
+    ]));
+
 
         $countToRemove = $campaign->workers()
             ->whereIn('worker_id', $request->worker_ids)
