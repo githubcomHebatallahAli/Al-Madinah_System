@@ -111,7 +111,7 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
 
     return response()->json([
         'message' => 'تم فصل المندوبين عن الحملة بنجاح',
-        'data' => $campaign->load(['workers.workerLogin.role', 'workers.title'])
+        'added_workers' => CampaignWorkerResource::collection($campaign),
     ], 200);
 }
 
@@ -124,14 +124,16 @@ public function getCampaignDelegates($campaignId)
         ->with([
             'workerLogin.role',
 
+
         ])
         ->get();
 
     return response()->json([
         'campaign_id' => (int)$campaignId,
         'campaign_name' => $campaign->name,
-        'workers' => $workers,
-        'count' => $campaign->workers_count,
+        'added_workers' => CampaignWorkerResource::collection($workers),
+
+        'count' => $campaign->workersCount,
         'message' => 'تم جلب بيانات مندوبي الحملة بنجاح'
     ], 200);
 }
