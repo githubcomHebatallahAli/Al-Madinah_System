@@ -93,25 +93,16 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
     $updateData = [];
     $this->setUpdatedBy($updateData);
 
-    $removedWorkers = collect(); // سيتم ملؤه داخل المعاملة
+    DB::transaction(function () use ($request, $campaign, $updateData) {
 
-    DB::transaction(function () use ($request, $campaign, $updateData, &$removedWorkers) {
-        // جلب بيانات المندوبين المرتبطين قبل الحذف
-        $removedWorkers = $campaign->workers()
+        $campaign->workers()
             ->whereIn('worker_id', $request->worker_ids)
-            ->with(['workerLogin.role']) // لو كنت تحتاج معلومات الدخول
-            ->get();
+            ->update($updateData);
 
-        // تحديث جدول pivot فقط بدون تحديث جدول workers لتفادي التعارض في الأعمدة
-        DB::table('campaign_workers')
-            ->where('campaign_id', $campaign->id)
+        $countToRemove = $campaign->workers()
             ->whereIn('worker_id', $request->worker_ids)
-            ->update(array_merge($updateData, [
-                'updated_at' => now()
-            ]));
+            ->count();
 
-        // حذف المندوبين من الحملة
-        $countToRemove = $removedWorkers->count();
         if ($countToRemove > 0) {
             $campaign->workers()->detach($request->worker_ids);
             $campaign->decrement('workersCount', $countToRemove);
@@ -120,11 +111,9 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
 
     return response()->json([
         'message' => 'تم فصل المندوبين عن الحملة بنجاح',
-        'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
+        'added_workers' => CampaignWorkerResource::collection($campaign),
     ], 200);
 }
-
-
 
 
 public function getCampaignDelegates($campaignId)
