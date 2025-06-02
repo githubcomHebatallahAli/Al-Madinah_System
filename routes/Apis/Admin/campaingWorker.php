@@ -10,8 +10,8 @@ use App\Http\Controllers\Admin\CampaignWorkerController;
 Route::controller(CampaignWorkerController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
-   Route::get('/add/Delegets/ToCampaign','addDelegatesToCampaign');
-   Route::post('/remove/Delegates/FromCampaign', 'removeDelegatesFromCampaign');
-   Route::get('/showAll/Campaign/Delegates','getCampaignDelegates');
+   Route::post('/add/Delegets/ToCampaign/{campaignId}','addDelegatesToCampaign');
+   Route::delete('/remove/Delegates/FromCampaign/{campaignId}', 'removeDelegatesFromCampaign');
+   Route::get('/show/Campaign/{campaignId}/Delegates','getCampaignDelegates');
 
    });

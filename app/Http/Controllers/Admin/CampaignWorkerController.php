@@ -13,11 +13,20 @@ use App\Http\Controllers\Controller;
 class CampaignWorkerController extends Controller
 {
     use HandleAddedByTrait, HijriDateTrait;
-public function addDelegatesToCampaign(Request $request, Campaign $campaign)
+public function addDelegatesToCampaign(Request $request, $campaignId)
 {
+    $campaign = Campaign::findOrFail($campaignId);
+
     $request->validate([
-        'worker_ids' => 'required|array',
-        'worker_ids.*' => 'exists:workers,id',
+        'worker_ids' => 'required|array|min:1',
+        'worker_ids.*' => [
+            'exists:workers,id',
+            function ($attribute, $value, $fail) use ($campaign) {
+                if ($campaign->workers()->where('worker_id', $value)->exists()) {
+                    $fail('المندوب مضاف بالفعل للحملة');
+                }
+            }
+        ]
     ]);
 
     $data = [];
@@ -65,11 +74,20 @@ public function addDelegatesToCampaign(Request $request, Campaign $campaign)
 }
 
 
-public function removeDelegatesFromCampaign(Request $request, Campaign $campaign)
+public function removeDelegatesFromCampaign(Request $request, $campaignId)
 {
+    $campaign = Campaign::findOrFail($campaignId);
+
     $request->validate([
-        'worker_ids' => 'required|array',
-        'worker_ids.*' => 'exists:workers,id',
+        'worker_ids' => 'required|array|min:1',
+        'worker_ids.*' => [
+            'exists:workers,id',
+            function ($attribute, $value, $fail) use ($campaign) {
+                if (!$campaign->workers()->where('worker_id', $value)->exists()) {
+                    $fail('المندوب غير موجود في الحملة');
+                }
+            }
+        ]
     ]);
 
     $updateData = [];
@@ -98,8 +116,10 @@ public function removeDelegatesFromCampaign(Request $request, Campaign $campaign
 }
 
 
-public function getCampaignDelegates(Campaign $campaign)
+public function getCampaignDelegates($campaignId)
 {
+    $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
+
     $workers = $campaign->workers()
         ->with([
             'workerLogin.role',
@@ -108,7 +128,10 @@ public function getCampaignDelegates(Campaign $campaign)
         ->get();
 
     return response()->json([
-        'data' => $workers,
+        'campaign_id' => (int)$campaignId,
+        'campaign_name' => $campaign->name,
+        'workers' => $workers,
+        'count' => $campaign->workers_count,
         'message' => 'تم جلب بيانات مندوبي الحملة بنجاح'
     ], 200);
 }
