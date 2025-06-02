@@ -16,6 +16,8 @@ class FlightResource extends JsonResource
             "id" => $this -> id,
             'service_id' => $this->service?->id,
             'service_name' => $this->service?->name,
+            'class' => $this->class ,
+            'seatNum' => $this-> seatNum,
             'direction' => $this->direction ,
             'DateTimeTrip'=> $this->DateTimeTrip,
             'DateTimeTripHijri'=> $this->DateTimeTripHijri,

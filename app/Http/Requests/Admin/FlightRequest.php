@@ -31,6 +31,8 @@ class FlightRequest extends FormRequest
             'DateTimeTrip' =>'nullable|date_format:Y-m-d H:i:s',
             'DateTimeTripHijri'=>'nullable|string',
             'quantity'=>'required|string',
+            'class'=>'required|string',
+            'seatNum'=>'required|integer',
             'direction'=>'required|string',
             'description'=>'nullable|string',
             'sellingPrice'=> 'required|numeric|min:0|max:99999.99',

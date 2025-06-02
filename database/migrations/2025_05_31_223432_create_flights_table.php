@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
             $table->dateTime('DateTimeTrip')->nullable();
             $table->string('DateTimeTripHijri')->nullable();
+            $table->integer('seatNum');
+            $table->string('class');
             $table->string('direction');
             $table->text('description')->nullable();
             $table->integer('quantity')->default(0);

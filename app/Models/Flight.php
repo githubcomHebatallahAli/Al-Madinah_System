@@ -16,6 +16,8 @@ class Flight extends Model
         'updated_by',
         'updated_by_type',
         'service_id',
+        'class',
+        'seatNum',
         'direction',
         'description',
         'DateTimeTrip',
@@ -34,7 +36,7 @@ class Flight extends Model
     {
         return $this->belongsTo(Service::class);
     }
-    
+
         public function shipmentItems()
 {
     return $this->morphMany(ShipmentItem::class, 'item');
