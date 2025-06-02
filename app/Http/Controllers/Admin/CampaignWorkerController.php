@@ -19,14 +19,7 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
 
     $request->validate([
         'worker_ids' => 'required|array|min:1',
-        'worker_ids.*' => [
-            'exists:workers,id',
-            function ($attribute, $value, $fail) use ($campaign) {
-                if ($campaign->workers()->where('worker_id', $value)->exists()) {
-                    $fail('المندوب مضاف بالفعل للحملة');
-                }
-            }
-        ]
+        'worker_ids.*' => 'exists:workers,id'
     ]);
 
     $data = [];
@@ -41,16 +34,19 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
     DB::transaction(function () use ($request, $campaign, $data) {
         $workersToAdd = [];
 
-        // جلب المندوبين الذين يستوفون الشروط
-        $delegateWorkers = Worker::whereIn('id', $request->worker_ids)
+        // جلب المندوبين الذين يستوفون جميع الشروط
+        $eligibleWorkers = Worker::whereIn('id', $request->worker_ids)
             ->where('status', 'active')
             ->where('dashboardAccess', 'ok')
-            ->pluck('id')
-            ->toArray();
+            ->whereHas('workerLogin', function($query) {
+                $query->where('role_id', 3); // الشرط الجديد للتحقق من role_id
+            })
+            ->with('workerLogin') // تحميل العلاقة لاستخدامها لاحقاً
+            ->get();
 
-        foreach ($delegateWorkers as $workerId) {
-            if (!$campaign->workers()->where('worker_id', $workerId)->exists()) {
-                $workersToAdd[$workerId] = $data;
+        foreach ($eligibleWorkers as $worker) {
+            if (!$campaign->workers()->where('worker_id', $worker->id)->exists()) {
+                $workersToAdd[$worker->id] = $data;
             }
         }
 
@@ -60,16 +56,23 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
         }
     });
 
-    // جلب بيانات المندوبين المضافين حديثاً
+    // جلب بيانات المندوبين المضافين مع التحقق من role_id
     $addedWorkers = $campaign->workers()
         ->whereIn('worker_id', $request->worker_ids)
+        ->whereHas('workerLogin', function($query) {
+            $query->where('role_id', 3);
+        })
         ->with(['workerLogin.role', 'title'])
         ->get();
 
     return response()->json([
+        'success' => true,
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
-        'data' => $addedWorkers,
-
+        'data' => [
+            'campaign_id' => $campaign->id,
+            'added_workers' => $addedWorkers,
+            'added_count' => $addedWorkers->count()
+        ]
     ], 200);
 }
 
