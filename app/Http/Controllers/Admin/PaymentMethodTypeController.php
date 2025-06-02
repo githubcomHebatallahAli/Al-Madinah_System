@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Http\Request;
+use App\Traits\HijriDateTrait;
 use App\Models\PaymentMethodType;
+use App\Traits\HandleAddedByTrait;
+use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
+use App\Traits\LoadsCreatorRelationsTrait;
+use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\PaymentMethodTypeRequest;
 use App\Http\Resources\Admin\PaymentMethodTypeResource;
 
 class PaymentMethodTypeTypeController extends Controller
 {
-        use HijriDateTrait;
+    use HijriDateTrait;
     use TracksChangesTrait;
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;
