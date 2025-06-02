@@ -48,8 +48,8 @@ class CampaignWorkerResource extends JsonResource
                 return [
                     'added_by' => $this->addedByAttribute(),
                     'updated_by' => $this->updatedByAttribute(),
-                    'creationDate' => $this->pivot->creation_date,
-                    'creationDateHijri' => $this->pivot->creation_date_hijri,
+                    'creationDate' => $this->pivot->creationDate,
+                    'creationDateHijri' => $this->pivot->creationDateHijri,
                     'changed_data' => $this->pivot->changed_data ?? null
                 ];
             }),
