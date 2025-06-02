@@ -21,4 +21,5 @@ require __DIR__ . '/Apis/Admin/flight.php';
 require __DIR__ . '/Apis/Admin/hotel.php';
 require __DIR__ . '/Apis/Admin/ihramSupply.php';
 require __DIR__ . '/Apis/Admin/pilgrims.php';
+require __DIR__ . '/Apis/Admin/campaignWorker.php';
 
