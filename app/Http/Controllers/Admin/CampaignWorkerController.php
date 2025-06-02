@@ -226,120 +226,120 @@ class CampaignWorkerController extends Controller
     }
 
 
+//     public function removeDelegatesFromCampaign(Request $request, $campaignId)
+// {
+//     $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
+
+//     $request->validate([
+//         'worker_ids' => 'required|array|min:1',
+//         'worker_ids.*' => [
+//             'exists:workers,id',
+//             function ($attribute, $value, $fail) use ($campaign) {
+//                 if (!$campaign->workers()->where('worker_id', $value)->exists()) {
+//                     $fail('المندوب غير موجود في الحملة');
+//                 }
+//             }
+//         ]
+//     ]);
+
+//     $updateData = [];
+//     $this->setUpdatedBy($updateData);
+//     $updateData['updated_at'] = now();
+
+//     $removedWorkers = collect();
+
+//     DB::transaction(function () use ($request, $campaign, $updateData, &$removedWorkers) {
+
+//         // استرجاع بيانات المندوبين قبل الفصل
+//         $workersBeforeDetach = DB::table('campaign_workers')
+//             ->where('campaign_id', $campaign->id)
+//             ->whereIn('worker_id', $request->worker_ids)
+//             ->get();
+
+//         // تسجيل البيانات القديمة داخل عمود changed_data
+//         foreach ($workersBeforeDetach as $pivotRow) {
+//             DB::table('campaign_workers')
+//                 ->where('campaign_id', $pivotRow->campaign_id)
+//                 ->where('worker_id', $pivotRow->worker_id)
+//                 ->update([
+//                     'changed_data' => json_encode($pivotRow),
+//                     'updated_by' => $updateData['updated_by'] ?? null,
+//                     'updated_by_type' => $updateData['updated_by_type'] ?? null,
+//                     'updated_at' => $updateData['updated_at'],
+//                 ]);
+//         }
+
+//         $removedWorkers = $campaign->workers()
+//             ->whereIn('worker_id', $request->worker_ids)
+//             ->with(['workerLogin.role', 'title'])
+//             ->get();
+
+//         $campaign->workers()->detach($request->worker_ids);
+
+//         $campaign->workersCount = $campaign->workers()->count();
+//         $campaign->save();
+//     });
+
+//     return response()->json([
+//         'message' => 'تم فصل المندوبين عن الحملة بنجاح',
+//         'data' => [
+//             'campaign_id' => $campaign->id,
+//             'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
+//             'removed_count' => $removedWorkers->count(),
+//             'remaining_workers_count' => $campaign->workersCount
+//         ]
+//     ], 200);
+// }
+
+
     public function removeDelegatesFromCampaign(Request $request, $campaignId)
-{
-    $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
+    {
+        $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
 
-    $request->validate([
-        'worker_ids' => 'required|array|min:1',
-        'worker_ids.*' => [
-            'exists:workers,id',
-            function ($attribute, $value, $fail) use ($campaign) {
-                if (!$campaign->workers()->where('worker_id', $value)->exists()) {
-                    $fail('المندوب غير موجود في الحملة');
+        $request->validate([
+            'worker_ids' => 'required|array|min:1',
+            'worker_ids.*' => [
+                'exists:workers,id',
+                function ($attribute, $value, $fail) use ($campaign) {
+                    if (!$campaign->workers()->where('worker_id', $value)->exists()) {
+                        $fail('المندوب غير موجود في الحملة');
+                    }
                 }
-            }
-        ]
-    ]);
+            ]
+        ]);
 
-    $updateData = [];
-    $this->setUpdatedBy($updateData);
-    $updateData['updated_at'] = now();
+        $updateData = [];
+        $this->setUpdatedBy($updateData);
+        $updateData['updated_at'] = now();
 
-    $removedWorkers = collect();
+        $removedWorkers = collect();
 
-    DB::transaction(function () use ($request, $campaign, $updateData, &$removedWorkers) {
+        DB::transaction(function () use ($request, $campaign, $updateData, &$removedWorkers) {
+            $removedWorkers = $campaign->workers()
+                ->whereIn('worker_id', $request->worker_ids)
+                ->with(['workerLogin.role', 'title'])
+                ->get();
 
-        // استرجاع بيانات المندوبين قبل الفصل
-        $workersBeforeDetach = DB::table('campaign_workers')
-            ->where('campaign_id', $campaign->id)
-            ->whereIn('worker_id', $request->worker_ids)
-            ->get();
-
-        // تسجيل البيانات القديمة داخل عمود changed_data
-        foreach ($workersBeforeDetach as $pivotRow) {
             DB::table('campaign_workers')
-                ->where('campaign_id', $pivotRow->campaign_id)
-                ->where('worker_id', $pivotRow->worker_id)
-                ->update([
-                    'changed_data' => json_encode($pivotRow),
-                    'updated_by' => $updateData['updated_by'] ?? null,
-                    'updated_by_type' => $updateData['updated_by_type'] ?? null,
-                    'updated_at' => $updateData['updated_at'],
-                ]);
-        }
+                ->where('campaign_id', $campaign->id)
+                ->whereIn('worker_id', $request->worker_ids)
+                ->update($updateData);
 
-        $removedWorkers = $campaign->workers()
-            ->whereIn('worker_id', $request->worker_ids)
-            ->with(['workerLogin.role', 'title'])
-            ->get();
+            $campaign->workers()->detach($request->worker_ids);
+            $campaign->workersCount = $campaign->workers()->count();
+            $campaign->save();
+        });
 
-        $campaign->workers()->detach($request->worker_ids);
-
-        $campaign->workersCount = $campaign->workers()->count();
-        $campaign->save();
-    });
-
-    return response()->json([
-        'message' => 'تم فصل المندوبين عن الحملة بنجاح',
-        'data' => [
-            'campaign_id' => $campaign->id,
-            'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
-            'removed_count' => $removedWorkers->count(),
-            'remaining_workers_count' => $campaign->workersCount
-        ]
-    ], 200);
-}
-
-
-    // public function removeDelegatesFromCampaign(Request $request, $campaignId)
-    // {
-    //     $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
-
-    //     $request->validate([
-    //         'worker_ids' => 'required|array|min:1',
-    //         'worker_ids.*' => [
-    //             'exists:workers,id',
-    //             function ($attribute, $value, $fail) use ($campaign) {
-    //                 if (!$campaign->workers()->where('worker_id', $value)->exists()) {
-    //                     $fail('المندوب غير موجود في الحملة');
-    //                 }
-    //             }
-    //         ]
-    //     ]);
-
-    //     $updateData = [];
-    //     $this->setUpdatedBy($updateData);
-    //     $updateData['updated_at'] = now();
-
-    //     $removedWorkers = collect();
-
-    //     DB::transaction(function () use ($request, $campaign, $updateData, &$removedWorkers) {
-    //         $removedWorkers = $campaign->workers()
-    //             ->whereIn('worker_id', $request->worker_ids)
-    //             ->with(['workerLogin.role', 'title'])
-    //             ->get();
-
-    //         DB::table('campaign_workers')
-    //             ->where('campaign_id', $campaign->id)
-    //             ->whereIn('worker_id', $request->worker_ids)
-    //             ->update($updateData);
-
-    //         $campaign->workers()->detach($request->worker_ids);
-    //         $campaign->workersCount = $campaign->workers()->count();
-    //         $campaign->save();
-    //     });
-
-    //     return response()->json([
-    //         'message' => 'تم فصل المندوبين عن الحملة بنجاح',
-    //         'data' => [
-    //             'campaign_id' => $campaign->id,
-    //             'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
-    //             'removed_count' => $removedWorkers->count(),
-    //             'remaining_workers_count' => $campaign->workersCount
-    //         ]
-    //     ], 200);
-    // }
+        return response()->json([
+            'message' => 'تم فصل المندوبين عن الحملة بنجاح',
+            'data' => [
+                'campaign_id' => $campaign->id,
+                'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
+                'removed_count' => $removedWorkers->count(),
+                'remaining_workers_count' => $campaign->workersCount
+            ]
+        ], 200);
+    }
 
     public function getCampaignDelegates($campaignId)
     {
