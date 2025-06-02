@@ -76,7 +76,7 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
 
 public function removeDelegatesFromCampaign(Request $request, $campaignId)
 {
-    $campaign = Campaign::findOrFail($campaignId);
+    $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
 
     $request->validate([
         'worker_ids' => 'required|array|min:1',
@@ -84,34 +84,44 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
             'exists:workers,id',
             function ($attribute, $value, $fail) use ($campaign) {
                 if (!$campaign->workers()->where('worker_id', $value)->exists()) {
-                    $fail('المندوب غير موجود في الحملة');
+                    $fail("المندوب ID {$value} غير موجود في الحملة");
                 }
             }
         ]
     ]);
 
-    $updateData = [];
+    $updateData = [
+        'updated_at' => now()->timezone('Asia/Riyadh')
+    ];
     $this->setUpdatedBy($updateData);
 
-    DB::transaction(function () use ($request, $campaign, $updateData) {
+    $removedCount = 0;
 
+    DB::transaction(function () use ($request, $campaign, $updateData, &$removedCount) {
+        // تحديث بيانات updated_by قبل الفصل
         $campaign->workers()
             ->whereIn('worker_id', $request->worker_ids)
             ->update($updateData);
 
-        $countToRemove = $campaign->workers()
+        $removedCount = $campaign->workers()
             ->whereIn('worker_id', $request->worker_ids)
             ->count();
 
-        if ($countToRemove > 0) {
+        if ($removedCount > 0) {
             $campaign->workers()->detach($request->worker_ids);
-            $campaign->decrement('workersCount', $countToRemove);
+            $campaign->decrement('workersCount', $removedCount);
         }
     });
 
     return response()->json([
-        'message' => 'تم فصل المندوبين عن الحملة بنجاح',
-        'added_workers' => CampaignWorkerResource::collection($campaign),
+        'success' => true,
+        'message' => 'تم فصل المندوبين بنجاح',
+        'data' => [
+            'campaign_id' => $campaign->id,
+            'removed_workers_count' => $removedCount,
+            'remaining_workers_count' => $campaign->workersCount - $removedCount,
+            'removed_workers_ids' => $request->worker_ids
+        ]
     ], 200);
 }
 
@@ -123,8 +133,6 @@ public function getCampaignDelegates($campaignId)
     $workers = $campaign->workers()
         ->with([
             'workerLogin.role',
-
-
         ])
         ->get();
 
