@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Worker;
 use App\Models\Campaign;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
@@ -12,7 +13,7 @@ use App\Http\Controllers\Controller;
 class CampaignWorkerController extends Controller
 {
     use HandleAddedByTrait, HijriDateTrait;
-    public function addDelegatesToCampaign(Request $request, Campaign $campaign)
+public function addDelegatesToCampaign(Request $request, Campaign $campaign)
 {
     $request->validate([
         'worker_ids' => 'required|array',
@@ -31,7 +32,14 @@ class CampaignWorkerController extends Controller
     DB::transaction(function () use ($request, $campaign, $data) {
         $workersToAdd = [];
 
-        foreach ($request->worker_ids as $workerId) {
+        // جلب المندوبين الذين يستوفون الشروط
+        $delegateWorkers = Worker::whereIn('id', $request->worker_ids)
+            ->where('status', 'active')
+            ->where('dashboardAccess', 'ok')
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($delegateWorkers as $workerId) {
             if (!$campaign->workers()->where('worker_id', $workerId)->exists()) {
                 $workersToAdd[$workerId] = $data;
             }
@@ -43,9 +51,16 @@ class CampaignWorkerController extends Controller
         }
     });
 
+    // جلب بيانات المندوبين المضافين حديثاً
+    $addedWorkers = $campaign->workers()
+        ->whereIn('worker_id', $request->worker_ids)
+        ->with(['workerLogin.role', 'title'])
+        ->get();
+
     return response()->json([
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
-        'data' => $campaign->load(['workers.workerLogin.role', 'workers.title'])
+        'data' => $addedWorkers,
+
     ], 200);
 }
 
@@ -82,9 +97,7 @@ public function removeDelegatesFromCampaign(Request $request, Campaign $campaign
     ], 200);
 }
 
-/**
- * الحصول على قائمة مندوبي الحملة
- */
+
 public function getCampaignDelegates(Campaign $campaign)
 {
     $workers = $campaign->workers()
