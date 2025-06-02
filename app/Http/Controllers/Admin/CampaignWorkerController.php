@@ -94,14 +94,13 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
     $this->setUpdatedBy($updateData);
 
     DB::transaction(function () use ($request, $campaign, $updateData) {
-
-       DB::table('campaign_workers')
-    ->where('campaign_id', $campaign->id)
-    ->whereIn('worker_id', $request->worker_ids)
-    ->update(array_merge($updateData, [
-        'updated_at' => now()
-    ]));
-
+        // ✅ التحديث الآمن لجدول campaign_workers فقط
+        DB::table('campaign_workers')
+            ->where('campaign_id', $campaign->id)
+            ->whereIn('worker_id', $request->worker_ids)
+            ->update(array_merge($updateData, [
+                'updated_at' => now()
+            ]));
 
         $countToRemove = $campaign->workers()
             ->whereIn('worker_id', $request->worker_ids)
@@ -118,6 +117,7 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
         'added_workers' => CampaignWorkerResource::collection($campaign),
     ], 200);
 }
+
 
 
 public function getCampaignDelegates($campaignId)
