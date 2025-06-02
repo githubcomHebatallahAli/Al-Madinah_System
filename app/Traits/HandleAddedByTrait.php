@@ -70,17 +70,17 @@ trait HandleAddedByTrait
         ], 403));
     }
 
-//      public function setAddedBy(array &$data): void
-//     {
-//         $data['added_by'] = $this->getAddedByIdOrFail();
-//         $data['added_by_type'] = $this->getAddedByType();
-//     }
+     public function setAddedBy(array &$data): void
+    {
+        $data['added_by'] = $this->getAddedByIdOrFail();
+        $data['added_by_type'] = $this->getAddedByType();
+    }
 
-//     public function setUpdatedBy(array &$data): void
-//     {
-//         $data['updated_by'] = $this->getUpdatedByIdOrFail();
-//         $data['updated_by_type'] = $this->getUpdatedByType();
-//     }
+    public function setUpdatedBy(array &$data): void
+    {
+        $data['updated_by'] = $this->getUpdatedByIdOrFail();
+        $data['updated_by_type'] = $this->getUpdatedByType();
+    }
 }
 
 
