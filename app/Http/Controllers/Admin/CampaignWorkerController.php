@@ -189,8 +189,8 @@ class CampaignWorkerController extends Controller
         $this->setUpdatedBy($data);
 
         $data = array_merge($data, [
-            'creation_date' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creation_date_hijri' => $this->getHijriDate(),
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
         ]);
 
         DB::transaction(function () use ($request, $campaign, $data) {
@@ -204,7 +204,7 @@ class CampaignWorkerController extends Controller
                 $campaign->workers()->attach($worker->id, $data);
             }
 
-            $campaign->workers_count = $campaign->workers()->count();
+            $campaign->workersCount = $campaign->workers()->count();
             $campaign->save();
         });
 
@@ -214,13 +214,12 @@ class CampaignWorkerController extends Controller
             ->get();
 
         return response()->json([
-            'success' => true,
             'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
             'data' => [
                 'campaign_id' => $campaign->id,
                 'added_workers' => CampaignWorkerResource::collection($addedWorkers),
                 'added_count' => $addedWorkers->count(),
-                'remaining_workers_count' => $campaign->workers_count
+                'remaining_workers_count' => $campaign->workersCount
             ]
         ], 200);
     }
@@ -259,18 +258,17 @@ class CampaignWorkerController extends Controller
                 ->update($updateData);
 
             $campaign->workers()->detach($request->worker_ids);
-            $campaign->workers_count = $campaign->workers()->count();
+            $campaign->workersCount = $campaign->workers()->count();
             $campaign->save();
         });
 
         return response()->json([
-            'success' => true,
             'message' => 'تم فصل المندوبين عن الحملة بنجاح',
             'data' => [
                 'campaign_id' => $campaign->id,
                 'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
                 'removed_count' => $removedWorkers->count(),
-                'remaining_workers_count' => $campaign->workers_count
+                'remaining_workers_count' => $campaign->workersCount
             ]
         ], 200);
     }
@@ -284,11 +282,10 @@ class CampaignWorkerController extends Controller
             ->get();
 
         return response()->json([
-            'success' => true,
             'campaign_id' => (int)$campaignId,
             'campaign_name' => $campaign->name,
             'workers' => CampaignWorkerResource::collection($workers),
-            'count' => $campaign->workers_count,
+            'count' => $campaign->workersCount,
             'message' => 'تم جلب بيانات مندوبي الحملة بنجاح'
         ], 200);
     }
