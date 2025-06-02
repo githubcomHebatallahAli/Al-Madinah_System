@@ -12,7 +12,36 @@ class IhramSupplyPolicy
 {
     use HandlesAuthorization;
 
-    public function create($user)
+    // public function create($user)
+    // {
+    //     if ($user instanceof WorkerLogin) {
+    //         $worker = $user->worker;
+
+    //         return $user->role_id === 6 &&
+    //                $worker &&
+    //                $worker->status === 'active' &&
+    //                $worker->dashboardAccess === 'ok';
+    //     }
+
+    //     return false;
+    // }
+
+    // public function update($user, IhramSupply $ihramSupply)
+    // {
+    //     if ($user instanceof WorkerLogin) {
+    //         $worker = $user->worker;
+
+    //         return $user->role_id === 6 &&
+    //                $worker &&
+    //                $worker->status === 'active' &&
+    //                $worker->dashboardAccess === 'ok';
+    //     }
+
+    //     return false;
+    // }
+
+
+       public function create($user)
     {
         if ($user instanceof WorkerLogin) {
             $worker = $user->worker;
@@ -20,7 +49,8 @@ class IhramSupplyPolicy
             return $user->role_id === 6 &&
                    $worker &&
                    $worker->status === 'active' &&
-                   $worker->dashboardAccess === 'ok';
+                   $worker->dashboardAccess === 'ok' &&
+                   $worker->store_id !== null;
         }
 
         return false;
@@ -34,7 +64,8 @@ class IhramSupplyPolicy
             return $user->role_id === 6 &&
                    $worker &&
                    $worker->status === 'active' &&
-                   $worker->dashboardAccess === 'ok';
+                   $worker->dashboardAccess === 'ok' &&
+                   $worker->store_id !== null;
         }
 
         return false;
@@ -50,23 +81,47 @@ class IhramSupplyPolicy
         return $this->update($user, $ihramSupply);
     }
 
+    // public function showAll($user)
+    // {
+    //     if ($user instanceof Admin) {
+    //         return $user->role_id === 1 && $user->status === 'active';
+    //     }
+
+    //     if ($user instanceof WorkerLogin) {
+    //         $worker = $user->worker;
+
+    //         return in_array($user->role_id, [2, 6]) &&
+    //                $worker &&
+    //                $worker->status === 'active' &&
+    //                $worker->dashboardAccess === 'ok';
+    //     }
+
+    //     return false;
+    // }
+
     public function showAll($user)
-    {
-        if ($user instanceof Admin) {
-            return $user->role_id === 1 && $user->status === 'active';
-        }
-
-        if ($user instanceof WorkerLogin) {
-            $worker = $user->worker;
-
-            return in_array($user->role_id, [2, 6]) &&
-                   $worker &&
-                   $worker->status === 'active' &&
-                   $worker->dashboardAccess === 'ok';
-        }
-
-        return false;
+{
+    if ($user instanceof Admin) {
+        return $user->role_id === 1 && $user->status === 'active';
     }
+
+    if ($user instanceof WorkerLogin) {
+        $worker = $user->worker;
+
+        if (! $worker || $worker->status !== 'active' || $worker->dashboardAccess !== 'ok') {
+            return false;
+        }
+
+        if ($user->role_id === 6) {
+            return $worker->store_id !== null;
+        }
+
+        return in_array($user->role_id, [2]);
+    }
+
+    return false;
+}
+
 
 
     public function edit($user, IhramSupply $ihramSupply)

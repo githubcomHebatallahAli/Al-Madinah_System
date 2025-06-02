@@ -19,7 +19,8 @@ return new class extends Migration
             $table->string('updated_by_type')->nullable();
             $table->foreignId('campaign_id')->constrained('campaigns')->cascadeOnDelete();
             $table->foreignId('worker_id')->constrained('workers')->cascadeOnDelete();
-            $table->timestamp('joined_at')->nullable();
+            $table->dateTime('creationDate')->nullable();
+            $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
             $table->timestamps();
         });

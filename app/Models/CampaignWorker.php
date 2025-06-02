@@ -13,7 +13,6 @@ class CampaignWorker extends Model
     protected $fillable = [
         'campaign_id',
         'worker_id',
-        'joined_at',
         'added_by',
         'added_by_type',
         'updated_by',

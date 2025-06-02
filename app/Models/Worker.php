@@ -66,10 +66,18 @@ public function updater()
         return $this->belongsTo(Store::class);
     }
 
+    // public function campaigns()
+    // {
+    //     return $this->belongsToMany(Campaign::class, 'campaign_workers');
+    // }
+
     public function campaigns()
-    {
-        return $this->belongsToMany(Campaign::class, 'campaign_workers');
-    }
+{
+    return $this->belongsToMany(Campaign::class, 'campaign_workers')
+                ->withPivot([ 'added_by', 'added_by_type', 'updated_by', 'updated_by_type', 'creationDate', 'creationDateHijri'])
+                ->using(CampaignWorker::class);
+}
+
 
 
     public function branch()
