@@ -25,17 +25,13 @@ class Campaign extends Model
         'changed_data'
     ];
 
-//   public function workers()
-// {
-//     return $this->belongsToMany(Worker::class, 'campaign_workers');
-// }
 
 
 public function workers()
 {
     return $this->belongsToMany(Worker::class, 'campaign_workers')
                 ->withPivot([ 'added_by', 'added_by_type', 'updated_by', 'updated_by_type', 'creationDate', 'creationDateHijri']);
-                // ->using(CampaignWorker::class);
+
 }
 
 
