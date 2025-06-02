@@ -23,6 +23,19 @@ class CampaignWorker extends Model
         'changed_data',
     ];
 
+
+    
+
+    public function getCreationDateAttribute($value)
+    {
+        return $value;
+    }
+
+    public function getCreationDateHijriAttribute($value)
+    {
+        return $value;
+    }
+
     public $timestamps = false;
     //  public $incrementing = true;
 

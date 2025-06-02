@@ -186,7 +186,7 @@ class CampaignWorkerController extends Controller
 
         $data = [];
         $this->setAddedBy($data);
-        $this->setUpdatedBy($data);
+        // $this->setUpdatedBy($data);
 
         $data = array_merge($data, [
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
