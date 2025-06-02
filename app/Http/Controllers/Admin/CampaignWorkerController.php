@@ -66,7 +66,7 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
         'data' => [
             'campaign_id' => $campaign->id,
-            'added_workers' => $addedWorkers,
+            'added_workers' => CampaignWorkerResource::collection($addedWorkers),
             'added_count' => $addedWorkers->count(),
             'remaining_workers_count' => $campaign->workersCount
         ]
