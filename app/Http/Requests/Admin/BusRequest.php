@@ -26,7 +26,7 @@ class BusRequest extends FormRequest
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
-            'busNum'=>'required|integer',
+            'busNum'=>'required|string',
             'busModel'=>'required|string',
             'plateNum'=>'required|string',
             'seatNum'=>'required|integer',

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('buses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
-            $table->integer('busNum');
+            $table->string('busNum');
             $table->string('busModel');
             $table->string('plateNum');
             $table->integer('seatNum');
