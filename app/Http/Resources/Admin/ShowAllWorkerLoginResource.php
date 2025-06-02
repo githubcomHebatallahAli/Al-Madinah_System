@@ -13,8 +13,8 @@ class ShowAllWorkerLoginResource extends JsonResource
     {
         return [
             'id'=>$this->id,
-            'branch_id'   => $this->title?->branch?->id,
-            'branch_name' => $this->title?->branch?->name,
+            'branch_id'   => $this->worker?->title?->branch?->id,
+            'branch_name' => $this->worker?->title?->branch?->name,
             'title_id' => $this->worker?->title?->id,
             'title_name' => $this->worker?->title?->name,
             'store_id' => $this->worker?->store?->id,
