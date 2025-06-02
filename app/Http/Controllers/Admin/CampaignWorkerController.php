@@ -51,12 +51,6 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
             $data
         );
 
-        // طريقة بديلة
-        /*
-        foreach ($eligibleWorkers as $worker) {
-            $campaign->workers()->attach($worker->id, $data);
-        }
-        */
 
         $campaign->refresh()->workers_count = $campaign->workers()->count();
         $campaign->save();
