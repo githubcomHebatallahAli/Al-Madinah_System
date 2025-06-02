@@ -52,7 +52,7 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
         );
 
 
-        $campaign->refresh()->workers_count = $campaign->workers()->count();
+        $campaign->refresh()->workersCount = $campaign->workers()->count();
         $campaign->save();
     });
 
@@ -68,7 +68,7 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
             'campaign_id' => $campaign->id,
             'added_workers' => $addedWorkers,
             'added_count' => $addedWorkers->count(),
-            'remaining_workers_count' => $campaign->workers_count
+            'remaining_workers_count' => $campaign->workersCount
         ]
     ], 200);
 }

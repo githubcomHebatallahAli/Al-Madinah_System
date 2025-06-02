@@ -23,8 +23,8 @@ class CampaignWorker extends Model
         'changed_data',
     ];
 
-    public $timestamps = false;
-     public $incrementing = true;
+    // public $timestamps = false;
+    //  public $incrementing = true;
 
 public function creator()
 {
@@ -35,5 +35,9 @@ public function updater()
 {
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
+
+protected $casts = [
+    'changed_data' => 'array',
+];
 
 }
