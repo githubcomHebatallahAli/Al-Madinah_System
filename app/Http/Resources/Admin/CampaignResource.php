@@ -17,6 +17,7 @@ class CampaignResource extends JsonResource
             'office_name' => $this->office?->name,
             'name' => $this -> name,
             'groupsCount' => $this-> groupsCount,
+            'workersCount' => $this-> workersCount,
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,

@@ -23,7 +23,7 @@ class CampaignWorker extends Model
         'changed_data',
     ];
 
-    // public $timestamps = false;
+    public $timestamps = false;
     //  public $incrementing = true;
 
 public function creator()
