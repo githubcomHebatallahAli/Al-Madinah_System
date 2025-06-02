@@ -270,12 +270,31 @@ class CampaignWorkerController extends Controller
         }
 
         // حفظ نسخة من بيانات المندوبين قبل الفصل لعرضها في الريسبونس
-        $removedWorkers = $campaign->workers()
-            ->whereIn('worker_id', $request->worker_ids)
-            ->with(['workerLogin.role', 'title'])
-            ->get();
+        // $removedWorkers = $campaign->workers()
+        //     ->whereIn('worker_id', $request->worker_ids)
+        //     ->with(['workerLogin.role', 'title'])
+        //     ->get();
 
-        // تنفيذ الفصل
+        // نحضر بيانات المندوبين pivot بالكامل قبل الفصل
+$pivotData = DB::table('campaign_workers')
+    ->where('campaign_id', $campaign->id)
+    ->whereIn('worker_id', $request->worker_ids)
+    ->pluck('changed_data', 'worker_id');
+
+// بعد كده نحضر المندوبين من علاقة workers
+$removedWorkers = $campaign->workers()
+    ->whereIn('worker_id', $request->worker_ids)
+    ->with(['workerLogin.role', 'title'])
+    ->get();
+
+// ندمج بيانات changed_data داخل الـ pivot يدويًا
+$removedWorkers->each(function ($worker) use ($pivotData) {
+    if (isset($pivotData[$worker->id])) {
+        $changedData = json_decode($pivotData[$worker->id], true);
+        $worker->pivot->changed_data = $changedData;
+    }
+});
+
         $campaign->workers()->detach($request->worker_ids);
 
         $campaign->workersCount = $campaign->workers()->count();
