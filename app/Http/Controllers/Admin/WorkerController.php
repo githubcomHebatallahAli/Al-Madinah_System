@@ -16,6 +16,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\WorkerResource;
 use App\Http\Resources\Auth\WorkerRegisterResource;
+use App\Http\Resources\Admin\ShowAllWorkerLoginResource;
 
 class WorkerController extends Controller
 {
@@ -98,7 +99,7 @@ public function showAllWorkerLogin(Request $request)
     $this->loadRelationsForCollection($workers->getCollection());
 
     return response()->json([
-        'data' => WorkerRegisterResource::collection($workers),
+        'data' => ShowAllWorkerLoginResource::collection($workers),
         'pagination' => [
             'total' => $workers->total(),
             'count' => $workers->count(),
