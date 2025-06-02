@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\Admin;
+use App\Models\Pilgrims;
 use App\Models\IhramSupply;
 use App\Policies\AdminPolicy;
+use App\Policies\PilgrimsPolicy;
 use App\Policies\IhramSupplyPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Application;
@@ -28,6 +30,6 @@ return Application::configure(basePath: dirname(__DIR__))
       ->withExceptions(function (Exceptions $exceptions) {
         Gate::policy(Admin::class, AdminPolicy::class);
         Gate::policy(IhramSupply::class, IhramSupplyPolicy::class);
-
+        Gate::policy(Pilgrims::class, PilgrimsPolicy::class);
 
     })->create();
