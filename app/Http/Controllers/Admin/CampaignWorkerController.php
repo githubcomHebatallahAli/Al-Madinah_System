@@ -191,6 +191,7 @@ class CampaignWorkerController extends Controller
         $data = array_merge($data, [
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             'creationDateHijri' => $this->getHijriDate(),
+            'changed_data' => null
         ]);
 
         DB::transaction(function () use ($request, $campaign, $data) {

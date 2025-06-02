@@ -17,6 +17,8 @@ class Campaign extends Model
         'updated_by_type',
         'office_id',
         'name',
+        'workersCount',
+        'groupsCount',
         'status',
         'creationDate',
         'creationDateHijri',
