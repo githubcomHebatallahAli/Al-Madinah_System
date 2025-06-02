@@ -9,6 +9,7 @@ use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Admin\CampaignWorkerResource;
 
 class CampaignWorkerController extends Controller
 {
@@ -58,14 +59,14 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
 
     $addedWorkers = $campaign->workers()
         ->whereIn('worker_id', $request->worker_ids)
-        ->with(['workerLogin.role',])
+        ->with(['workerLogin.role','workers.title'])
         ->get();
 
     return response()->json([
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
         'data' => [
             'campaign_id' => $campaign->id,
-            'added_workers' => $addedWorkers,
+            'added_workers' => CampaignWorkerResource::collection($addedWorkers),
             'added_count' => $addedWorkers->count(),
             'remaining_workers_count' => $campaign->workersCount
         ]
@@ -122,7 +123,7 @@ public function getCampaignDelegates($campaignId)
     $workers = $campaign->workers()
         ->with([
             'workerLogin.role',
-            
+
         ])
         ->get();
 
