@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class CampaignWorker extends Model
 {
     use HasFactory,TracksChangesTrait,HijriDateTrait;
+     protected $table = 'campaign_workers';
     protected $fillable = [
         'campaign_id',
         'worker_id',
@@ -21,6 +22,9 @@ class CampaignWorker extends Model
         'creationDateHijri',
         'changed_data',
     ];
+
+    public $timestamps = false;
+     public $incrementing = true;
 
 public function creator()
 {
