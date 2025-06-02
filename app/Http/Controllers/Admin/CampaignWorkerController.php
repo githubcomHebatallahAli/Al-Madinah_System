@@ -62,7 +62,6 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
         ->get();
 
     return response()->json([
-        'success' => true,
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
         'data' => [
             'campaign_id' => $campaign->id,
@@ -76,7 +75,7 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
 
 public function removeDelegatesFromCampaign(Request $request, $campaignId)
 {
-    $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
+    $campaign = Campaign::findOrFail($campaignId);
 
     $request->validate([
         'worker_ids' => 'required|array|min:1',
@@ -84,46 +83,50 @@ public function removeDelegatesFromCampaign(Request $request, $campaignId)
             'exists:workers,id',
             function ($attribute, $value, $fail) use ($campaign) {
                 if (!$campaign->workers()->where('worker_id', $value)->exists()) {
-                    $fail("المندوب ID {$value} غير موجود في الحملة");
+                    $fail('المندوب غير موجود في الحملة');
                 }
             }
         ]
     ]);
 
-    $updateData = [
-        'updated_at' => now()->timezone('Asia/Riyadh')
-    ];
+    $updateData = [];
     $this->setUpdatedBy($updateData);
+    $updateData['updated_at'] = now();
 
-    $removedCount = 0;
+    $removedWorkers = collect();
 
-    DB::transaction(function () use ($request, $campaign, $updateData, &$removedCount) {
-        // تحديث بيانات updated_by قبل الفصل
-        $campaign->workers()
+    DB::transaction(function () use ($request, $campaign, $updateData, &$removedWorkers) {
+        // جلب المندوبين المرتبطين قبل الحذف مع العلاقات المطلوبة
+        $removedWorkers = $campaign->workers()
+            ->whereIn('worker_id', $request->worker_ids)
+            ->with(['workerLogin.role', 'title'])
+            ->get();
+
+        // تحديث جدول pivot مباشرة
+        DB::table('campaign_workers')
+            ->where('campaign_id', $campaign->id)
             ->whereIn('worker_id', $request->worker_ids)
             ->update($updateData);
 
-        $removedCount = $campaign->workers()
-            ->whereIn('worker_id', $request->worker_ids)
-            ->count();
+        // حذف العلاقة من الجدول الوسيط
+        $campaign->workers()->detach($request->worker_ids);
 
-        if ($removedCount > 0) {
-            $campaign->workers()->detach($request->worker_ids);
-            $campaign->decrement('workersCount', $removedCount);
-        }
+        // تحديث العداد بعد الحذف
+        $campaign->refresh()->workersCount = $campaign->workers()->count();
+        $campaign->save();
     });
 
     return response()->json([
-        'success' => true,
-        'message' => 'تم فصل المندوبين بنجاح',
+        'message' => 'تم فصل المندوبين عن الحملة بنجاح',
         'data' => [
             'campaign_id' => $campaign->id,
-            'removed_workers_count' => $removedCount,
-            'remaining_workers_count' => $campaign->workersCount - $removedCount,
-            'removed_workers_ids' => $request->worker_ids
+            'removed_workers' => CampaignWorkerResource::collection($removedWorkers),
+            'removed_count' => $removedWorkers->count(),
+            'remaining_workers_count' => $campaign->workersCount
         ]
     ], 200);
 }
+
 
 
 public function getCampaignDelegates($campaignId)
