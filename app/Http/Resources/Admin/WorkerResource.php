@@ -13,8 +13,8 @@ class WorkerResource extends JsonResource
     {
         return [
             "id" => $this -> id,
-            'branch_id' => $this->branch?->title?->id,
-            'branch_name' => $this->branch?->title?->name,
+            'branch_id'   => $this->title?->branch?->id,
+            'branch_name' => $this->title?->branch?->name,
             'title_id' => $this->title?->id,
             'title_name' => $this->title?->name,
             'store_id' => $this->store?->id,
