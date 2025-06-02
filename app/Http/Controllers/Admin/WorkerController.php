@@ -77,7 +77,7 @@ public function showAllWorkerLogin(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = WorkerLogin::with(['worker', 'worker.title', 'role'])
+    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
         ->orderBy('created_at', 'desc');
 
     if ($request->search) {
