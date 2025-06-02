@@ -16,7 +16,7 @@ class CampaignWorkerController extends Controller
     use HandleAddedByTrait, HijriDateTrait;
 public function addDelegatesToCampaign(Request $request, $campaignId)
 {
-    $campaign = Campaign::findOrFail($campaignId);
+    $campaign = Campaign::withCount('workers')->findOrFail($campaignId);
 
     $request->validate([
         'worker_ids' => 'required|array|min:1',
@@ -35,8 +35,8 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
     $this->setUpdatedBy($data);
 
     $data = array_merge($data, [
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
+        'creation_date' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creation_date_hijri' => $this->getHijriDate(),
     ]);
 
     DB::transaction(function () use ($request, $campaign, $data) {
@@ -46,29 +46,33 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
             ->whereHas('workerLogin', fn($q) => $q->where('role_id', 3))
             ->get();
 
-        // الطريقة الموصى بها في Laravel 12
-        $campaign->workers()->attach(
-            $eligibleWorkers->pluck('id')->toArray(),
-            $data
-        );
+        // إضافة المندوبين المؤهلين
+        foreach ($eligibleWorkers as $worker) {
+            $campaign->workers()->attach($worker->id, $data);
+        }
 
-
-        $campaign->refresh()->workersCount = $campaign->workers()->count();
+        // تحديث العداد
+        $campaign->workers_count = $campaign->workers()->count();
         $campaign->save();
     });
 
+    // جلب المندوبين المضافين مع علاقاتهم
     $addedWorkers = $campaign->workers()
         ->whereIn('worker_id', $request->worker_ids)
-        ->with(['workerLogin.role','workers.title'])
+        ->with([
+            'workerLogin.role',
+            'title' // علاقة title من نموذج Worker
+        ])
         ->get();
 
     return response()->json([
+        'success' => true,
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
         'data' => [
             'campaign_id' => $campaign->id,
             'added_workers' => CampaignWorkerResource::collection($addedWorkers),
             'added_count' => $addedWorkers->count(),
-            'remaining_workers_count' => $campaign->workersCount
+            'total_workers_count' => $campaign->workers_count
         ]
     ], 200);
 }
