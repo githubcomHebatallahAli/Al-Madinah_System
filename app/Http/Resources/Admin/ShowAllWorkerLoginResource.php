@@ -28,9 +28,9 @@ class ShowAllWorkerLoginResource extends JsonResource
             'role_name' => $this->role?->name,
             'creationDate' => $this -> creationDate,
             'creationDateHijri'=> $this -> creationDateHijri,
-            'changed_data' => $this -> changed_data,
-            'added_by' => $this->addedByAttribute(),
-            'updated_by' => $this->updatedByAttribute(),
+            // 'changed_data' => $this -> changed_data,
+            // 'added_by' => $this->addedByAttribute(),
+            // 'updated_by' => $this->updatedByAttribute(),
         ];
     }
 }
