@@ -122,7 +122,7 @@ public function getCampaignDelegates($campaignId)
     $workers = $campaign->workers()
         ->with([
             'workerLogin.role',
-            'title',
+            
         ])
         ->get();
 
