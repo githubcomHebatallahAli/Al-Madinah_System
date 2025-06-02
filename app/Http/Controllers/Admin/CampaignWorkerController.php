@@ -58,11 +58,10 @@ public function addDelegatesToCampaign(Request $request, $campaignId)
 
     $addedWorkers = $campaign->workers()
         ->whereIn('worker_id', $request->worker_ids)
-        ->with(['workerLogin.role', 'title'])
+        ->with(['workerLogin.role',])
         ->get();
 
     return response()->json([
-        'success' => true,
         'message' => 'تمت إضافة المندوبين إلى الحملة بنجاح',
         'data' => [
             'campaign_id' => $campaign->id,
