@@ -13,7 +13,7 @@ use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\PaymentMethodTypeRequest;
 use App\Http\Resources\Admin\PaymentMethodTypeResource;
 
-class PaymentMethodTypeTypeController extends Controller
+class PaymentMethodTypeController extends Controller
 {
     use HijriDateTrait;
     use TracksChangesTrait;
