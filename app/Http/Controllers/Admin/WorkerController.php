@@ -31,43 +31,59 @@ class WorkerController extends Controller
 
 
 
-public function showAllWorkerLogin(Request $request)
+// public function showAllWorkerLogin(Request $request)
+// {
+//     $this->authorize('manage_system');
+
+//     $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
+//         ->orderBy('created_at', 'desc');
+
+//     if ($request->search) {
+//         $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
+//     }
+
+//     if ($request->role_id) {
+//         $query->where('role_id', $request->role_id);
+//     }
+
+//     if ($request->title_name) {
+//         $query->whereHas('worker.title', function($q) use ($request) {
+//             $q->where('name', 'like', '%'.$request->title_name.'%');
+//         });
+//     }
+
+//     $workers = $query->paginate(10);
+
+//     $this->loadRelationsForCollection($workers->getCollection());
+
+//     return response()->json([
+//         'data' => ShowAllWorkerLoginResource::collection($workers),
+//         'pagination' => [
+//             'total' => $workers->total(),
+//             'count' => $workers->count(),
+//             'per_page' => $workers->perPage(),
+//             'current_page' => $workers->currentPage(),
+//             'total_pages' => $workers->lastPage(),
+//         ],
+//         'message' => "Workers data retrieved successfully."
+//     ]);
+// }
+
+public function showAllWorkerLogin()
 {
     $this->authorize('manage_system');
 
-    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
-        ->orderBy('created_at', 'desc');
-
-    if ($request->search) {
-        $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
-    }
-
-    if ($request->role_id) {
-        $query->where('role_id', $request->role_id);
-    }
-
-    if ($request->title_name) {
-        $query->whereHas('worker.title', function($q) use ($request) {
-            $q->where('name', 'like', '%'.$request->title_name.'%');
-        });
-    }
-
-    $workers = $query->paginate(10);
-
-    $this->loadRelationsForCollection($workers->getCollection());
+    $branches = Branch::with([
+        'titles.workers.workerLogin.role',
+        'titles.workers.store'
+    ])->get();
 
     return response()->json([
-        'data' => ShowAllWorkerLoginResource::collection($workers),
-        'pagination' => [
-            'total' => $workers->total(),
-            'count' => $workers->count(),
-            'per_page' => $workers->perPage(),
-            'current_page' => $workers->currentPage(),
-            'total_pages' => $workers->lastPage(),
-        ],
-        'message' => "Workers data retrieved successfully."
+        'data' => ShowAllWorkerLoginResource::collection($branches),
+        'message' => 'Workers structured data retrieved successfully.'
     ]);
 }
+
 
 public function showAll()
     {
