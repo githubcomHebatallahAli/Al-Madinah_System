@@ -138,14 +138,13 @@ public function create(ShipmentRequest $request)
                     'creationDateHijri' => $this->getHijriDate(),
                 ]);
 
-                // تحديث الكمية في الجدول الأصلي
+                 $shipment->updateItemsCount();
+
                 $itemModel = $morphClass::find($item['item_id']);
 
                 if ($itemModel) {
-                    // زيادة الكمية المتاحة
                     $itemModel->increment('quantity', $item['quantity']);
 
-                    // يمكنك تسجيل عملية التحديث للتحقق
                     Log::info("تم تحديث كمية العنصر", [
                         'model' => $morphClass,
                         'id' => $item['item_id'],
