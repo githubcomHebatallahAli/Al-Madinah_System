@@ -75,7 +75,7 @@ public function showAllWorkerLogin()
 
     $branches = Branch::with([
         'titles.workers.workerLogin.role',
-        'titles.workers.store'
+        'titles.workers'
     ])->get();
 
     return response()->json([

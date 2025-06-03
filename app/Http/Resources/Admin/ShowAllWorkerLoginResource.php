@@ -45,8 +45,8 @@ class ShowAllWorkerLoginResource extends JsonResource
                         return [
                             'worker_id' => $worker->id,
                             'worker_name' => $worker->name,
-                            'store_id' => $worker->store?->id,
-                            'store_name' => $worker->store?->name,
+                            // 'store_id' => $worker->store?->id,
+                            // 'store_name' => $worker->store?->name,
                             'email' => $worker->workerLogin?->email,
                             'role_id' => $worker->workerLogin?->role?->id,
                             'role_name' => $worker->workerLogin?->role?->name,
