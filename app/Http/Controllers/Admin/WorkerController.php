@@ -69,20 +69,6 @@ class WorkerController extends Controller
 //     ]);
 // }
 
-// public function showAllWorkerLogin()
-// {
-//     $this->authorize('manage_system');
-
-//     $branches = Branch::with([
-//         'titles.workers.workerLogin.role',
-//     ])->get();
-
-//     return response()->json([
-//         'data' => ShowAllWorkerLoginResource::collection($branches),
-//         'message' => 'Workers structured data retrieved successfully.'
-//     ]);
-// }
-
 
 public function showAllWorkerLogin(Request $request)
 {
@@ -92,7 +78,7 @@ public function showAllWorkerLogin(Request $request)
 
     $query = Branch::with([
         'titles.workers.workerLogin.role'
-    ]);
+    ])->orderBy('created_at', 'desc');
 
     // فلتر بالبرانش مباشرة (لأننا بنبدأ من الفرع)
     if ($request->filled('branch_id')) {
@@ -144,18 +130,65 @@ public function showAllWorkerLogin(Request $request)
 
 
 
-public function showAll()
-    {
-        $this->authorize('manage_system');
-        $branches = Branch::with('titles.workers')
-        ->orderBy('created_at', 'desc')->get();
-    $this->loadRelationsForCollection($branches);
+// public function showAll()
+//     {
+//         $this->authorize('manage_system');
+//         $branches = Branch::with('titles.workers')
+//         ->orderBy('created_at', 'desc')->get();
+//     $this->loadRelationsForCollection($branches);
 
-         return response()->json([
-             'data' =>  ShowAllWorkerResource::collection($branches),
-             'message' => "Show All Workers."
-        ]);
+//          return response()->json([
+//              'data' =>  ShowAllWorkerResource::collection($branches),
+//              'message' => "Show All Workers."
+//         ]);
+//     }
+
+public function showAll(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $query = Branch::with(['titles.workers'])
+        ->orderBy('created_at', 'desc');
+
+    // فلتر بالبرانش (id الفرع)
+    if ($request->filled('branch_id')) {
+        $query->where('id', $request->branch_id);
     }
+
+    // فلتر بالتايتل (id العنوان)
+    if ($request->filled('title_id')) {
+        $query->whereHas('titles', function ($q) use ($request) {
+            $q->where('id', $request->title_id);
+        });
+    }
+
+    // سيرش باسم العامل داخل العناوين والعمال
+    if ($request->filled('worker_name')) {
+        $search = $request->worker_name;
+        $query->whereHas('titles.workers', function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%");
+        });
+    }
+
+    // Pagination
+    $branches = $query->paginate(10);
+
+    // لو عندك دالة لتحميل علاقات إضافية
+    // $this->loadRelationsForCollection($branches->getCollection());
+
+    return response()->json([
+        'data' => ShowAllWorkerResource::collection($branches),
+        'pagination' => [
+            'total' => $branches->total(),
+            'count' => $branches->count(),
+            'per_page' => $branches->perPage(),
+            'current_page' => $branches->currentPage(),
+            'total_pages' => $branches->lastPage(),
+        ],
+        'message' => "Show All Workers with filters and search."
+    ]);
+}
+
 
 public function create(WorkerRequest $request)
     {
