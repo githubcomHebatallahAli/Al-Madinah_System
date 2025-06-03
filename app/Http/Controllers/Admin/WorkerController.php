@@ -16,9 +16,11 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\WorkerResource;
+use App\Http\Resources\Admin\WorkerWebResource;
 use App\Http\Resources\Admin\ShowAllWorkerResource;
 use App\Http\Resources\Auth\WorkerRegisterResource;
 use App\Http\Resources\Admin\ShowAllWorkerLoginResource;
+use App\Http\Resources\Admin\ShowAllWorkerLoginWebResource;
 
 class WorkerController extends Controller
 {
@@ -31,43 +33,43 @@ class WorkerController extends Controller
 
 
 
-// public function showAllWorkerLogin(Request $request)
-// {
-//     $this->authorize('manage_system');
+public function showAllWorkerLoginWeb(Request $request)
+{
+    $this->authorize('manage_system');
 
-//     $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
-//         ->orderBy('created_at', 'desc');
+    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
+        ->orderBy('created_at', 'desc');
 
-//     if ($request->search) {
-//         $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
-//     }
+    if ($request->search) {
+        $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
+    }
 
-//     if ($request->role_id) {
-//         $query->where('role_id', $request->role_id);
-//     }
+    if ($request->role_id) {
+        $query->where('role_id', $request->role_id);
+    }
 
-//     if ($request->title_name) {
-//         $query->whereHas('worker.title', function($q) use ($request) {
-//             $q->where('name', 'like', '%'.$request->title_name.'%');
-//         });
-//     }
+    if ($request->title_name) {
+        $query->whereHas('worker.title', function($q) use ($request) {
+            $q->where('name', 'like', '%'.$request->title_name.'%');
+        });
+    }
 
-//     $workers = $query->paginate(10);
+    $workers = $query->paginate(10);
 
-//     $this->loadRelationsForCollection($workers->getCollection());
+    $this->loadRelationsForCollection($workers->getCollection());
 
-//     return response()->json([
-//         'data' => ShowAllWorkerLoginResource::collection($workers),
-//         'pagination' => [
-//             'total' => $workers->total(),
-//             'count' => $workers->count(),
-//             'per_page' => $workers->perPage(),
-//             'current_page' => $workers->currentPage(),
-//             'total_pages' => $workers->lastPage(),
-//         ],
-//         'message' => "Workers data retrieved successfully."
-//     ]);
-// }
+    return response()->json([
+        'data' => ShowAllWorkerLoginWebResource::collection($workers),
+        'pagination' => [
+            'total' => $workers->total(),
+            'count' => $workers->count(),
+            'per_page' => $workers->perPage(),
+            'current_page' => $workers->currentPage(),
+            'total_pages' => $workers->lastPage(),
+        ],
+        'message' => "Workers Login data retrieved successfully."
+    ]);
+}
 
 
 public function showAllWorkerLogin(Request $request)
@@ -103,11 +105,6 @@ public function showAllWorkerLogin(Request $request)
 
     $branches = $query->paginate(10);
 
-
-
-    // لو عندك دالة لتحميل علاقات إضافية ممكن تستخدمها
-    // $this->loadRelationsForCollection($workers->getCollection());
-
     return response()->json([
         'data' => ShowAllWorkerLoginResource::collection($branches),
         'pagination' => [
@@ -122,19 +119,19 @@ public function showAllWorkerLogin(Request $request)
 }
 
 
+// Ziad
+public function showAllWeb()
+    {
+        $this->authorize('manage_system');
+        $workers = Worker::orderBy('created_at', 'desc')->get();
 
-// public function showAll()
-//     {
-//         $this->authorize('manage_system');
-//         $branches = Branch::with('titles.workers')
-//         ->orderBy('created_at', 'desc')->get();
-//     $this->loadRelationsForCollection($branches);
+    $this->loadRelationsForCollection($workers);
 
-//          return response()->json([
-//              'data' =>  ShowAllWorkerResource::collection($branches),
-//              'message' => "Show All Workers."
-//         ]);
-//     }
+         return response()->json([
+             'data' =>  WorkerWebResource::collection($workers),
+             'message' => "Show All Workers."
+        ]);
+    }
 
 public function showAll(Request $request)
 {
@@ -162,9 +159,6 @@ public function showAll(Request $request)
 
 
     $branches = $query->paginate(10);
-
-    // لو عندك دالة لتحميل علاقات إضافية
-    // $this->loadRelationsForCollection($branches->getCollection());
 
     return response()->json([
         'data' => ShowAllWorkerResource::collection($branches),

@@ -9,8 +9,8 @@ use App\Http\Controllers\Admin\WorkerController;
 Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
-//    Route::get('/showAll/workerLogin','showAllWorkerLogin');
-//    Route::get('/showAll/worker','showAll');
+   Route::get('/showAll/workerLogin','showAllWorkerLoginWeb');
+   Route::get('/showAll/worker','showAllWeb');
    Route::post('/create/worker', 'create');
    Route::get('/edit/worker/{id}','edit');
    Route::post('/update/worker/{id}', 'update');
@@ -23,6 +23,6 @@ Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->midd
 Route::controller(WorkerController::class)->prefix('/admin')->middleware('admin')->group(
     function () {
 
-   Route::get('/showAll/workerLogin','showAllWorkerLogin');
-   Route::get('/showAll/worker','showAll');
+   Route::get('/showAll/workerLogin/flutter','showAllWorkerLogin');
+   Route::get('/showAll/worker/flutter','showAll');
    });

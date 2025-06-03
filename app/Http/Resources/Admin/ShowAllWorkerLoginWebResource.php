@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Resources\Admin;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class ShowAllWorkerLoginWebResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+            return [
+            'id'=>$this->id,
+            'branch_id'   => $this->worker?->title?->branch?->id,
+            'branch_name' => $this->worker?->title?->branch?->name,
+            'title_id' => $this->worker?->title?->id,
+            'title_name' => $this->worker?->title?->name,
+            'worker_id' => $this->worker?->id,
+            'worker_name' => $this->worker?->name,
+            'status' => $this->worker?->status,
+            'dashboardAccess' => $this->worker?->dashboardAccess,
+            'email'=>$this->email,
+            'role_id' => $this->role?->id,
+            'role_name' => $this->role?->name,
+            'creationDate' => $this -> creationDate,
+            'creationDateHijri'=> $this -> creationDateHijri,
+        ];
+    }
+}
