@@ -60,4 +60,23 @@ public function updater()
      protected $casts = [
     'changed_data' => 'array',
 ];
+
+
+protected static function booted()
+{
+    static::created(function ($shipment) {
+        $shipment->updateItemsCount();
+    });
+}
+
+public function updateItemsCount()
+{
+    $this->shipmentItemsCount = $this->items()->count();
+    $this->saveQuietly();
+}
+
+public function getShipmentItemsCountAttribute($value)
+{
+    return $value ?? 0;
+}
 }

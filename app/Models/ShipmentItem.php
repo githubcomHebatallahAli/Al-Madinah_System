@@ -47,4 +47,18 @@ protected $hidden = ['created_at', 'updated_at'];
 ];
 
 
+ protected static function booted()
+    {
+      static::created(function ($item) {
+        $item->shipment->updateItemsCount();
+    });
+
+    static::updated(function ($item) {
+        $item->shipment->updateItemsCount();
+    });
+
+
+    }
+
+
 }
