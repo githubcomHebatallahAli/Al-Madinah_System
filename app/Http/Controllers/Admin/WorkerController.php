@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Branch;
 use App\Models\Worker;
 use App\Models\WorkerLogin;
 use Illuminate\Http\Request;
@@ -71,11 +72,12 @@ public function showAllWorkerLogin(Request $request)
 public function showAll()
     {
         $this->authorize('manage_system');
-        $Workers = Worker::with('title.workers')->orderBy('created_at', 'desc')->get();
-    $this->loadRelationsForCollection($Workers);
+        $branches = Branch::with('titles.workers')
+        ->orderBy('created_at', 'desc')->get();
+    $this->loadRelationsForCollection($branches);
 
          return response()->json([
-             'data' =>  ShowAllWorkerResource::collection($Workers),
+             'data' =>  ShowAllWorkerResource::collection($branches),
              'message' => "Show All Workers."
         ]);
     }
