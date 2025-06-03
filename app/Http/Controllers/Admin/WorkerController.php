@@ -88,52 +88,57 @@ public function showAllWorkerLogin(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
-        ->orderBy('created_at', 'desc');
+  $this->authorize('manage_system');
 
-    // فلتر بالـ branch_id عن طريق علاقة worker -> title -> branch
+    $query = Branch::with([
+        'titles.workers.workerLogin.role'
+    ]);
+
+    // فلتر بالبرانش مباشرة (لأننا بنبدأ من الفرع)
     if ($request->filled('branch_id')) {
-        $branchId = $request->branch_id;
-        $query->whereHas('worker.title.branch', function ($q) use ($branchId) {
-            $q->where('id', $branchId);
-        });
+        $query->where('id', $request->branch_id);
     }
 
-    // فلتر بالـ title_id (worker -> title)
+    // فلتر بالتايتل (داخل علاقة العناوين)
     if ($request->filled('title_id')) {
-        $query->whereHas('worker.title', function ($q) use ($request) {
+        $query->whereHas('titles', function($q) use ($request) {
             $q->where('id', $request->title_id);
         });
     }
 
-    // فلتر بالـ role_id مباشرة
-    if ($request->filled('role_id')) {
-        $query->where('role_id', $request->role_id);
-    }
-
-    // سيرش بالاسم في جدول العمال (worker.name)
-    if ($request->filled('worker_name')) {
-        $search = $request->worker_name;
-        $query->whereHas('worker', function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%");
+    // فلتر بالرول أو السيرش بالاسم لازم يكون على علاقة العمال داخل العناوين
+    if ($request->filled('role_id') || $request->filled('worker_name')) {
+        $query->whereHas('titles.workers.workerLogin', function($q) use ($request) {
+            if ($request->filled('role_id')) {
+                $q->where('role_id', $request->role_id);
+            }
+            if ($request->filled('worker_name')) {
+                $search = $request->worker_name;
+                $q->whereHas('worker', function($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%");
+                });
+            }
         });
     }
 
-    $workers = $query->paginate(10);
+    // Pagination على الفروع (يمكن تعديل حسب حجم البيانات)
+    $branches = $query->paginate(10);
+
+
 
     // لو عندك دالة لتحميل علاقات إضافية ممكن تستخدمها
     // $this->loadRelationsForCollection($workers->getCollection());
 
     return response()->json([
-        'data' => ShowAllWorkerLoginResource::collection($workers),
+        'data' => ShowAllWorkerLoginResource::collection($branches),
         'pagination' => [
-            'total' => $workers->total(),
-            'count' => $workers->count(),
-            'per_page' => $workers->perPage(),
-            'current_page' => $workers->currentPage(),
-            'total_pages' => $workers->lastPage(),
+            'total' => $branches->total(),
+            'count' => $branches->count(),
+            'per_page' => $branches->perPage(),
+            'current_page' => $branches->currentPage(),
+            'total_pages' => $branches->lastPage(),
         ],
-        'message' => "Workers data retrieved successfully."
+        'message' => "Workers login data retrieved successfully."
     ]);
 }
 
