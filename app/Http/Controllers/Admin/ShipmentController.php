@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Log;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
 use App\Traits\HijriDateTrait;
@@ -145,7 +146,7 @@ public function create(ShipmentRequest $request)
                     $itemModel->increment('quantity', $item['quantity']);
 
                     // يمكنك تسجيل عملية التحديث للتحقق
-                    \Log::info("تم تحديث كمية العنصر", [
+                    Log::info("تم تحديث كمية العنصر", [
                         'model' => $morphClass,
                         'id' => $item['item_id'],
                         'quantity_added' => $item['quantity'],
@@ -164,7 +165,7 @@ public function create(ShipmentRequest $request)
         return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات بنجاح.");
 
     } catch (\Exception $e) {
-        \Log::error('فشل إنشاء الشحنة', [
+        Log::error('فشل إنشاء الشحنة', [
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
             'request' => $request->all()
