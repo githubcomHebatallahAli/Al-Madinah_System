@@ -21,7 +21,10 @@ class ShipmentItem extends Model
         'quantity',
         'unitPrice',
         'totalPrice',
-        // 'status',
+        'rentalStart',
+        'rentalEnd',
+        'rentalStartHijri',
+        'rentalEndHijri',
         'creationDate',
         'creationDateHijri',
         'changed_data'

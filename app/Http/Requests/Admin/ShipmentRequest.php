@@ -36,9 +36,13 @@ class ShipmentRequest extends FormRequest
             'integer',
             new ValidMorphItemRule($items),
         ],
-        'items.*.item_type' => 'required|string|in:bus,hotel,product',
+        'items.*.item_type' => 'required|string|in:bus,hotel,flight,ihramSupply',
         'items.*.quantity' => 'required|numeric|min:1',
         'items.*.unitPrice' => 'required|numeric|min:0',
+        'items.*.rentalStart' => 'nullable|date_format:Y-m-d H:i:s',
+        'items.*.rentalEnd' => 'nullable|date_format:Y-m-d H:i:s',
+        'items.*.rentalStartHijri' => 'nullable|string',
+        'items.*.rentalEndHijri' => 'nullable|string',
     ];
     }
 
