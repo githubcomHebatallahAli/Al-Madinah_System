@@ -15,6 +15,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\WorkerResource;
+use App\Http\Resources\Admin\ShowAllWorkerResource;
 use App\Http\Resources\Auth\WorkerRegisterResource;
 use App\Http\Resources\Admin\ShowAllWorkerLoginResource;
 
@@ -27,51 +28,7 @@ class WorkerController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    //     public function showAllWorkerLogin()
-    // {
-    //     $this->authorize('manage_system');
-    //     $workersLogin = WorkerLogin::orderBy('created_at', 'desc')
-    //         ->get();
-    //     $this->loadRelationsForCollection($workersLogin);
 
-    //     return response()->json([
-    //         'data' => WorkerRegisterResource::collection($workersLogin),
-    //         'message' => "Show All Workers Login."
-    //     ]);
-    // }
-
-//     public function showAllWorkerLogin(Request $request)
-// {
-//     $this->authorize('manage_system');
-
-//   $query = WorkerLogin::with(['worker','role'])
-//                 ->orderBy('created_at', 'desc');
-
-//     if ($request->search) {
-//         $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
-//     }
-
-//     if ($request->role_id) {
-//         $query->where('role_id', $request->role_id);
-//     }
-
-//     $workers = $query->paginate(10);
-
-//     // هذه السطر سيحل المشكلة:
-//     $this->loadRelationsForCollection($workers->getCollection());
-
-//     return response()->json([
-//         'data' => WorkerRegisterResource::collection($workers),
-//         'pagination' => [
-//             'total' => $workers->total(),
-//             'count' => $workers->count(),
-//             'per_page' => $workers->perPage(),
-//             'current_page' => $workers->currentPage(),
-//             'total_pages' => $workers->lastPage(),
-//         ],
-//         'message' => "Workers data retrieved successfully."
-//     ]);
-// }
 
 public function showAllWorkerLogin(Request $request)
 {
@@ -118,7 +75,7 @@ public function showAll()
     $this->loadRelationsForCollection($Workers);
 
          return response()->json([
-             'data' =>  WorkerResource::collection($Workers),
+             'data' =>  ShowAllWorkerResource::collection($Workers),
              'message' => "Show All Workers."
         ]);
     }
