@@ -72,27 +72,21 @@ class WorkerController extends Controller
 
 public function showAllWorkerLogin(Request $request)
 {
-    $this->authorize('manage_system');
-
-  $this->authorize('manage_system');
+  $this->authorize('manage_users');
 
     $query = Branch::with([
         'titles.workers.workerLogin.role'
     ])->orderBy('created_at', 'desc');
 
-    // فلتر بالبرانش مباشرة (لأننا بنبدأ من الفرع)
     if ($request->filled('branch_id')) {
         $query->where('id', $request->branch_id);
     }
 
-    // فلتر بالتايتل (داخل علاقة العناوين)
     if ($request->filled('title_id')) {
         $query->whereHas('titles', function($q) use ($request) {
             $q->where('id', $request->title_id);
         });
     }
-
-    // فلتر بالرول أو السيرش بالاسم لازم يكون على علاقة العمال داخل العناوين
     if ($request->filled('role_id') || $request->filled('worker_name')) {
         $query->whereHas('titles.workers.workerLogin', function($q) use ($request) {
             if ($request->filled('role_id')) {
@@ -107,7 +101,6 @@ public function showAllWorkerLogin(Request $request)
         });
     }
 
-    // Pagination على الفروع (يمكن تعديل حسب حجم البيانات)
     $branches = $query->paginate(10);
 
 
@@ -145,24 +138,21 @@ public function showAllWorkerLogin(Request $request)
 
 public function showAll(Request $request)
 {
-    $this->authorize('manage_system');
+    $this->authorize('manage_users');
 
     $query = Branch::with(['titles.workers'])
         ->orderBy('created_at', 'desc');
 
-    // فلتر بالبرانش (id الفرع)
     if ($request->filled('branch_id')) {
         $query->where('id', $request->branch_id);
     }
 
-    // فلتر بالتايتل (id العنوان)
     if ($request->filled('title_id')) {
         $query->whereHas('titles', function ($q) use ($request) {
             $q->where('id', $request->title_id);
         });
     }
 
-    // سيرش باسم العامل داخل العناوين والعمال
     if ($request->filled('worker_name')) {
         $search = $request->worker_name;
         $query->whereHas('titles.workers', function ($q) use ($search) {
@@ -170,7 +160,7 @@ public function showAll(Request $request)
         });
     }
 
-    // Pagination
+
     $branches = $query->paginate(10);
 
     // لو عندك دالة لتحميل علاقات إضافية
