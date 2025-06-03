@@ -69,20 +69,74 @@ class WorkerController extends Controller
 //     ]);
 // }
 
-public function showAllWorkerLogin()
+// public function showAllWorkerLogin()
+// {
+//     $this->authorize('manage_system');
+
+//     $branches = Branch::with([
+//         'titles.workers.workerLogin.role',
+//     ])->get();
+
+//     return response()->json([
+//         'data' => ShowAllWorkerLoginResource::collection($branches),
+//         'message' => 'Workers structured data retrieved successfully.'
+//     ]);
+// }
+
+
+public function showAllWorkerLogin(Request $request)
 {
     $this->authorize('manage_system');
 
-    $branches = Branch::with([
-        'titles.workers.workerLogin.role',
-        'titles.workers'
-    ])->get();
+    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
+        ->orderBy('created_at', 'desc');
+
+    // فلتر بالـ branch_id عن طريق علاقة worker -> title -> branch
+    if ($request->filled('branch_id')) {
+        $branchId = $request->branch_id;
+        $query->whereHas('worker.title.branch', function ($q) use ($branchId) {
+            $q->where('id', $branchId);
+        });
+    }
+
+    // فلتر بالـ title_id (worker -> title)
+    if ($request->filled('title_id')) {
+        $query->whereHas('worker.title', function ($q) use ($request) {
+            $q->where('id', $request->title_id);
+        });
+    }
+
+    // فلتر بالـ role_id مباشرة
+    if ($request->filled('role_id')) {
+        $query->where('role_id', $request->role_id);
+    }
+
+    // سيرش بالاسم في جدول العمال (worker.name)
+    if ($request->filled('worker_name')) {
+        $search = $request->worker_name;
+        $query->whereHas('worker', function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%");
+        });
+    }
+
+    $workers = $query->paginate(10);
+
+    // لو عندك دالة لتحميل علاقات إضافية ممكن تستخدمها
+    // $this->loadRelationsForCollection($workers->getCollection());
 
     return response()->json([
-        'data' => ShowAllWorkerLoginResource::collection($branches),
-        'message' => 'Workers structured data retrieved successfully.'
+        'data' => ShowAllWorkerLoginResource::collection($workers),
+        'pagination' => [
+            'total' => $workers->total(),
+            'count' => $workers->count(),
+            'per_page' => $workers->perPage(),
+            'current_page' => $workers->currentPage(),
+            'total_pages' => $workers->lastPage(),
+        ],
+        'message' => "Workers data retrieved successfully."
     ]);
 }
+
 
 
 public function showAll()
