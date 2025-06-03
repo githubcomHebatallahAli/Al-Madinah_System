@@ -128,7 +128,7 @@ public function showAllWeb()
     $this->loadRelationsForCollection($workers);
 
          return response()->json([
-             'data' =>  WorkerWebResource::collection($workers),
+             'data' =>  WorkerResource::collection($workers),
              'message' => "Show All Workers."
         ]);
     }
