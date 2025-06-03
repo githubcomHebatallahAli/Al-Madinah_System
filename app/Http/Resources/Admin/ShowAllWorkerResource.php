@@ -14,7 +14,7 @@ class ShowAllWorkerResource extends JsonResource
             'branch_id'   => $this->id,
             'branch_name' => $this->name,
 
-            'titles' => optional($this->titles)->map(function ($title) {
+            'titles' => $this->titles->map(function ($title) {
                 return [
                     'title_id'   => $title->id,
                     'title_name' => $title->name,

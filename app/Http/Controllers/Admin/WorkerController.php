@@ -71,7 +71,7 @@ public function showAllWorkerLogin(Request $request)
 public function showAll()
     {
         $this->authorize('manage_system');
-        $Workers = Worker::orderBy('created_at', 'desc')->get();
+        $Workers = Worker::with('titles.workers')->orderBy('created_at', 'desc')->get();
     $this->loadRelationsForCollection($Workers);
 
          return response()->json([
