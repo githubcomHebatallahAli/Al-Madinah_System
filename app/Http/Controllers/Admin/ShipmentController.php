@@ -111,14 +111,21 @@ public function create(ShipmentRequest $request)
             $total = 0;
 
             foreach ($request->items as $item) {
+                // الحصول على الـ morph class باستخدام الـ trait
+                $morphClass = $this->getMorphClass($item['item_type']);
+
+                if (!class_exists($morphClass)) {
+                    throw new \Exception("Class {$morphClass} not found");
+                }
+
                 $itemTotal = $item['quantity'] * $item['unitPrice'];
                 $total += $itemTotal;
 
                 // إنشاء عنصر الشحنة
-                ShipmentItem::create([
+                $shipmentItem = ShipmentItem::create([
                     'shipment_id' => $shipment->id,
                     'item_id'     => $item['item_id'],
-                    'item_type'   => $this->getMorphClass($item['item_type']),
+                    'item_type'   => $morphClass,
                     'quantity'    => $item['quantity'],
                     'unitPrice'   => $item['unitPrice'],
                     'totalPrice'  => $itemTotal,
@@ -131,11 +138,19 @@ public function create(ShipmentRequest $request)
                 ]);
 
                 // تحديث الكمية في الجدول الأصلي
-                $itemModel = $item['item_type']::find($item['item_id']);
+                $itemModel = $morphClass::find($item['item_id']);
 
                 if ($itemModel) {
                     // زيادة الكمية المتاحة
                     $itemModel->increment('quantity', $item['quantity']);
+
+                    // يمكنك تسجيل عملية التحديث للتحقق
+                    \Log::info("تم تحديث كمية العنصر", [
+                        'model' => $morphClass,
+                        'id' => $item['item_id'],
+                        'quantity_added' => $item['quantity'],
+                        'new_quantity' => $itemModel->quantity
+                    ]);
                 }
             }
 
@@ -149,6 +164,12 @@ public function create(ShipmentRequest $request)
         return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات بنجاح.");
 
     } catch (\Exception $e) {
+        \Log::error('فشل إنشاء الشحنة', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'request' => $request->all()
+        ]);
+
         return response()->json([
             'success' => false,
             'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
