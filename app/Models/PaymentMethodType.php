@@ -20,7 +20,8 @@ class PaymentMethodType extends Model
         'creationDateHijri',
         'changed_data',
         'payment_method_id',
-        'type'
+        'type',
+        'by'
     ];
 
         public function paymentMethod()

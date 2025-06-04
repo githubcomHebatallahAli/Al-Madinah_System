@@ -15,7 +15,6 @@ class ShipmentItemResource extends JsonResource
         'id'=> $this -> id,
         'item_id'=> $this-> item_id,
         'item_type' => class_basename($this->item_type),
-        // 'item_name' => $this->item?->name ?? $this->item?->model ?? '—',
         'quantity'=> $this-> quantity,
         'unitPrice'=> $this-> unitPrice,
         'totalPrice'=> $this ->totalPrice,
@@ -25,9 +24,11 @@ class ShipmentItemResource extends JsonResource
         'rentalEndHijri'=> $this ->rentalEndHijri,
         'creationDate'=> $this ->creationDate,
         'creationDateHijri'=> $this ->creationDateHijri,
-        // 'changed_data'=> $this ->changed_data,
-        // 'added_by' => $this->addedByAttribute(),
-        // 'updated_by' => $this->updatedByAttribute(),
+        'class' => $this->class ,
+        'seatNum' => $this-> seatNum,
+        'DateTimeTrip'=> $this->DateTimeTrip,
+        'DateTimeTripHijri'=> $this->DateTimeTripHijri,
+
         ];
     }
 }

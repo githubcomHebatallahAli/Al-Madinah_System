@@ -112,7 +112,6 @@ public function create(ShipmentRequest $request)
             $total = 0;
 
             foreach ($request->items as $item) {
-                // الحصول على الـ morph class باستخدام الـ trait
                 $morphClass = $this->getMorphClass($item['item_type']);
 
                 if (!class_exists($morphClass)) {
@@ -122,20 +121,24 @@ public function create(ShipmentRequest $request)
                 $itemTotal = $item['quantity'] * $item['unitPrice'];
                 $total += $itemTotal;
 
-                // إنشاء عنصر الشحنة
-                $shipmentItem = ShipmentItem::create([
-                    'shipment_id' => $shipment->id,
-                    'item_id'     => $item['item_id'],
-                    'item_type'   => $morphClass,
-                    'quantity'    => $item['quantity'],
-                    'unitPrice'   => $item['unitPrice'],
-                    'totalPrice'  => $itemTotal,
-                    'rentalStart'     => $item['rentalStart'] ?? null,
-                    'rentalEnd'       => $item['rentalEnd'] ?? null,
-                    'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
-                    'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
-                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    'creationDateHijri' => $this->getHijriDate(),
+        $shipmentItem = ShipmentItem::create([
+        'shipment_id' => $shipment->id,
+        'item_id'     => $item['item_id'],
+        'item_type'   => $morphClass,
+        'quantity'    => $item['quantity'],
+        'unitPrice'   => $item['unitPrice'],
+        'totalPrice'  => $itemTotal,
+        'rentalStart'     => $item['rentalStart'] ?? null,
+        'rentalEnd'       => $item['rentalEnd'] ?? null,
+        'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
+        'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
+        'DateTimeTripHijri'=> $item['DateTimeTripHijri'] ?? null,
+        'DateTimeTrip'=>$item['DateTimeTrip'] ?? null,
+        'seatNum'=>$item['seatNum'] ?? null,
+        'class'=>$item['class'] ?? null,
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+
                 ]);
 
                  $shipment->updateItemsCount();
@@ -238,19 +241,23 @@ public function create(ShipmentRequest $request)
                 $itemTotal = $item['quantity'] * $item['unitPrice'];
                 $total += $itemTotal;
 
-                ShipmentItem::create([
-                    'shipment_id' => $shipment->id,
-                    'item_id'     => $item['item_id'],
-                    'item_type'   => $this->getMorphClass($item['item_type']),
-                    'quantity'    => $item['quantity'],
-                    'unitPrice'   => $item['unitPrice'],
-                    'totalPrice'  => $itemTotal,
-                    'rentalStart'     => $item['rentalStart'] ?? null,
-                    'rentalEnd'       => $item['rentalEnd'] ?? null,
-                    'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
-                    'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
-                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    'creationDateHijri' => $this->getHijriDate(),
+        ShipmentItem::create([
+        'shipment_id' => $shipment->id,
+        'item_id'     => $item['item_id'],
+        'item_type'   => $this->getMorphClass($item['item_type']),
+        'quantity'    => $item['quantity'],
+        'unitPrice'   => $item['unitPrice'],
+        'totalPrice'  => $itemTotal,
+        'rentalStart'     => $item['rentalStart'] ?? null,
+        'rentalEnd'       => $item['rentalEnd'] ?? null,
+        'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
+        'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
+        'DateTimeTripHijri'=> $item['DateTimeTripHijri'] ?? null,
+        'DateTimeTrip'=>$item['DateTimeTrip'] ?? null,
+        'seatNum'=>$item['seatNum'] ?? null,
+        'class'=>$item['class'] ?? null,
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
                 ]);
             }
 
@@ -275,23 +282,36 @@ public function create(ShipmentRequest $request)
 
 protected function itemsEqual(Shipment $shipment, array $newItems): bool
 {
-    // العناصر القديمة بعد ترتيبها
     $oldItems = $shipment->items->map(function ($item) {
         return [
             'item_id'   => (int) $item->item_id,
             'item_type' => $item->item_type,
             'quantity'  => (float) $item->quantity,
             'unitPrice' => (float) $item->unitPrice,
+            'rentalStart'          => $item->rentalStart,
+            'rentalEnd'            => $item->rentalEnd,
+            'rentalStartHijri'     => $item->rentalStartHijri,
+            'rentalEndHijri'       => $item->rentalEndHijri,
+            'DateTimeTripHijri'    => $item->DateTimeTripHijri,
+            'DateTimeTrip'         => $item->DateTimeTrip,
+            'seatNum'              => $item->seatNum,
+            'class'                => $item->class,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
-
-    // العناصر الجديدة بعد تحويل نوع العنصر المورف وتصفيتها
     $newItemsNormalized = collect($newItems)->map(function ($item) {
         return [
             'item_id'   => (int) $item['item_id'],
             'item_type' => $this->getMorphClass($item['item_type']),
             'quantity'  => (float) $item['quantity'],
             'unitPrice' => (float) $item['unitPrice'],
+            'rentalStart'          => $item->rentalStart,
+            'rentalEnd'            => $item->rentalEnd,
+            'rentalStartHijri'     => $item->rentalStartHijri,
+            'rentalEndHijri'       => $item->rentalEndHijri,
+            'DateTimeTripHijri'    => $item->DateTimeTripHijri,
+            'DateTimeTrip'         => $item->DateTimeTrip,
+            'seatNum'              => $item->seatNum,
+            'class'                => $item->class,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
 

@@ -27,7 +27,13 @@ class ShipmentItem extends Model
         'rentalEndHijri',
         'creationDate',
         'creationDateHijri',
-        'changed_data'
+        'changed_data',
+        'DateTimeTripHijri',
+        'DateTimeTrip',
+        'seatNum',
+        'class'
+
+
     ];
 
     public function shipment()

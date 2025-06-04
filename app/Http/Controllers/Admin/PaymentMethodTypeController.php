@@ -39,7 +39,7 @@ class PaymentMethodTypeController extends Controller
     {
         $this->authorize('manage_system');
         $data = array_merge($request->only([
-             'type','payment_method_id'
+             'type','payment_method_id','by'
 
         ]), $this->prepareCreationMetaData());
 
@@ -55,7 +55,7 @@ public function update(PaymentMethodTypeRequest $request, string $id)
     $PaymentMethodType = PaymentMethodType::findOrFail($id);
     $oldData = $PaymentMethodType->toArray();
 
-    $updateData = $request->only(['type','payment_method_id','status']);
+    $updateData = $request->only(['type','payment_method_id','status','by']);
 
     $updateData = array_merge(
         $updateData,

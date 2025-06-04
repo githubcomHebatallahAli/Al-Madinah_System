@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('payment_method_id')->constrained('payment_methods')->cascadeOnDelete();
             $table->string('type')->nullable();
+            $table->enum('by', ['zakat', 'pilgrims'])->default('pilgrims');
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
