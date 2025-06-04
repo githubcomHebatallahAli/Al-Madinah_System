@@ -133,23 +133,27 @@ public function showAllWeb()
         ]);
     }
 
-public function showAll(Request $request)
+
+    public function showAll(Request $request)
 {
-    $this->authorize('manage_users');
+    $this->authorize('manage_system');
 
     $query = Branch::with(['titles.workers'])
         ->orderBy('created_at', 'desc');
 
+    // فلتر بالبرانش (id الفرع)
     if ($request->filled('branch_id')) {
         $query->where('id', $request->branch_id);
     }
 
+    // فلتر بالتايتل (id العنوان)
     if ($request->filled('title_id')) {
         $query->whereHas('titles', function ($q) use ($request) {
             $q->where('id', $request->title_id);
         });
     }
 
+    // سيرش باسم العامل داخل العناوين والعمال
     if ($request->filled('worker_name')) {
         $search = $request->worker_name;
         $query->whereHas('titles.workers', function ($q) use ($search) {
@@ -157,8 +161,11 @@ public function showAll(Request $request)
         });
     }
 
-
+    // Pagination
     $branches = $query->paginate(10);
+
+    // لو عندك دالة لتحميل علاقات إضافية
+    // $this->loadRelationsForCollection($branches->getCollection());
 
     return response()->json([
         'data' => ShowAllWorkerResource::collection($branches),
@@ -172,6 +179,7 @@ public function showAll(Request $request)
         'message' => "Show All Workers with filters and search."
     ]);
 }
+
 
 
 public function create(WorkerRequest $request)
@@ -209,70 +217,6 @@ public function edit(string $id)
     return $this->respondWithResource($Worker, "Worker retrieved for editing.");
         }
 
-
-// public function update(WorkerRequest $request, string $id)
-// {
-//     $this->authorize('manage_system');
-
-//     $worker = Worker::find($id);
-//     if (!$worker) {
-//         return response()->json(['message' => "Worker not found."], 404);
-//     }
-
-//     $oldData = $worker->toArray();
-
-//     $request->merge(['status' => $request->status ?? $worker->status ?? 'active']);
-
-//     $fieldsToCheck = ['title_id', 'store_id', 'name', 'idNum', 'personPhoNum', 'branchPhoNum', 'salary', 'status', 'dashboardAccess'];
-//     $hasChanges = false;
-
-//     foreach ($fieldsToCheck as $field) {
-//         if ($request->has($field)) {  // تم إصلاح هنا - إضافة القوس الناقص
-//             $requestField = $request->$field ?? $worker->$field;
-//             if ($worker->$field != $requestField) {
-//                 $hasChanges = true;
-//                 break;
-//             }
-//         }
-//     }
-
-//     if ($request->hasFile('cv')) {
-//         $hasChanges = true;
-//     }
-
-//     if (!$hasChanges) {
-//         $this->loadCommonRelations($worker);
-//         return $this->respondWithResource($worker, "No actual changes detected.");
-//     }
-
-//     $updateData = array_merge(
-//         $request->only($fieldsToCheck),
-//         $this->prepareUpdateMeta($request, $worker->status)
-//     );
-
-//     $updateData['dashboardAccess'] = $updateData['dashboardAccess'] ?? 'notOk';
-
-
-//     // $this->applyChangesAndSave($worker, $updateData, $oldData);
-//        $worker->update($updateData);
-
-//     $changedData = $worker->getChangedData($oldData, $worker->fresh()->toArray());
-//     $worker->changed_data = $changedData;
-//     $worker->save();
-
-//     if ($request->hasFile('cv')) {
-//         if ($worker->cv) {
-//             Storage::disk('public')->delete($worker->cv);
-//         }
-//         $cvPath = $request->file('cv')->store(Worker::storageFolder, 'public');
-//         $worker->cv = $cvPath;
-//         $worker->save();
-//     }
-
-//     $this->loadCommonRelations($worker);
-
-//     return $this->respondWithResource($worker, "Worker updated successfully.");
-// }
 
 public function update(WorkerRequest $request, string $id)
 {
