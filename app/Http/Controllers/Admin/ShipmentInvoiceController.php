@@ -120,10 +120,6 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
 }
 
 
-
-
-
-
     public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
     {
         $invoice = ShipmentInvoice::findOrFail($id);
