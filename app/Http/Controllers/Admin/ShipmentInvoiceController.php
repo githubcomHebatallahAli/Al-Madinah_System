@@ -212,8 +212,7 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
             'remainingAmount'         => $remaining,
             'invoice'                 => $invoiceStatus,
             'description'             => $request->description,
-            'creationDate'            => $request->creationDate ?? $invoice->creationDate,
-            'creationDateHijri'       => $request->creationDateHijri ?? $invoice->creationDateHijri,
+
         ], $this->prepareUpdateMeta($request, $invoice->status));
 
         // تطبيق التحديث مع تتبع التغييرات
