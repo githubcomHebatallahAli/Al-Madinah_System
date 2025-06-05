@@ -28,41 +28,41 @@ class ShipmentInvoiceController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll(Request $request)
+public function showAll(Request $request)
 {
-    // $this->authorize('showAll', ShipmentInvoice::class);
-
     $searchTerm = $request->input('search', '');
-    $statusFilter = $request->input('status', '');
+    $invoiceStatus = $request->input('invoice', ''); // paid أو pending
+    $serviceId = $request->input('service_id');
 
-    $query = ShipmentInvoice::where('customerName', 'like', '%' . $searchTerm . '%');
+    $query = ShipmentInvoice::with(['shipment.supplier.company.service'])
+        ->when($searchTerm, function ($q) use ($searchTerm) {
+            $q->whereHas('shipment.supplier', function ($q2) use ($searchTerm) {
+                $q2->where('name', 'like', "%{$searchTerm}%");
+            })->orWhereHas('shipment.supplier.company', function ($q3) use ($searchTerm) {
+                $q3->where('name', 'like', "%{$searchTerm}%");
+            });
+        })
+        ->when($serviceId, function ($q) use ($serviceId) {
+            $q->whereHas('shipment.supplier.company', function ($q2) use ($serviceId) {
+                $q2->where('service_id', $serviceId);
+            });
+        })
+        ->when($invoiceStatus === 'paid', function ($q) {
+            $q->where('invoice', 'paid');
+        })
+        ->when($invoiceStatus === 'pending', function ($q) {
+            $q->where('invoice', 'pending');
+        })
+        ->orderBy('created_at', 'desc');
 
-    if ($statusFilter === 'paid') {
-        $query->where('status', 'paid');
-    } elseif ($statusFilter === 'unpaid') {
-        $query->where('status', 'pending');
-    }
-
-    $ShipmentInvoices = $query->orderBy('created_at', 'desc')
-                   ->paginate(10);
-
+    $ShipmentInvoices = $query->paginate(10);
 
     $totalPaidAmount = ShipmentInvoice::sum('paidAmount');
-    $totalRemainingAmount = ShipmentInvoice::where('status', 'pending')->sum('remainingAmount');
+    $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
 
     return response()->json([
-        'data' => $ShipmentInvoices->map(function ($ShipmentInvoice) {
-            return [
-                'id' => $ShipmentInvoice->id,
-                'customerName' => $ShipmentInvoice->customerName,
-                'status' => $ShipmentInvoice->status,
-                'paidAmount' => $ShipmentInvoice->paidAmount,
-                'remainingAmount' => $ShipmentInvoice->remainingAmount,
-                'depetAfterDiscount' => $ShipmentInvoice->depetAfterDiscount,
-                'creationDate' => $ShipmentInvoice->creationDate,
-            ];
-        }),
-            'pagination' => [
+        'data' => ShipmentInvoiceResource::collection($ShipmentInvoices),
+        'pagination' => [
             'total' => $ShipmentInvoices->total(),
             'count' => $ShipmentInvoices->count(),
             'per_page' => $ShipmentInvoices->perPage(),
@@ -75,9 +75,11 @@ class ShipmentInvoiceController extends Controller
             'paid_amount' => $totalPaidAmount,
             'remaining_amount' => $totalRemainingAmount,
         ],
-        'message' => "تم عرض الفواتير بنجاح."
+        'message' => "تم عرض الفواتير بنجاح.",
     ]);
 }
+
+
 
 
 
@@ -138,10 +140,8 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
             'invoice'           => $invoiceStatus,
         ];
 
-        // 🟢 نضيف بيانات الـ updated_by باستخدام التريت
         $this->setUpdatedBy($updateData);
 
-        // التحقق من وجود تغييرات
         $hasChanges = false;
         foreach ($updateData as $key => $value) {
             if ($invoice->$key != $value) {
