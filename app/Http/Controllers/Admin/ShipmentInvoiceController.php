@@ -83,60 +83,41 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
     DB::beginTransaction();
 
     try {
-        // 1. التحقق من وجود الشحنة
         $shipment = Shipment::findOrFail($request->shipment_id);
 
-        // 2. حساب القيم المالية
         $discount = $request->discount ?? 0;
         $paidAmount = $request->paidAmount ?? 0;
         $totalAfterDiscount = $shipment->totalPrice - $discount;
         $remaining = $totalAfterDiscount - $paidAmount;
         $invoiceStatus = $remaining <= 0 ? 'paid' : 'pending';
 
-        // 3. تحضير البيانات الأساسية باستخدام الـ Traits
-        $creationData = $this->prepareCreationMetaData();
-
-        // 4. بناء مصفوفة بيانات الفاتورة
-        $invoiceData = [
+        $invoiceData = array_merge([
             'shipment_id'             => $shipment->id,
             'payment_method_type_id'  => $request->payment_method_type_id,
-            'discount'                => $discount,
+            'discount'               => $discount,
             'totalPriceAfterDiscount' => $totalAfterDiscount,
-            'paidAmount'              => $paidAmount,
-            'remainingAmount'         => $remaining,
-            'invoice'                 => $invoiceStatus,
-            'description'             => $request->description,
-            'creationDate'            => $request->creationDate ?? $creationData['creationDate'],
-            'creationDateHijri'       => $request->creationDateHijri ?? $creationData['creationDateHijri'],
-            'status'                  => $request->status ?? $creationData['status'],
-        ];
+            'paidAmount'             => $paidAmount,
+            'remainingAmount'        => $remaining,
+            'invoice'                => $invoiceStatus,
+            'description'            => $request->description,
 
-        // 5. إضافة بيانات المستخدم باستخدام الـ Trait
-        $this->setAddedBy($invoiceData);
+        ], $this->prepareCreationMetaData());
 
-        // 6. إنشاء الفاتورة
         $invoice = ShipmentInvoice::create($invoiceData);
-
-        // // 7. تحميل العلاقات باستخدام الـ Trait
-        // $this->loadCreatorRelations($invoice);
-        // $this->loadUpdaterRelations($invoice);
 
         DB::commit();
 
-        // 8. إرجاع النتيجة باستخدام الـ Trait
         return $this->respondWithResource($invoice, 'تم إنشاء الفاتورة بنجاح');
 
     } catch (\Throwable $e) {
         DB::rollBack();
-
-        // 9. معالجة الأخطاء
-        return response()->json([
-            'success' => false,
-            'message' => 'حدث خطأ أثناء إنشاء الفاتورة',
-            'error'   => $e->getMessage()
-        ], 500);
+        return $this->handleError($e, 'حدث خطأ أثناء إنشاء الفاتورة');
     }
 }
+
+
+
+
 
 
 public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
