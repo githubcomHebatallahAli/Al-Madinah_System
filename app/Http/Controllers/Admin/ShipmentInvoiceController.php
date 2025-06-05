@@ -196,13 +196,14 @@ public function edit(string $id)
         'message' => 'ShipmentInvoice details fetched successfully',
         'ShipmentInvoice' => new ShipmentInvoiceResource($ShipmentInvoice->load('products')),
 
-        'totalShipmentInvoicePrice' => number_format($totalShipmentInvoicePrice, 2, '.', ''),
-        'discount' => number_format($discount, 2, '.', ''),
-        'ShipmentInvoiceAfterDiscount' => number_format($ShipmentInvoiceAfterDiscount, 2, '.', ''),
-        'paidAmount' => number_format($paidAmount, 2, '.', ''),
-        'remainingAmount' => number_format($remainingAmount, 2, '.', ''),
+        'totalShipmentInvoicePrice' => $totalShipmentInvoicePrice,
+        'discount' => $discount,
+        'ShipmentInvoiceAfterDiscount' => $ShipmentInvoiceAfterDiscount,
+        'paidAmount' => $paidAmount,
+        'remainingAmount' => $remainingAmount,
     ]);
 }
+
 
 
 public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
