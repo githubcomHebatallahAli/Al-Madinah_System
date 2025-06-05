@@ -177,7 +177,7 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
 
 public function edit(string $id)
 {
-    $ShipmentInvoice = ShipmentInvoice::with(['shipment', 'paymentMethodType'])->find($id);
+    $ShipmentInvoice = ShipmentInvoice::with(['shipment', 'paymentMethodType','paymentMethodType.paymentMethod'])->find($id);
 
     if (!$ShipmentInvoice) {
         return response()->json([
