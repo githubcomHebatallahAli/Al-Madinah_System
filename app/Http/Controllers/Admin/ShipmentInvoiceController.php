@@ -18,6 +18,7 @@ use App\Http\Resources\Admin\ShipmentResource;
 use App\Http\Requests\Admin\ShipmentInvoiceRequest;
 use App\Http\Requests\Admin\UpdatePaidAmountRequest;
 use App\Http\Resources\Admin\ShipmentInvoiceResource;
+use App\Http\Resources\Admin\ShowAllShipmentInvoiceResource;
 
 class ShipmentInvoiceController extends Controller
 {
@@ -31,20 +32,24 @@ class ShipmentInvoiceController extends Controller
 public function showAll(Request $request)
 {
     $searchTerm = $request->input('search', '');
-    $invoiceStatus = $request->input('invoice', ''); // paid أو pending
+    $invoiceStatus = $request->input('invoice', '');
     $serviceId = $request->input('service_id');
+    $branchId = $request->input('branch_id');
 
     $query = ShipmentInvoice::with(['shipment.supplier.company.service'])
         ->when($searchTerm, function ($q) use ($searchTerm) {
-            $q->whereHas('shipment.supplier', function ($q2) use ($searchTerm) {
-                $q2->where('name', 'like', "%{$searchTerm}%");
-            })->orWhereHas('shipment.supplier.company', function ($q3) use ($searchTerm) {
+            $q->whereHas('shipment.supplier.company', function ($q3) use ($searchTerm) {
                 $q3->where('name', 'like', "%{$searchTerm}%");
             });
         })
         ->when($serviceId, function ($q) use ($serviceId) {
             $q->whereHas('shipment.supplier.company', function ($q2) use ($serviceId) {
                 $q2->where('service_id', $serviceId);
+            });
+        })
+        ->when($branchId, function ($q) use ($branchId) {
+            $q->whereHas('shipment.supplier.company.service', function ($q2) use ($branchId) {
+                $q2->where('branch_id', $branchId);
             });
         })
         ->when($invoiceStatus === 'paid', function ($q) {
@@ -61,7 +66,7 @@ public function showAll(Request $request)
     $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
 
     return response()->json([
-        'data' => ShipmentInvoiceResource::collection($ShipmentInvoices),
+        'data' => ShowAllShipmentInvoiceResource::collection($ShipmentInvoices),
         'pagination' => [
             'total' => $ShipmentInvoices->total(),
             'count' => $ShipmentInvoices->count(),
@@ -78,6 +83,7 @@ public function showAll(Request $request)
         'message' => "تم عرض الفواتير بنجاح.",
     ]);
 }
+
 
 
 
