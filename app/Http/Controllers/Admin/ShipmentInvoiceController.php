@@ -124,35 +124,62 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
 
 
 
-public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
-{
-    $invoice = ShipmentInvoice::findOrFail($id);
+    public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
+    {
+        $invoice = ShipmentInvoice::findOrFail($id);
 
-    $paidAmountToAdd = $request->paidAmount;
-    $invoice->paidAmount += $paidAmountToAdd;
+        $oldData = $invoice->toArray();
 
-    $debetAfterDiscount = $invoice->totalPriceAfterDiscount ?? 0;
+        $paidAmountToAdd = $request->paidAmount;
+        $newPaidAmount = $invoice->paidAmount + $paidAmountToAdd;
+        $debetAfterDiscount = $invoice->totalPriceAfterDiscount ?? 0;
+        $remainingAmount = $debetAfterDiscount - $newPaidAmount;
+        $newStatus = $remainingAmount > 0 ? 'pending' : 'paid';
 
-    $remainingAmount = $debetAfterDiscount - $invoice->paidAmount;
+        $updateData = [
+            'paidAmount'       => $newPaidAmount,
+            'remainingAmount'  => max($remainingAmount, 0),
+            'status'           => $newStatus,
+        ];
 
-    $invoice->remainingAmount = number_format(max($remainingAmount, 0), 2, '.', '');
-    $invoice->status = $remainingAmount > 0 ? 'pending' : 'paid';
+        // 🟢 نضيف بيانات الـ updated_by باستخدام التريت
+        $this->setUpdatedBy($updateData);
 
-    $invoice->updated_by = auth()->id();
-    $invoice->updated_by_type = get_class(auth()->user());
+        // التحقق من وجود تغييرات
+        $hasChanges = false;
+        foreach ($updateData as $key => $value) {
+            if ($invoice->$key != $value) {
+                $hasChanges = true;
+                break;
+            }
+        }
 
-    $invoice->save();
+        if (!$hasChanges) {
+            return response()->json([
+                'message' => 'لا يوجد تغييرات فعلية',
+                'shipmentInvoice' => new ShipmentInvoiceResource($invoice->load(['shipment', 'paymentMethodType'])),
+            ]);
+        }
 
-    return response()->json([
-        'message' => 'Paid amount updated successfully',
-        'shipmentInvoice' => new ShipmentInvoiceResource($invoice->load(['shipment', 'paymentMethodType'])),
-        'totalPrice' => number_format($invoice->totalPriceAfterDiscount, 2, '.', ''),
-        'discount' => number_format($invoice->discount, 2, '.', ''),
-        'debetAfterDiscount' => number_format($debetAfterDiscount, 2, '.', ''),
-        'paidAmount' => number_format($invoice->paidAmount, 2, '.', ''),
-        'remainingAmount' => number_format($invoice->remainingAmount, 2, '.', ''),
-    ]);
-}
+        // التحديث
+        $invoice->update($updateData);
+
+        // تسجيل التغييرات
+        $changedData = $invoice->getChangedData($oldData, $invoice->fresh()->toArray());
+        $invoice->changed_data = $changedData;
+        $invoice->save();
+
+        return response()->json([
+            'message' => 'تم تحديث المبلغ المدفوع بنجاح',
+            'shipmentInvoice' => new ShipmentInvoiceResource($invoice->load(['shipment', 'paymentMethodType'])),
+            'totalPrice' => $invoice->totalPriceAfterDiscount,
+            'discount' => $invoice->discount,
+            'debetAfterDiscount' => $debetAfterDiscount,
+            'paidAmount' => $invoice->paidAmount,
+            'remainingAmount' => $invoice->remainingAmount,
+        ]);
+    }
+
 
 public function edit(string $id)
 {
@@ -192,17 +219,14 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
         $invoice = ShipmentInvoice::findOrFail($id);
         $shipment = Shipment::findOrFail($request->shipment_id);
 
-        // حساب القيم المالية
         $discount = $request->discount ?? $invoice->discount;
         $paidAmount = $request->paidAmount ?? $invoice->paidAmount;
         $totalAfterDiscount = $shipment->totalPrice - $discount;
         $remaining = $totalAfterDiscount - $paidAmount;
         $invoiceStatus = $remaining <= 0 ? 'paid' : 'pending';
 
-        // حفظ البيانات القديمة لتتبع التغييرات
         $oldData = $invoice->toArray();
 
-        // إعداد بيانات التحديث
         $updateData = array_merge([
             'shipment_id'             => $shipment->id,
             'payment_method_type_id'  => $request->payment_method_type_id,
@@ -214,7 +238,6 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
             'description'             => $request->description,
         ], $this->prepareUpdateMeta($request, $invoice->status));
 
-        // التحقق من وجود تغييرات فعلية
         $hasChanges = false;
         foreach ($updateData as $key => $value) {
             if ($invoice->$key != $value) {
@@ -228,15 +251,13 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
             return $this->respondWithResource($invoice, 'لا يوجد تغييرات فعلية');
         }
 
-        // تطبيق التحديث
         $invoice->update($updateData);
 
-        // تسجيل التغييرات
         $changedData = $invoice->getChangedData($oldData, $invoice->fresh()->toArray());
         $invoice->changed_data = $changedData;
         $invoice->save();
 
-        // تحميل العلاقات
+
         $invoice->load(['paymentMethodType', 'shipment', 'paymentMethodType.paymentMethod']);
 
         DB::commit();
