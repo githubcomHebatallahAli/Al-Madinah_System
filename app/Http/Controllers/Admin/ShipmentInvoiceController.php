@@ -190,18 +190,19 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
 
     try {
         $invoice = ShipmentInvoice::findOrFail($id);
-
         $shipment = Shipment::findOrFail($request->shipment_id);
 
-        $discount = $request->discount ?? 0;
+        
+        $discount = $request->discount ?? $invoice->discount;
         $paidAmount = $request->paidAmount ?? $invoice->paidAmount;
         $totalAfterDiscount = $shipment->totalPrice - $discount;
-
         $remaining = $totalAfterDiscount - $paidAmount;
-
         $invoiceStatus = $remaining <= 0 ? 'paid' : 'pending';
 
-        $invoice->update([
+        $oldData = $invoice->toArray();
+
+
+        $updateData = array_merge([
             'shipment_id'             => $shipment->id,
             'payment_method_type_id'  => $request->payment_method_type_id,
             'discount'                => $discount,
@@ -210,29 +211,22 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
             'remainingAmount'         => $remaining,
             'invoice'                 => $invoiceStatus,
             'description'             => $request->description,
-            'creationDate'            => $request->creationDate,
-            'creationDateHijri'       => $request->creationDateHijri,
-            'status'                  => $request->status ?? $invoice->status,
-            'updated_by'              => auth()->id(),
-            'updated_by_type'         => get_class(auth()->user()),
-        ]);
+            'creationDate'            => $request->creationDate ?? $invoice->creationDate,
+            'creationDateHijri'       => $request->creationDateHijri ?? $invoice->creationDateHijri,
+        ], $this->prepareUpdateMeta($request, $invoice->status));
+
+        $this->applyChangesAndSave($invoice, $updateData, $oldData);
+
+
+        $invoice->load(['paymentMethodType', 'shipment', 'paymentMethodType.paymentMethod']);
 
         DB::commit();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تحديث الفاتورة بنجاح',
-            'data'    => $invoice
-        ]);
+        return $this->respondWithResource($invoice, 'تم تحديث الفاتورة بنجاح');
 
     } catch (\Throwable $e) {
         DB::rollBack();
-
-        return response()->json([
-            'success' => false,
-            'message' => 'حدث خطأ أثناء تحديث الفاتورة',
-            'error'   => $e->getMessage()
-        ], 500);
+        return $this->handleError($e, 'حدث خطأ أثناء تحديث الفاتورة');
     }
 }
 
