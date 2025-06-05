@@ -13,15 +13,29 @@ class ShipmentInvoiceResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+           'payment_method' => $this->whenLoaded('paymentMethod', function () {
+        return [
             'id'=> $this -> id,
             'payment_method_id'=> $this->paymentMethodType->paymentMethod->id ?? null,
             'payment_method_name'=> $this->paymentMethodType->paymentMethod->name ?? null,
 
-            'payment_method_type_id' => $this->paymentMethodType->id ?? null,
-            'type' => $this->paymentMethodType->type ?? null,
-            'by' => $this->paymentMethodType->by ?? null,
+    ];
+}),
 
-            'shipment_id' => $this->shipment->id ?? null,
+            'payment_method_type' => $this->whenLoaded('paymentMethodType', function () {
+    return [
+       'payment_method_type_id' => $this->paymentMethodType->id ?? null,
+        'type' => $this->paymentMethodType->type ?? null,
+        'by' => $this->paymentMethodType->by ?? null,
+
+    ];
+}),
+
+
+
+            'shipment' => $this->whenLoaded('shipment', function () {
+    return [
+       'shipment_id' => $this->shipment->id ?? null,
 
             'service_id' => $this->shipment->service->id ?? null,
             'service_name' => $this->shipment->service->name ?? null,
@@ -34,6 +48,9 @@ class ShipmentInvoiceResource extends JsonResource
 
             'shipmentItemsCount' => $this->shipment->shipmentItemsCount ?? 0,
             'totalPrice' => $this->shipment->totalPrice ?? 0,
+    ];
+}),
+
 
             'discount'=> $this->discount,
             'totalPriceAfterDiscount'=> $this->totalPriceAfterDiscount,
