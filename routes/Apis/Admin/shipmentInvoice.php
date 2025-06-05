@@ -12,6 +12,7 @@ Route::controller(ShipmentInvoiceController::class)->prefix('/supplier')->middle
 
    Route::get('/showAll/shipmentInvoice','showAll');
    Route::post('/create/shipmentInvoice', 'create');
+    Route::put('/updatePaid/shipmentInvoice/{id}','updatePaidAmount');
    Route::get('/edit/shipmentInvoice/{id}','edit');
    Route::post('/update/shipmentInvoice/{id}', 'update');
    Route::patch('notActive/shipmentInvoice/{id}', 'notActive');
