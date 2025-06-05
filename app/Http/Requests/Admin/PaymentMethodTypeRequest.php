@@ -29,7 +29,7 @@ class PaymentMethodTypeRequest extends FormRequest
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'type' =>'nullable|string',
-            'by'=>'nullable|in:zakat|pilgrims|system',
+            'by'=>'required|in:zakat|pilgrims|system',
         ];
     }
 
