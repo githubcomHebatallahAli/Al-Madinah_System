@@ -135,7 +135,7 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
         $updateData = [
             'paidAmount'       => $newPaidAmount,
             'remainingAmount'  => max($remainingAmount, 0),
-            'status'           => $newStatus,
+            'invoice'           => $newStatus,
         ];
 
         // 🟢 نضيف بيانات الـ updated_by باستخدام التريت
