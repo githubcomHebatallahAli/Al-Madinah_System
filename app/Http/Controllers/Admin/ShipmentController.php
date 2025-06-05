@@ -40,60 +40,6 @@ class ShipmentController extends Controller
         ]);
     }
 
-// public function create(ShipmentRequest $request)
-// {
-//     $this->authorize('manage_system');
-
-//     try {
-//         $shipment = DB::transaction(function () use ($request) {
-//             $data = array_merge($request->only([
-//                 'company_id', 'supplier_id', 'service_id', 'description'
-//             ]), $this->prepareCreationMetaData());
-
-//             $data['status'] = $data['status'] ?? 'active';
-//             $data['totalPrice'] = 0;
-
-//             $shipment = Shipment::create($data);
-
-//             $total = 0;
-
-//             foreach ($request->items as $item) {
-//                 $itemTotal = $item['quantity'] * $item['unitPrice'];
-//                 $total += $itemTotal;
-
-//                 ShipmentItem::create([
-//                     'shipment_id' => $shipment->id,
-//                     'item_id'     => $item['item_id'],
-//                     'item_type'   => $this->getMorphClass($item['item_type']),
-//                     'quantity'    => $item['quantity'],
-//                     'unitPrice'   => $item['unitPrice'],
-//                     'totalPrice'  => $itemTotal,
-//                     'rentalStart'     => $item['rentalStart'] ?? null,
-//                     'rentalEnd'       => $item['rentalEnd'] ?? null,
-//                     'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
-//                     'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
-//                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-//                     'creationDateHijri' => $this->getHijriDate(),
-//                 ]);
-//             }
-//             $shipment->update(['totalPrice' => $total]);
-
-//             return $shipment;
-//         });
-
-//         $this->loadCommonRelations($shipment);
-//         $shipment->load('items');
-
-//         return $this->respondWithResource($shipment, "Shipment created successfully.");
-
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'حدث خطأ أثناء إنشاء الشحنة.',
-//             'error' => $e->getMessage(),
-//         ], 500);
-//     }
-// }
 
 public function create(ShipmentRequest $request)
 {

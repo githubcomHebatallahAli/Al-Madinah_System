@@ -3,10 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PaymentMethodTypeRequest extends FormRequest
+class ShipmentInvoiceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,16 +24,17 @@ class PaymentMethodTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_method_id' => 'nullable|exists:payment_methods,id',
-            'status' => 'nullable|in:active,notActive',
-            'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
-            'creationDateHijri'=>'nullable|string',
-            'type' =>'nullable|string',
-            'by'=>'nullable|in:zakat|pilgrims|system',
+        'shipment_id'=> 'required|exists:shipments,id',
+        'payment_method_type_id'=> 'required|exists:payment_method_types,id',
+        'discount'=> 'nullable|numeric|min:0|max:99999.99',
+        'description'=>'nullable|string',
+        'paidAmount'=>'nullable|numeric|min:0|max:99999.99',
+        'status' => 'nullable|in:active,notActive',
+        'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
+        'creationDateHijri'=>'nullable|string',
         ];
     }
-
-              public function failedValidation(Validator $validator)
+                  public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'success'   => false,
