@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShipmentResource;
 use App\Http\Requests\Admin\ShipmentInvoiceRequest;
 use App\Http\Requests\Admin\UpdatePaidAmountRequest;
 use App\Http\Resources\Admin\ShipmentInvoiceResource;
@@ -77,6 +78,8 @@ class ShipmentInvoiceController extends Controller
         'message' => "تم عرض الفواتير بنجاح."
     ]);
 }
+
+
 
 public function create(ShipmentInvoiceRequest $request): JsonResponse
 {
@@ -231,6 +234,11 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
         ], 500);
     }
 }
+
+   protected function getResourceClass(): string
+    {
+        return ShipmentInvoiceResource::class;
+    }
 
 
 }
