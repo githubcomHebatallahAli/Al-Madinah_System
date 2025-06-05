@@ -107,6 +107,7 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
         ], $this->prepareCreationMetaData());
 
         $invoice = ShipmentInvoice::create($invoiceData);
+          $invoice->load(['paymentMethodType', 'shipment']);
 
         DB::commit();
 
