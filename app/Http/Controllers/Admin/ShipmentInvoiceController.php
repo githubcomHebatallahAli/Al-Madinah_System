@@ -194,7 +194,7 @@ public function edit(string $id)
 
     return response()->json([
         'message' => 'ShipmentInvoice details fetched successfully',
-        'ShipmentInvoice' => new ShipmentInvoiceResource($ShipmentInvoice->load('products')),
+        'ShipmentInvoice' => new ShipmentInvoiceResource($ShipmentInvoice),
 
         'totalShipmentInvoicePrice' => $totalShipmentInvoicePrice,
         'discount' => $discount,
