@@ -192,16 +192,17 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
         $invoice = ShipmentInvoice::findOrFail($id);
         $shipment = Shipment::findOrFail($request->shipment_id);
 
-        
+        // حساب القيم المالية
         $discount = $request->discount ?? $invoice->discount;
         $paidAmount = $request->paidAmount ?? $invoice->paidAmount;
         $totalAfterDiscount = $shipment->totalPrice - $discount;
         $remaining = $totalAfterDiscount - $paidAmount;
         $invoiceStatus = $remaining <= 0 ? 'paid' : 'pending';
 
+        // حفظ البيانات القديمة لتتبع التغييرات
         $oldData = $invoice->toArray();
 
-
+        // إعداد بيانات التحديث
         $updateData = array_merge([
             'shipment_id'             => $shipment->id,
             'payment_method_type_id'  => $request->payment_method_type_id,
@@ -215,9 +216,15 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
             'creationDateHijri'       => $request->creationDateHijri ?? $invoice->creationDateHijri,
         ], $this->prepareUpdateMeta($request, $invoice->status));
 
-        $this->applyChangesAndSave($invoice, $updateData, $oldData);
+        // تطبيق التحديث مع تتبع التغييرات
+        $invoice->update($updateData);
 
+        // تسجيل التغييرات
+        $changedData = $this->getChangedData($oldData, $invoice->fresh()->toArray());
+        $invoice->changed_data = $changedData;
+        $invoice->save();
 
+        // تحميل العلاقات
         $invoice->load(['paymentMethodType', 'shipment', 'paymentMethodType.paymentMethod']);
 
         DB::commit();
@@ -226,10 +233,15 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
 
     } catch (\Throwable $e) {
         DB::rollBack();
-        return $this->handleError($e, 'حدث خطأ أثناء تحديث الفاتورة');
+
+        // استخدام الدالة الجديدة لمعالجة الأخطاء
+        return response()->json([
+            'success' => false,
+            'message' => 'حدث خطأ أثناء تحديث الفاتورة',
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
     }
 }
-
    protected function getResourceClass(): string
     {
         return ShipmentInvoiceResource::class;

@@ -47,6 +47,21 @@ protected function respondWithCollection(Collection $collection, ?string $messag
         ];
     }
 
+        protected function handleError(\Throwable $e, string $message, int $statusCode = 500): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'error' => config('app.debug') ? [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTrace()
+            ] : null
+        ], $statusCode);
+    }
+
+
 
 protected function prepareUpdateMeta($request,?string $status = null): array
 {
