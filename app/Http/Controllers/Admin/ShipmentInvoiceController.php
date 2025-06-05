@@ -212,14 +212,27 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
             'remainingAmount'         => $remaining,
             'invoice'                 => $invoiceStatus,
             'description'             => $request->description,
-
         ], $this->prepareUpdateMeta($request, $invoice->status));
 
-        // تطبيق التحديث مع تتبع التغييرات
+        // التحقق من وجود تغييرات فعلية
+        $hasChanges = false;
+        foreach ($updateData as $key => $value) {
+            if ($invoice->$key != $value) {
+                $hasChanges = true;
+                break;
+            }
+        }
+
+        if (!$hasChanges) {
+            $invoice->load(['paymentMethodType', 'shipment', 'paymentMethodType.paymentMethod']);
+            return $this->respondWithResource($invoice, 'لا يوجد تغييرات فعلية');
+        }
+
+        // تطبيق التحديث
         $invoice->update($updateData);
 
         // تسجيل التغييرات
-        $changedData = $this->getChangedData($oldData, $invoice->fresh()->toArray());
+        $changedData = $invoice->getChangedData($oldData, $invoice->fresh()->toArray());
         $invoice->changed_data = $changedData;
         $invoice->save();
 
@@ -233,7 +246,6 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
     } catch (\Throwable $e) {
         DB::rollBack();
 
-        // استخدام الدالة الجديدة لمعالجة الأخطاء
         return response()->json([
             'success' => false,
             'message' => 'حدث خطأ أثناء تحديث الفاتورة',
@@ -241,6 +253,8 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
         ], 500);
     }
 }
+
+
    protected function getResourceClass(): string
     {
         return ShipmentInvoiceResource::class;
