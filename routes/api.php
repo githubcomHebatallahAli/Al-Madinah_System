@@ -24,4 +24,5 @@ require __DIR__ . '/Apis/Admin/pilgrims.php';
 require __DIR__ . '/Apis/Admin/campaignWorker.php';
 require __DIR__ . '/Apis/Admin/paymentMethod.php';
 require __DIR__ . '/Apis/Admin/paymentMethodType.php';
+require __DIR__ . '/Apis/Admin/shipmentInvoice.php';
 
