@@ -85,10 +85,6 @@ public function showAll(Request $request)
 }
 
 
-
-
-
-
 public function create(ShipmentInvoiceRequest $request): JsonResponse
 {
     DB::beginTransaction();
@@ -275,6 +271,22 @@ public function update(ShipmentInvoiceRequest $request, $id): JsonResponse
         ], 500);
     }
 }
+
+    public function active(string $id)
+    {
+         $this->authorize('manage_users');
+        $ShipmentInvoice = ShipmentInvoice::findOrFail($id);
+
+        return $this->changeStatusSimple($ShipmentInvoice, 'active');
+    }
+
+    public function notActive(string $id)
+    {
+         $this->authorize('manage_users');
+        $ShipmentInvoice = ShipmentInvoice::findOrFail($id);
+
+        return $this->changeStatusSimple($ShipmentInvoice, 'notActive');
+    }
 
 
    protected function getResourceClass(): string
