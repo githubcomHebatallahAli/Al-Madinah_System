@@ -130,12 +130,12 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
         $newPaidAmount = $invoice->paidAmount + $paidAmountToAdd;
         $debetAfterDiscount = $invoice->totalPriceAfterDiscount ?? 0;
         $remainingAmount = $debetAfterDiscount - $newPaidAmount;
-        $newStatus = $remainingAmount > 0 ? 'pending' : 'paid';
+        $invoiceStatus = $remainingAmount > 0 ? 'pending' : 'paid';
 
         $updateData = [
             'paidAmount'       => $newPaidAmount,
             'remainingAmount'  => max($remainingAmount, 0),
-            'invoice'           => $newStatus,
+            'invoice'           => $invoiceStatus,
         ];
 
         // 🟢 نضيف بيانات الـ updated_by باستخدام التريت
@@ -157,10 +157,8 @@ public function create(ShipmentInvoiceRequest $request): JsonResponse
             ]);
         }
 
-        // التحديث
         $invoice->update($updateData);
 
-        // تسجيل التغييرات
         $changedData = $invoice->getChangedData($oldData, $invoice->fresh()->toArray());
         $invoice->changed_data = $changedData;
         $invoice->save();
