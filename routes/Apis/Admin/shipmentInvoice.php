@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ShipmentInvoiceController;
 
 
-Route::controller(ShipmentInvoiceController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
+Route::controller(ShipmentInvoiceController::class)->prefix('/supplier')->middleware('adminOrWorker')->group(
     function () {
 
    Route::get('/showAll/shipmentInvoice','showAll');
