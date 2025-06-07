@@ -7,7 +7,7 @@ use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Pilgrims extends Model
+class Pilgrim extends Model
 {
     use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
@@ -23,7 +23,8 @@ class Pilgrims extends Model
         'phoNum',
         'idNum',
         'nationality',
-        'description'
+        'description',
+        'gender'
     ];
 
         public function creator()
@@ -39,5 +40,12 @@ class Pilgrims extends Model
      protected $casts = [
     'changed_data' => 'array',
 ];
+
+    public function busInvoices()
+    {
+        return $this->belongsToMany(busInvoice::class)
+            ->withPivot(['seatNumber', 'seatPrice', 'status', 'status_reason'])
+            ->withTimestamps();
+    }
 
 }

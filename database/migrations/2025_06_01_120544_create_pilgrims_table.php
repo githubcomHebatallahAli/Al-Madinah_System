@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('pilgrims', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('idNum');
-            $table->string('phoNum');
+            $table->string('idNum')->nullable();
+            $table->string('phoNum')->nullable();
             $table->string('nationality');
+            $table->enum('gender', ['male', 'female','child']);
             $table->text('description')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();

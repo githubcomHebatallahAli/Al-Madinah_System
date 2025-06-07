@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('remainingAmount', 15, 2)->nullable();
             $table->enum('invoice', ['paid', 'pending'])->default('pending');
             $table->foreignId('payment_method_type_id')->constrained('payment_method_types')->cascadeOnDelete();
-            $table->text('paidAmount')->nullable();
+            $table->text('description')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

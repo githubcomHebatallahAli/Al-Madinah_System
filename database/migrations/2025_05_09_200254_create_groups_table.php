@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('updated_by_type')->nullable();
             $table->foreignId('campaign_id')->constrained('campaigns')->cascadeOnDelete();
             $table->string('groupNum')->nullable();
+            // عدد الباصات
             $table->integer('numBus')->nullable();
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();

@@ -24,10 +24,11 @@ class PilgrimsRequest extends FormRequest
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
             'name'=>'required|string',
-            'phoNum'=>'required|string',
-            'idNum'=>'required|string',
+            'phoNum'=>'nullable|string',
+            'idNum'=>'nullable|string',
             'nationality'=>'required|string',
             'description'=>'nullable|string',
+            'gender'=>'nullable|in:male,female,child'
         ];
     }
 
