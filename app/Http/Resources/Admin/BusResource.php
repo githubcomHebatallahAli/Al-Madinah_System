@@ -19,6 +19,7 @@ class BusResource extends JsonResource
             'busModel' => $this-> busModel,
             'plateNum' => $this-> plateNum ,
             'seatNum' => $this-> seatNum,
+            'seatMap' => $this-> seatMap,
             'quantity' => $this-> quantity,
             'sellingPrice' => $this-> sellingPrice,
             'purchesPrice' => $this-> purchesPrice,

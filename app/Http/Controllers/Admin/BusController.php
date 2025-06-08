@@ -36,18 +36,37 @@ class BusController extends Controller
     }
 
 
-    public function create(BusRequest $request)
+    // public function create(BusRequest $request)
+    // {
+    //     $this->authorize('manage_system');
+    //    $data = array_merge($request->only([
+    //         'service_id', 'busNum', 'busModel','plateNum'
+    //         ,'seatNum','quantity','sellingPrice','purchesPrice'
+    //     ]), $this->prepareCreationMetaData());
+
+    //     $Bus = Bus::create($data);
+
+    //      return $this->respondWithResource($Bus, "Bus created successfully.");
+    //     }
+
+        public function create(BusRequest $request)
     {
         $this->authorize('manage_system');
-       $data = array_merge($request->only([
-            'service_id', 'busNum', 'busModel','plateNum'
-            ,'seatNum','quantity','sellingPrice','purchesPrice'
+
+        $data = array_merge($request->only([
+            'service_id', 'busNum', 'busModel', 'plateNum',
+            'seatNum', 'quantity', 'sellingPrice', 'purchesPrice',
+            'seatMap'
         ]), $this->prepareCreationMetaData());
 
         $Bus = Bus::create($data);
 
-         return $this->respondWithResource($Bus, "Bus created successfully.");
+        if (!isset($data['seatMap'])) {
+            $Bus->generateDefaultSeatMap();
         }
+
+        return $this->respondWithResource($Bus, "Bus created successfully.");
+    }
 
         public function edit(string $id)
         {
@@ -63,41 +82,103 @@ class BusController extends Controller
     return $this->respondWithResource($Bus, "Bus retrieved for editing.");
         }
 
-public function update(BusRequest $request, string $id)
-{
-    $this->authorize('manage_system');
-    $Bus = Bus::findOrFail($id);
-    $oldData = $Bus->toArray();
+// public function update(BusRequest $request, string $id)
+// {
+//     $this->authorize('manage_system');
+//     $Bus = Bus::findOrFail($id);
+//     $oldData = $Bus->toArray();
 
-    $updateData = $request->only(['status','service_id', 'busNum', 'busModel','plateNum'
-            ,'seatNum','quantity','sellingPrice','purchesPrice']);
+//     $updateData = $request->only(['status','service_id', 'busNum', 'busModel','plateNum'
+//             ,'seatNum','quantity','sellingPrice','purchesPrice']);
 
-    $updateData = array_merge(
-        $updateData,
-        $this->prepareUpdateMeta($request, $Bus->status)
-    );
+//     $updateData = array_merge(
+//         $updateData,
+//         $this->prepareUpdateMeta($request, $Bus->status)
+//     );
 
-    $hasChanges = false;
-    foreach ($updateData as $key => $value) {
-        if ($Bus->$key != $value) {
-            $hasChanges = true;
-            break;
+//     $hasChanges = false;
+//     foreach ($updateData as $key => $value) {
+//         if ($Bus->$key != $value) {
+//             $hasChanges = true;
+//             break;
+//         }
+//     }
+
+//     if (!$hasChanges) {
+//         $this->loadCommonRelations($Bus);
+//         return $this->respondWithResource($Bus, "لا يوجد تغييرات فعلية");
+//     }
+
+//     $Bus->update($updateData);
+//     $changedData = $Bus->getChangedData($oldData, $Bus->fresh()->toArray());
+//     $Bus->changed_data = $changedData;
+//     $Bus->save();
+
+//     $this->loadCommonRelations($Bus);
+//     return $this->respondWithResource($Bus, "تم تحديث الباص بنجاح");
+// }
+
+
+    public function update(BusRequest $request, string $id)
+    {
+        $this->authorize('manage_system');
+        $Bus = Bus::findOrFail($id);
+        $oldData = $Bus->toArray();
+
+        $updateData = $request->only([
+            'status', 'service_id', 'busNum', 'busModel', 'plateNum',
+            'seatNum', 'quantity', 'sellingPrice', 'purchesPrice',
+            'seatMap'
+        ]);
+
+        
+        if ($request->has('seatNum') && $Bus->seatNum != $request->seatNum) {
+            $Bus->seatNum = $request->seatNum;
+            $Bus->generateDefaultSeatMap();
         }
-    }
 
-    if (!$hasChanges) {
+        elseif ($request->has('seatMap')) {
+            $Bus->seatMap = $request->seatMap;
+        }
+
+        $updateData = array_merge(
+            $updateData,
+            $this->prepareUpdateMeta($request, $Bus->status)
+        );
+
+        $hasChanges = false;
+        foreach ($updateData as $key => $value) {
+            if ($Bus->$key != $value) {
+                $hasChanges = true;
+                break;
+            }
+        }
+
+        if (!$hasChanges) {
+            $this->loadCommonRelations($Bus);
+            return $this->respondWithResource($Bus, "لا يوجد تغييرات فعلية");
+        }
+
+        $Bus->update($updateData);
+        $changedData = $Bus->getChangedData($oldData, $Bus->fresh()->toArray());
+        $Bus->changed_data = $changedData;
+        $Bus->save();
+
         $this->loadCommonRelations($Bus);
-        return $this->respondWithResource($Bus, "لا يوجد تغييرات فعلية");
+        return $this->respondWithResource($Bus, "تم تحديث الباص بنجاح");
     }
 
-    $Bus->update($updateData);
-    $changedData = $Bus->getChangedData($oldData, $Bus->fresh()->toArray());
-    $Bus->changed_data = $changedData;
-    $Bus->save();
 
-    $this->loadCommonRelations($Bus);
-    return $this->respondWithResource($Bus, "تم تحديث الباص بنجاح");
-}
+  public function updateSeatMap(BusRequest $request, string $id)
+    {
+        $this->authorize('manage_system');
+        $Bus = Bus::findOrFail($id);
+
+        $Bus->seatMap = $request->seatMap;
+        $Bus->save();
+
+        return $this->respondWithResource($Bus, "تم تحديث خريطة المقاعد بنجاح");
+    }
 
     public function active(string $id)
     {

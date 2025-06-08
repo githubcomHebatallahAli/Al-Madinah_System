@@ -13,6 +13,7 @@ Route::controller(BusController::class)->prefix('/adminOrBranchManger')->middlew
    Route::post('/create/bus', 'create');
    Route::get('/edit/bus/{id}','edit');
    Route::post('/update/bus/{id}', 'update');
+   Route::post('/update/seatMap/bus/{id}', 'updateSeatMap');
    Route::patch('notActive/bus/{id}', 'notActive');
     Route::patch('active/bus/{id}', 'active');
    });
