@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Worker;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
@@ -76,7 +77,7 @@ public function create(BusInvoiceRequest $request): JsonResponse
     try {
         $validated = $request->validated();
 
-        // تحقق من أن المندوب يتبع الحملة
+
         $worker = Worker::findOrFail($validated['worker_id']);
         if ($worker->campaign_id != $validated['campaign_id']) {
             return $this->respondWithError('المندوب لا يتبع هذه الحملة.');
@@ -87,7 +88,7 @@ public function create(BusInvoiceRequest $request): JsonResponse
             return $this->respondWithError('يجب تحديد المعتمرين والمقاعد.');
         }
 
-        // إنشاء الفاتورة
+
         $invoiceData = array_merge([
             'main_pilgrim_id'         => $validated['main_pilgrim_id'] ?? null,
             'trip_id'                 => $validated['trip_id'],
@@ -98,8 +99,8 @@ public function create(BusInvoiceRequest $request): JsonResponse
             'bus_driver_id'           => $validated['bus_driver_id'],
             'worker_id'               => $validated['worker_id'],
             'payment_method_type_id'  => $validated['payment_method_type_id'],
-            'travelDate'              => $validated['travelDate'] ?? now(),
-            'travelDateHijri'         => $validated['travelDateHijri'] ?? $this->getHijriDate(now()),
+            'travelDate'              => $validated['travelDate'] ,
+            'travelDateHijri'         => $validated['travelDateHijri'],
             'discount'                => $validated['discount'] ?? 0,
             'tax'                     => $validated['tax'] ?? 0,
             'paidAmount'              => $validated['paidAmount'],
@@ -110,7 +111,6 @@ public function create(BusInvoiceRequest $request): JsonResponse
 
         $invoice = BusInvoice::create($invoiceData);
 
-        // إرفاق المعتمرين والمقاعد
         foreach ($pilgrims as $p) {
             $invoice->pilgrims()->attach($p['id'], [
                 'seatNumber' => $p['seatNumber'] ?? null,
@@ -128,7 +128,7 @@ public function create(BusInvoiceRequest $request): JsonResponse
         $invoice->calculateTotal();
         $invoice->updateSeatsCount();
 
-        // تحميل العلاقات
+
         $invoice->load([
             'mainPilgrim', 'trip', 'campaign', 'office', 'group',
             'bus', 'busDriver', 'worker', 'paymentMethodType',
