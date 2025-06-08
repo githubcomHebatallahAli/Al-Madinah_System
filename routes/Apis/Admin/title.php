@@ -10,6 +10,8 @@ Route::controller(TitleController::class)->prefix('/adminOrBranchManger')->middl
     function () {
 
    Route::get('/showAll/title','showAll');
+    Route::get('/showAll/title/withPaginate','showAllWithPaginate');
+   Route::get('/showAll/title/withoutPaginate','showAllWithoutPaginate');
    Route::post('/create/title', 'create');
    Route::get('/edit/title/{id}','edit');
    Route::post('/update/title/{id}', 'update');

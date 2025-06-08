@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Title;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Resources\Admin\TitleResource;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllTitleResource;
 
 class TitleController extends Controller
 {
@@ -32,6 +34,49 @@ class TitleController extends Controller
         return response()->json([
             'data' => TitleResource::collection($titles),
             'message' => "All titles retrieved successfully."
+        ]);
+    }
+
+    // ==================
+
+          public function showAllWithPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Titles = Title::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->paginate(10);
+        $this->loadRelationsForCollection($Titles);
+
+        return response()->json([
+            'data' =>  ShowAllTitleResource::collection($Titles),
+              'pagination' => [
+                        'total' => $Titles->total(),
+                        'count' => $Titles->count(),
+                        'per_page' => $Titles->perPage(),
+                        'current_page' => $Titles->currentPage(),
+                        'total_pages' => $Titles->lastPage(),
+                        'next_page_url' => $Titles->nextPageUrl(),
+                        'prev_page_url' => $Titles->previousPageUrl(),
+                    ],
+            'message' => "Show All Titles."
+        ]);
+    }
+
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Titles = Title::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->get();
+        $this->loadRelationsForCollection($Titles);
+
+        return response()->json([
+            'data' =>  ShowAllTitleResource::collection($Titles),
+            'message' => "Show All Titles."
         ]);
     }
 
