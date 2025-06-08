@@ -85,7 +85,7 @@ $workerBelongsToCampaign = DB::table('campaign_workers')
 
 if (!$workerBelongsToCampaign) {
     return response()->json([
-       
+
         'message' => 'المندوب لا يتبع هذه الحملة.'
     ]);
 }
@@ -129,8 +129,6 @@ if (!$workerBelongsToCampaign) {
                 'status_reason' => null,
                 'creationDate'=> now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                 'creationDateHijri'=> $this->getHijriDate(),
-
-
             ]);
         }
 

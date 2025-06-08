@@ -123,6 +123,7 @@ class BusInvoice extends Model
 
 
     }
+
     public function generateInvoiceNumber()
 {
     try {
@@ -140,8 +141,8 @@ class BusInvoice extends Model
         );
 
     } catch (\Exception $e) {
-        // Fallback أكثر قوة
-        $lastNumber = static::withTrashed()->max('id') ?? 0;
+        // Fallback بدون withTrashed
+        $lastNumber = static::max('id') ?? 0;
         return sprintf(
             'BUS-%04d/%s',
             $lastNumber + 1,
@@ -152,10 +153,6 @@ class BusInvoice extends Model
 
 
 
-//     public function getAvailableSeatsAttribute()
-// {
-//     return max(0, $this->bus->seatNum - $this->bookedSeats);
-// }
 
   public function getAvailableSeatsAttribute()
     {

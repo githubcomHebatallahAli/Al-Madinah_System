@@ -26,15 +26,7 @@ class CampaignWorker extends Model
 
 
 
-    // public function getCreationDateAttribute($value)
-    // {
-    //     return $value;
-    // }
 
-    // public function getCreationDateHijriAttribute($value)
-    // {
-    //     return $value;
-    // }
 
     public $timestamps = false;
     //  public $incrementing = true;
