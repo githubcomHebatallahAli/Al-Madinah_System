@@ -122,18 +122,6 @@ if (!$workerBelongsToCampaign) {
 
         $invoice = BusInvoice::create($invoiceData);
 
-        // foreach ($pilgrims as $p) {
-        //     $invoice->pilgrims()->attach($p['id'], [
-        //         'seatNumber' => $p['seatNumber'] ?? null,
-        //         'seatPrice'  => $p['seatPrice'] ?? null,
-        //         'status'     => 'booked',
-        //          'type' => $seatInfo['type'],
-        //     'position' => $seatInfo['position'],
-        //         'creationDate'=> now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        //         'creationDateHijri'=> $this->getHijriDate(),
-        //     ]);
-        // }
-
         $this->validateAndAttachPilgrims($invoice, $pilgrims);
 
 
