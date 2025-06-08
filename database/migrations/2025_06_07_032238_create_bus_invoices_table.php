@@ -29,10 +29,10 @@ return new class extends Migration
             $table->string('travelDateHijri');
 
             // الحسابات
-            $table->decimal('subtotal', 10, 2);
+            $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('tax', 10, 2)->default(0);
-            $table->decimal('total', 10, 2);
+            $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
             $table->integer('bookedSeats')->default(0);
 
