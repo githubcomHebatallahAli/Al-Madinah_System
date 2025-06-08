@@ -75,12 +75,10 @@ public function availableSeats()
 }
 
 
- public function generateDefaultSeatMap($seatsPerRow = null)
+public function generateDefaultSeatMap($seatsPerRow = null)
 {
-
-    if ($seatsPerRow === null) {
-        $seatsPerRow = $this->calculateOptimalSeatsPerRow();
-    }
+    // تحديد أن عدد المقاعد في الصف لا يتجاوز 4
+    $seatsPerRow = min(4, $seatsPerRow ?? 4);
 
     $rows = ceil($this->seatNum / $seatsPerRow);
     $seatMap = [];
@@ -88,7 +86,6 @@ public function availableSeats()
 
     for ($row = 1; $row <= $rows; $row++) {
         for ($col = 1; $col <= $seatsPerRow; $col++) {
-
             if ($seatCounter > $this->seatNum) {
                 break;
             }
@@ -116,12 +113,16 @@ public function availableSeats()
 
 protected function calculateOptimalSeatsPerRow()
 {
-    if ($this->seatNum <= 20) {
-        return 3;
-    } elseif ($this->seatNum <= 40) {
-        return 4;
+    // الحد الأقصى للمقاعد في الصف العادي هو 4
+    $maxRegularSeats = 4;
+
+    if ($this->seatNum <= 12) {
+        return min(3, $maxRegularSeats); // للأعداد الصغيرة نفضل 3 مقاعد في الصف
+    } elseif ($this->seatNum <= 24) {
+        return $maxRegularSeats; // 4 مقاعد في الصف
     } else {
-        return 5;
+        // للأعداد الكبيرة نستخدم 4 مقاعد في الصف مع السماح للصف الأخير بأن يكون أكثر إذا لزم الأمر
+        return $maxRegularSeats;
     }
 }
 
@@ -140,33 +141,28 @@ protected function generateSeatNumber($row, $col)
 
 protected function determineSeatType($row, $col, $totalRows, $seatsPerRow)
 {
+    $seatsPerRow = min(4, $seatsPerRow);
+
 
     if ($row == $totalRows) {
         return 'rearCouch';
     }
 
-    $seatsPerRow = min($seatsPerRow, 4);
-
-
     if ($col == 1 || $col == $seatsPerRow) {
         return 'window';
     }
 
-    if ($col == 2 || $col == 3) {
-        return 'aisle';
-    }
 
     return 'aisle';
 }
 
 protected function determineSeatPosition($col, $seatsPerRow)
 {
-    $seatsPerRow = max(2, min($seatsPerRow, 4));
+    $seatsPerRow = min(4, $seatsPerRow);
 
-    if ($seatsPerRow == 3) {
-        return ($col == 1) ? 'left' : (($col == 2) ? 'center' : 'right');
+    if ($seatsPerRow == 1) {
+        return 'center';
     }
-
     return ($col <= $seatsPerRow / 2) ? 'left' : 'right';
 }
 
