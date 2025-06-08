@@ -68,7 +68,7 @@ class BusInvoiceController extends Controller
 
 
 
-public function store(BusInvoiceRequest $request)
+public function create(BusInvoiceRequest $request)
 {
     DB::beginTransaction();
 
@@ -105,36 +105,50 @@ public function store(BusInvoiceRequest $request)
 protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
 {
     $bus = $invoice->bus;
+    throw_unless($bus, new \Exception("Bus not found"));
+
     $availableSeats = $bus->available_seats;
-    $availableSeatNumbers = array_column($availableSeats, 'seatNumber');
+    $availableSeatsMap = collect($availableSeats)->keyBy('seatNumber'); // تحويل لـ map للبحث السريع
 
     $pilgrimsToAttach = [];
     $seatNumbersUsed = [];
 
     foreach ($pilgrimsData as $pilgrim) {
-        if (!in_array($pilgrim['seatNumber'], $availableSeatNumbers)) {
-            throw new \Exception("Seat {$pilgrim['seatNumber']} is not available or does not exist");
-        }
+        throw_unless(
+            isset($pilgrim['id'], $pilgrim['seatNumber']),
+            new \Exception("Invalid pilgrim data structure")
+        );
 
-        if (in_array($pilgrim['seatNumber'], $seatNumbersUsed)) {
-            throw new \Exception("Seat {$pilgrim['seatNumber']} is assigned to multiple pilgrims");
-        }
+        $seatNumber = $pilgrim['seatNumber'];
+        $seatInfo = $availableSeatsMap[$seatNumber] ?? null;
 
-        $seatNumbersUsed[] = $pilgrim['seatNumber'];
+        throw_unless(
+            $seatInfo,
+            new \Exception("Seat {$seatNumber} is not available or does not exist")
+        );
+
+        throw_if(
+            in_array($seatNumber, $seatNumbersUsed),
+            new \Exception("Seat {$seatNumber} is assigned to multiple pilgrims")
+        );
+
+        $seatNumbersUsed[] = $seatNumber;
 
         $pilgrimsToAttach[$pilgrim['id']] = [
-            'seatNumber' => $pilgrim['seatNumber'],
+            'seatNumber' => $seatNumber,
             'seatPrice' => $pilgrim['seatPrice'],
+            'type' => $seatInfo['type'],
+            'position' => $seatInfo['position'], 
             'status' => 'booked',
-            'creationDate' => now(),
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             'creationDateHijri' => $this->getHijriDate()
         ];
     }
 
-    // Check if bus capacity is not exceeded
-    if (count($pilgrimsToAttach) > ($bus->seatNum - $bus->total_bookedSeats)) {
-        throw new \Exception("Bus capacity exceeded. Available seats: " . ($bus->seatNum - $bus->total_bookedSeats));
-    }
+    throw_if(
+        count($pilgrimsToAttach) > ($bus->seatNum - $bus->total_bookedSeats),
+        new \Exception("Bus capacity exceeded")
+    );
 
     $invoice->pilgrims()->attach($pilgrimsToAttach);
 }
