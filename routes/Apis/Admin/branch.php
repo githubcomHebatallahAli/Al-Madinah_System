@@ -12,11 +12,14 @@ Route::post('/create/branch', 'create');
 Route::post('/update/branch/{id}', 'update');
 Route::patch('notActive/branch/{id}', 'notActive');
 Route::patch('active/branch/{id}', 'active');
+Route::get('/showAll/branch/withoutPaginate','showAllWithoutPaginate');
    });
 
    Route::controller(BranchController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
         Route::get('/edit/branch/{id}','edit');
         Route::get('/showAll/branch','showAll');
+         Route::get('/showAll/branch/withPaginate','showAllWithPaginate');
+
            });
 

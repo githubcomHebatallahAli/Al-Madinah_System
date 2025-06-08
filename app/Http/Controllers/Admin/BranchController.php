@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Branch;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\BranchRequest;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\BranchResource;
+use App\Http\Resources\Admin\ShowAllBranchResource;
 
 class BranchController extends Controller
 {
@@ -33,6 +34,46 @@ class BranchController extends Controller
         return response()->json([
             'data' =>  BranchResource::collection($Branches),
             'message' => "Show All branches."
+        ]);
+    }
+    // ==================
+      public function showAllWithPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Branches = Branch::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->paginate(10);
+        $this->loadRelationsForCollection($Branches);
+
+        return response()->json([
+            'data' =>  ShowAllBranchResource::collection($Branches),
+              'pagination' => [
+                        'total' => $Branches->total(),
+                        'count' => $Branches->count(),
+                        'per_page' => $Branches->perPage(),
+                        'current_page' => $Branches->currentPage(),
+                        'total_pages' => $Branches->lastPage(),
+                        'next_page_url' => $Branches->nextPageUrl(),
+                        'prev_page_url' => $Branches->previousPageUrl(),
+                    ],
+            'message' => "Show All Branches."
+        ]);
+    }
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Branches = Branch::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->get();
+        $this->loadRelationsForCollection($Branches);
+
+        return response()->json([
+            'data' =>  ShowAllBranchResource::collection($Branches),
+            'message' => "Show All Branches."
         ]);
     }
 
