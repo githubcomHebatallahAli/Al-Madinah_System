@@ -78,14 +78,17 @@ public function create(BusInvoiceRequest $request): JsonResponse
         $validated = $request->validated();
 
 
-        $worker = Worker::findOrFail($validated['worker_id']);
-        if ($worker->campaign_id != $validated['campaign_id']) {
-          return response()->json([
-    'success' => false,
-    'message' => 'المندوب لا يتبع هذه الحملة.',
-], 400);
+$workerBelongsToCampaign = DB::table('campaign_workers')
+    ->where('campaign_id', $request->campaign_id)
+    ->where('worker_id', $request->worker_id)
+    ->exists();
 
-        }
+if (!$workerBelongsToCampaign) {
+    return response()->json([
+       
+        'message' => 'المندوب لا يتبع هذه الحملة.'
+    ]);
+}
 
         $pilgrims = $validated['pilgrims'] ?? [];
         if (empty($pilgrims)) {
