@@ -77,13 +77,31 @@ class BusInvoice extends Model
         return $this->belongsTo(PaymentMethodType::class);
     }
 
+    // public function pilgrims()
+    // {
+    //     return $this->belongsToMany(Pilgrim::class)
+    //         ->withPivot(['seatNumber', 'seatPrice', 'status',
+    //         'type','position', 'status_reason'])
+    //         ->withTimestamps();
+    // }
+
     public function pilgrims()
-    {
-        return $this->belongsToMany(Pilgrim::class)
-            ->withPivot(['seatNumber', 'seatPrice', 'status',
-            'type','position', 'status_reason'])
-            ->withTimestamps();
-    }
+{
+    return $this->belongsToMany(Pilgrim::class, 'bus_invoice_pilgrims')
+        ->withPivot([
+            'seatNumber',
+            'seatPrice',
+            'status',
+            'status_reason', // إذا كنت ستضيف هذا الحقل
+            'creationDate',
+            'creationDateHijri',
+            'changed_data',
+             'type',
+             'position',
+        ])
+        ->withTimestamps();
+}
+
 
     // دوال مساعدة
     // public function calculateTotal(): void
