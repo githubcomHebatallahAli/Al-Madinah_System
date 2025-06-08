@@ -77,21 +77,32 @@ public function availableSeats()
 
 public function generateDefaultSeatMap($seatsPerRow = null)
 {
-    // تحديد أن عدد المقاعد في الصف لا يتجاوز 4
-    $seatsPerRow = min(4, $seatsPerRow ?? 4);
+    $seatsPerRow = min(4, $seatsPerRow ?? $this->calculateOptimalSeatsPerRow());
+    $minLastRowSeats = 5;
 
-    $rows = ceil($this->seatNum / $seatsPerRow);
+    $regularRows = floor(($this->seatNum - $minLastRowSeats) / $seatsPerRow);
+    $remainingSeats = $this->seatNum - ($regularRows * $seatsPerRow);
+
+    
+    if ($remainingSeats > 0 && $remainingSeats < $minLastRowSeats) {
+        $regularRows--;
+        $remainingSeats = $this->seatNum - ($regularRows * $seatsPerRow);
+    }
+
+    $totalRows = $regularRows + ($remainingSeats > 0 ? 1 : 0);
     $seatMap = [];
     $seatCounter = 1;
 
-    for ($row = 1; $row <= $rows; $row++) {
-        for ($col = 1; $col <= $seatsPerRow; $col++) {
+    for ($row = 1; $row <= $totalRows; $row++) {
+        $currentRowSeats = ($row == $totalRows) ? max($remainingSeats, $minLastRowSeats) : $seatsPerRow;
+
+        for ($col = 1; $col <= $currentRowSeats; $col++) {
             if ($seatCounter > $this->seatNum) {
                 break;
             }
 
             $seatNumber = $this->generateSeatNumber($row, $col);
-            $seatType = $this->determineSeatType($row, $col, $rows, $seatsPerRow);
+            $seatType = $this->determineSeatType($row, $col, $totalRows, $currentRowSeats);
 
             $seatMap[] = [
                 'seatNumber' => $seatNumber,
@@ -99,7 +110,7 @@ public function generateDefaultSeatMap($seatsPerRow = null)
                 'status' => 'available',
                 'row' => $row,
                 'column' => $col,
-                'position' => $this->determineSeatPosition($col, $seatsPerRow)
+                'position' => $this->determineSeatPosition($col, $currentRowSeats)
             ];
 
             $seatCounter++;
@@ -113,15 +124,23 @@ public function generateDefaultSeatMap($seatsPerRow = null)
 
 protected function calculateOptimalSeatsPerRow()
 {
-    // الحد الأقصى للمقاعد في الصف العادي هو 4
     $maxRegularSeats = 4;
+    $minLastRowSeats = 5;
 
     if ($this->seatNum <= 12) {
-        return min(3, $maxRegularSeats); // للأعداد الصغيرة نفضل 3 مقاعد في الصف
+        return min(3, $maxRegularSeats);
     } elseif ($this->seatNum <= 24) {
-        return $maxRegularSeats; // 4 مقاعد في الصف
+        return $maxRegularSeats;
     } else {
-        // للأعداد الكبيرة نستخدم 4 مقاعد في الصف مع السماح للصف الأخير بأن يكون أكثر إذا لزم الأمر
+        $regularRows = floor(($this->seatNum - $minLastRowSeats) / $maxRegularSeats);
+        $remainingSeats = $this->seatNum - ($regularRows * $maxRegularSeats);
+
+
+        if ($remainingSeats > 0 && $remainingSeats < $minLastRowSeats) {
+            $regularRows--;
+            $remainingSeats = $this->seatNum - ($regularRows * $maxRegularSeats);
+        }
+
         return $maxRegularSeats;
     }
 }
