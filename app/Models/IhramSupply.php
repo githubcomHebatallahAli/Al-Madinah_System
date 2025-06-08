@@ -59,4 +59,18 @@ public function updater()
      protected $casts = [
     'changed_data' => 'array',
 ];
+
+        protected static function booted()
+    {
+        static::created(function ($ihramSupplies) {
+            $ihramSupplies->store->increment('ihramSuppliesCount');
+        });
+
+        static::updated(function ($ihramSupplies) {
+            if ($ihramSupplies->wasChanged('store_id')) {
+                Store::find($ihramSupplies->getOriginal('store_id'))->decrement('ihramSuppliesCount');
+                $ihramSupplies->store->increment('ihramSuppliesCount');
+            }
+        });
+}
 }
