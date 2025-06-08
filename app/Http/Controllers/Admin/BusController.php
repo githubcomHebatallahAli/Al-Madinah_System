@@ -59,6 +59,10 @@ class BusController extends Controller
             'seatMap'
         ]), $this->prepareCreationMetaData());
 
+         if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
+        $data['profit'] = $data['sellingPrice'] - $data['purchesPrice'];
+    }
+
         $Bus = Bus::create($data);
 
         if (!isset($data['seatMap'])) {
@@ -131,7 +135,7 @@ class BusController extends Controller
             'seatMap'
         ]);
 
-        
+
         if ($request->has('seatNum') && $Bus->seatNum != $request->seatNum) {
             $Bus->seatNum = $request->seatNum;
             $Bus->generateDefaultSeatMap();
