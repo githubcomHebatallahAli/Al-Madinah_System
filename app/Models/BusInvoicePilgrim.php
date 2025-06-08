@@ -35,6 +35,9 @@ public function updater()
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
+public $timestamps = true;
+
+
 
 
 

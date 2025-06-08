@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
+use Illuminate\Http\JsonResponse;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
@@ -68,38 +69,82 @@ class BusInvoiceController extends Controller
 
 
 
-public function create(BusInvoiceRequest $request)
+public function create(BusInvoiceRequest $request): JsonResponse
 {
     DB::beginTransaction();
 
     try {
         $validated = $request->validated();
 
-        $creationData = $this->prepareCreationMetaData();
-        $validated = array_merge($validated, $creationData);
+        // تحقق من أن المندوب يتبع الحملة
+        $worker = Worker::findOrFail($validated['worker_id']);
+        if ($worker->campaign_id != $validated['campaign_id']) {
+            return $this->respondWithError('المندوب لا يتبع هذه الحملة.');
+        }
 
-        $invoice = BusInvoice::create($validated);
+        $pilgrims = $validated['pilgrims'] ?? [];
+        if (empty($pilgrims)) {
+            return $this->respondWithError('يجب تحديد المعتمرين والمقاعد.');
+        }
 
-        if ($request->has('pilgrims') && is_array($request->pilgrims)) {
-            $this->validateAndAttachPilgrims($invoice, $request->pilgrims);
+        // إنشاء الفاتورة
+        $invoiceData = array_merge([
+            'main_pilgrim_id'         => $validated['main_pilgrim_id'] ?? null,
+            'trip_id'                 => $validated['trip_id'],
+            'campaign_id'             => $validated['campaign_id'],
+            'office_id'               => $validated['office_id'],
+            'group_id'                => $validated['group_id'],
+            'bus_id'                  => $validated['bus_id'],
+            'bus_driver_id'           => $validated['bus_driver_id'],
+            'worker_id'               => $validated['worker_id'],
+            'payment_method_type_id'  => $validated['payment_method_type_id'],
+            'travelDate'              => $validated['travelDate'] ?? now(),
+            'travelDateHijri'         => $validated['travelDateHijri'] ?? $this->getHijriDate(now()),
+            'discount'                => $validated['discount'] ?? 0,
+            'tax'                     => $validated['tax'] ?? 0,
+            'paidAmount'              => $validated['paidAmount'],
+            'status'                  => $validated['status'] ?? 'active',
+            'paymentStatus'           => $validated['paymentStatus'] ?? 'pending',
+            'reason'                  => $validated['reason'] ?? null,
+        ], $this->prepareCreationMetaData());
+
+        $invoice = BusInvoice::create($invoiceData);
+
+        // إرفاق المعتمرين والمقاعد
+        foreach ($pilgrims as $p) {
+            $invoice->pilgrims()->attach($p['id'], [
+                'seatNumber' => $p['seatNumber'] ?? null,
+                'seatPrice'  => $p['seatPrice'] ?? null,
+                'status'     => 'booked',
+                'status_reason' => null,
+                'creationDate'=> now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                'creationDateHijri'=> $this->getHijriDate(),
+
+
+            ]);
         }
 
 
         $invoice->calculateTotal();
         $invoice->updateSeatsCount();
 
+        // تحميل العلاقات
+        $invoice->load([
+            'mainPilgrim', 'trip', 'campaign', 'office', 'group',
+            'bus', 'busDriver', 'worker', 'paymentMethodType',
+            'pilgrims'
+        ]);
+
         DB::commit();
 
-        return $this->respondWithResource($invoice->load([
-            'bus', 'trip', 'campaign', 'office', 'group',
-            'busDriver', 'worker', 'paymentMethodType', 'pilgrims'
-        ]), 'Bus invoice created successfully with pilgrims');
-
-    } catch (\Exception $e) {
+        return $this->respondWithResource($invoice, 'تم إنشاء فاتورة الباص بنجاح.');
+    } catch (\Throwable $e) {
         DB::rollBack();
-        return $this->handleError($e, 'Failed to create bus invoice with pilgrims');
+        return $this->handleError($e, 'حدث خطأ أثناء إنشاء فاتورة الباص.');
     }
 }
+
+
 
 
 protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
@@ -138,7 +183,7 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
             'seatNumber' => $seatNumber,
             'seatPrice' => $pilgrim['seatPrice'],
             'type' => $seatInfo['type'],
-            'position' => $seatInfo['position'], 
+            'position' => $seatInfo['position'],
             'status' => 'booked',
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             'creationDateHijri' => $this->getHijriDate()

@@ -80,7 +80,8 @@ class BusInvoice extends Model
     public function pilgrims()
     {
         return $this->belongsToMany(Pilgrim::class)
-            ->withPivot(['seatNumber', 'seatPrice', 'status', 'status_reason'])
+            ->withPivot(['seatNumber', 'seatPrice', 'status',
+            'type','position', 'status_reason'])
             ->withTimestamps();
     }
 
