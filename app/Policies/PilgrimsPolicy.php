@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Admin;
-use App\Models\Pilgrims;
+use App\Models\Pilgrim;
 use App\Models\WorkerLogin;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -25,7 +25,7 @@ class PilgrimsPolicy
         return false;
     }
 
-    public function update($user, Pilgrims $pilgrims)
+    public function update($user, Pilgrim $pilgrims)
     {
         if ($user instanceof WorkerLogin) {
             $worker = $user->worker;
@@ -39,12 +39,12 @@ class PilgrimsPolicy
         return false;
     }
 
-    public function active($user, Pilgrims $pilgrims)
+    public function active($user, Pilgrim $pilgrims)
     {
         return $this->update($user, $pilgrims);
     }
 
-    public function notActive($user, Pilgrims $pilgrims)
+    public function notActive($user, Pilgrim $pilgrims)
     {
         return $this->update($user, $pilgrims);
     }
