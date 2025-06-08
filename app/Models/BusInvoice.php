@@ -92,7 +92,6 @@ class BusInvoice extends Model
             'seatNumber',
             'seatPrice',
             'status',
-            'status_reason', // إذا كنت ستضيف هذا الحقل
             'creationDate',
             'creationDateHijri',
             'changed_data',
