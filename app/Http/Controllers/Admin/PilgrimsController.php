@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Pilgrims;
+use App\Models\Pilgrim;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -25,9 +25,9 @@ class PilgrimsController extends Controller
 
         public function showAll()
     {
-        $this->authorize('showAll',Pilgrims::class);
+        $this->authorize('showAll',Pilgrim::class);
 
-        $Pilgrims = Pilgrims::orderBy('created_at', 'desc')
+        $Pilgrims = Pilgrim::orderBy('created_at', 'desc')
         ->get();
        $this->loadRelationsForCollection($Pilgrims);
 
@@ -40,20 +40,20 @@ class PilgrimsController extends Controller
 
     public function create(PilgrimsRequest $request)
     {
-         $this->authorize('create',Pilgrims::class);
+         $this->authorize('create',Pilgrim::class);
        $data = array_merge($request->only([
             'name','phoNum','nationality',
             'description','idNum'
         ]), $this->prepareCreationMetaData());
 
-        $Pilgrims = Pilgrims::create($data);
+        $Pilgrims = Pilgrim::create($data);
 
          return $this->respondWithResource($Pilgrims, "Pilgrims created successfully.");
         }
 
         public function edit(string $id)
         {
-        $Pilgrims = Pilgrims::find($id);
+        $Pilgrims = Pilgrim::find($id);
 
         if (!$Pilgrims) {
             return response()->json([
@@ -67,7 +67,7 @@ class PilgrimsController extends Controller
 
 public function update(PilgrimsRequest $request, string $id)
 {
-    $Pilgrims = Pilgrims::findOrFail($id);
+    $Pilgrims = Pilgrim::findOrFail($id);
      $this->authorize('update',$Pilgrims);
     $oldData = $Pilgrims->toArray();
 
@@ -104,7 +104,7 @@ public function update(PilgrimsRequest $request, string $id)
 
     public function active(string $id)
     {
-        $Pilgrims = Pilgrims::findOrFail($id);
+        $Pilgrims = Pilgrim::findOrFail($id);
          $this->authorize('active',$Pilgrims);
 
         return $this->changeStatusSimple($Pilgrims, 'active');
@@ -112,7 +112,7 @@ public function update(PilgrimsRequest $request, string $id)
 
     public function notActive(string $id)
     {
-        $Pilgrims = Pilgrims::findOrFail($id);
+        $Pilgrims = Pilgrim::findOrFail($id);
          $this->authorize('notActive',$Pilgrims);
 
         return $this->changeStatusSimple($Pilgrims, 'notActive');
