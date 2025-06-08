@@ -40,7 +40,7 @@ class PilgrimsController extends Controller
 
     public function create(PilgrimsRequest $request)
     {
-         $this->authorize('create',Pilgrim::class);
+        //  $this->authorize('create',Pilgrim::class);
        $data = array_merge($request->only([
             'name','phoNum','nationality',
             'description','idNum'
