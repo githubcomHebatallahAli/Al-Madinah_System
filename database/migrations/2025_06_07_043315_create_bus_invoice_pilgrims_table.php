@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('seatNumber');
             $table->decimal('seatPrice', 10, 2);
             $table->enum('status', ['booked', 'cancelled'])->default('booked');
+            $table->string('type')->nullable();
+            $table->string('position')->nullable();
 
             $table->unique(['bus_invoice_id', 'pilgrim_id']);
             $table->dateTime('creationDate')->nullable();

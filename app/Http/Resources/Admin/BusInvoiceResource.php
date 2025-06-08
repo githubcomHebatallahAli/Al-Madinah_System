@@ -98,6 +98,8 @@ class BusInvoiceResource extends JsonResource
                         'seatNumber' => $pilgrim->pivot->seatNumber,
                         'seatPrice' => $pilgrim->pivot->seatPrice,
                         'status' => $pilgrim->pivot->status,
+                        'type' => $pilgrim->pivot->type,
+                        'position' => $pilgrim->pivot->position,
                     ];
                 });
             }),

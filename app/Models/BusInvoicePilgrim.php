@@ -14,6 +14,8 @@ class BusInvoicePilgrim extends Model
         'seatNumber',
         'seatPrice',
         'status',
+        'type',
+        'position',
         'creationDate',
         'creationDateHijri',
         'changed_data'

@@ -41,6 +41,8 @@ class BusInvoiceRequest extends FormRequest
         'pilgrims' => 'nullable|array',
         'pilgrims.*.id' => 'required|exists:pilgrims,id',
         'pilgrims.*.seatNumber' => 'required|string',
+        'pilgrims.*.type' => 'nullable|string',
+        'pilgrims.*.position' => 'nullable|string',
         'pilgrims.*.seatPrice' => 'required|numeric|min:0',
         ];
     }
