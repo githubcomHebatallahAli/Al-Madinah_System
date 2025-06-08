@@ -18,7 +18,7 @@ class Store extends Model
         'branch_id',
         'name',
         'address',
-        'productsCount',
+        'ihramSuppliesCount',
         'workersCount',
         'status',
         'creationDate',

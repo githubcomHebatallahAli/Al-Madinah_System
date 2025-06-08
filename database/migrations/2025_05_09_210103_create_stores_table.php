@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->string('name');
             $table->string('address');
-            $table->unsignedBigInteger('productsCount')->default(0);
+            $table->unsignedBigInteger('ihramSuppliesCount')->default(0);
             $table->unsignedBigInteger('workersCount')->default(0);
              $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();

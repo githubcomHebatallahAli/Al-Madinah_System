@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Store;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Resources\Admin\StoreResource;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllStoreResource;
 
 class StoreController extends Controller
 {
@@ -31,6 +33,49 @@ class StoreController extends Controller
 
         return response()->json([
             'data' =>  StoreResource::collection($Stores),
+            'message' => "Show All Stores."
+        ]);
+    }
+
+    // ===================
+
+              public function showAllWithPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $searchTerm = $request->input('search', '');
+       $Stores = Store::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->paginate(10);
+        $this->loadRelationsForCollection($Stores);
+
+        return response()->json([
+            'data' =>  ShowAllStoreResource::collection($Stores),
+              'pagination' => [
+                        'total' => $Stores->total(),
+                        'count' => $Stores->count(),
+                        'per_page' => $Stores->perPage(),
+                        'current_page' => $Stores->currentPage(),
+                        'total_pages' => $Stores->lastPage(),
+                        'next_page_url' => $Stores->nextPageUrl(),
+                        'prev_page_url' => $Stores->previousPageUrl(),
+                    ],
+            'message' => "Show All Stores."
+        ]);
+    }
+
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Stores = Store::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->get();
+        $this->loadRelationsForCollection($Stores);
+
+        return response()->json([
+            'data' =>  ShowAllStoreResource::collection($Stores),
             'message' => "Show All Stores."
         ]);
     }

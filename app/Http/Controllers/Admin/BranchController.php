@@ -39,7 +39,7 @@ class BranchController extends Controller
     // ==================
       public function showAllWithPaginate(Request $request)
     {
-        $this->authorize('manage_users');
+         $this->authorize('manage_system');
 
         $searchTerm = $request->input('search', '');
        $Branches = Branch::where('name', 'like', '%' . $searchTerm . '%')
