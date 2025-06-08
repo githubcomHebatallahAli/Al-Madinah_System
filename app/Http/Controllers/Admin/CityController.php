@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\City;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Http\Resources\Admin\CityResource;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllCityResource;
 
 
 class CityController extends Controller
@@ -32,6 +34,47 @@ class CityController extends Controller
 
         return response()->json([
             'data' =>  CityResource::collection($Cities),
+            'message' => "Show All Cities."
+        ]);
+    }
+
+    // ========
+        public function showAllWithPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Cities = City::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->paginate(10);
+        $this->loadRelationsForCollection($Cities);
+
+        return response()->json([
+            'data' =>  ShowAllCityResource::collection($Cities),
+              'pagination' => [
+                        'total' => $Cities->total(),
+                        'count' => $Cities->count(),
+                        'per_page' => $Cities->perPage(),
+                        'current_page' => $Cities->currentPage(),
+                        'total_pages' => $Cities->lastPage(),
+                        'next_page_url' => $Cities->nextPageUrl(),
+                        'prev_page_url' => $Cities->previousPageUrl(),
+                    ],
+            'message' => "Show All Cities."
+        ]);
+    }
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+        $searchTerm = $request->input('search', '');
+       $Cities = City::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->get();
+        $this->loadRelationsForCollection($Cities);
+
+        return response()->json([
+            'data' =>  ShowAllCityResource::collection($Cities),
             'message' => "Show All Cities."
         ]);
     }

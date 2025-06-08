@@ -10,6 +10,8 @@ Route::controller(CityController::class)->prefix('/admin')->middleware('admin')-
     function () {
 
    Route::get('/showAll/city','showAll');
+   Route::get('/showAll/city/withPaginate','showAllWithPaginate');
+   Route::get('/showAll/city/withoutPaginate','showAllWithoutPaginate');
    Route::post('/create/city', 'create');
    Route::get('/edit/city/{id}','edit');
    Route::post('/update/city/{id}', 'update');
