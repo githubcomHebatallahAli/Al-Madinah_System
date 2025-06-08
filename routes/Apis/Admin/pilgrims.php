@@ -11,11 +11,12 @@ Route::controller(PilgrimsController::class)->prefix('/adminOrBranchMangerOrDele
 
    Route::get('/showAll/pilgrims','showAll');
    Route::get('/edit/pilgrims/{id}','edit');
+    Route::post('/create/pilgrims', 'create');
    });
 
 Route::controller(PilgrimsController::class)->prefix('/delegate')->middleware('worker')->group(
     function () {
-   Route::post('/create/pilgrims', 'create');
+//    Route::post('/create/pilgrims', 'create');
    Route::post('/update/pilgrims/{id}', 'update');
    Route::patch('notActive/pilgrims/{id}', 'notActive');
 Route::patch('active/pilgrims/{id}', 'active');

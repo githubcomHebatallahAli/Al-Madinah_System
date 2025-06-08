@@ -104,7 +104,6 @@ public function create(BusInvoiceRequest $request): JsonResponse
             'discount'                => $validated['discount'] ?? 0,
             'tax'                     => $validated['tax'] ?? 0,
             'paidAmount'              => $validated['paidAmount'],
-            'status'                  => $validated['status'] ?? 'active',
             'paymentStatus'           => $validated['paymentStatus'] ?? 'pending',
             'reason'                  => $validated['reason'] ?? null,
         ], $this->prepareCreationMetaData());
