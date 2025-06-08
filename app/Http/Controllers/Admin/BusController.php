@@ -135,6 +135,12 @@ class BusController extends Controller
             'seatMap'
         ]);
 
+            if (isset($updateData['sellingPrice']) || isset($updateData['purchesPrice'])) {
+        $sellingPrice = $updateData['sellingPrice'] ?? $Bus->sellingPrice;
+        $purchesPrice = $updateData['purchesPrice'] ?? $Bus->purchesPrice;
+        $updateData['profit'] = $sellingPrice - $purchesPrice;
+    }
+
 
         if ($request->has('seatNum') && $Bus->seatNum != $request->seatNum) {
             $Bus->seatNum = $request->seatNum;
