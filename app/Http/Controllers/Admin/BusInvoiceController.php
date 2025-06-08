@@ -127,7 +127,6 @@ if (!$workerBelongsToCampaign) {
                 'seatNumber' => $p['seatNumber'] ?? null,
                 'seatPrice'  => $p['seatPrice'] ?? null,
                 'status'     => 'booked',
-                'status_reason' => null,
                 'creationDate'=> now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                 'creationDateHijri'=> $this->getHijriDate(),
             ]);
