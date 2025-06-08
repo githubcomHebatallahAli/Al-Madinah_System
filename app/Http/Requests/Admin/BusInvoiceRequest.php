@@ -34,7 +34,7 @@ class BusInvoiceRequest extends FormRequest
         'paidAmount'=>'required|numeric|min:0|max:99999.99',
         'bookedSeats'=>'nullable|integer',
         'reason' =>'nullable|string',
-        'status' =>'nullable|in:pending,approved,rejected,completed,absence',
+        'invoiceStatus' =>'nullable|in:pending,approved,rejected,completed,absence',
         'paymentStatus'=>'nullable|in:pending,paid,refunded',
         'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri'=>'nullable|string',

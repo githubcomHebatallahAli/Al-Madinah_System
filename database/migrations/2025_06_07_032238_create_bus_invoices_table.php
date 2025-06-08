@@ -36,7 +36,7 @@ return new class extends Migration
             $table->decimal('paidAmount', 10, 2)->default(0);
             $table->integer('bookedSeats')->default(0);
 
-            $table->enum('status', ['pending','approved','rejected','completed','absence'])->default('pending');
+            $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
             $table->enum('paymentStatus', ['pending','paid','refunded'])->default('pending');
             $table->unsignedBigInteger('added_by')->nullable();

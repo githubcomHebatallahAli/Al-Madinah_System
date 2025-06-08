@@ -82,7 +82,7 @@ class BusInvoiceResource extends JsonResource
             'paidAmount' => $this->paidAmount,
             'bookedSeats' => $this->bookedSeats,
             'availableSeats' => $this->bus->seatNum - $this->bookedSeats,
-            'status' => $this->status,
+            'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
             'paymentStatus' => $this->paymentStatus,
             'creationDateHijri' => $this->creationDateHijri,

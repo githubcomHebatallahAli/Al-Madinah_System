@@ -29,7 +29,7 @@ class BusInvoice extends Model
         'total',
         'paidAmount',
         'bookedSeats',
-        'status',
+        'invoiceStatus',
         'reason',
         'paymentStatus'
     ];
