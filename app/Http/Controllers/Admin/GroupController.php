@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Group;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Resources\Admin\GroupResource;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllGroupResource;
 
 
 class GroupController extends Controller
@@ -23,18 +25,57 @@ class GroupController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Groups = Group::orderBy('created_at', 'desc')->get();
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-         $this->loadRelationsForCollection($Groups);
+    $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' => GroupResource::collection($Groups),
-            'message' => "All Groups retrieved successfully."
-        ]);
+    $query = Group::where('groupNum', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->campaign_id) {
+        $query->where('campaign_id', $request->campaign_id);
     }
+
+    $Groups = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllGroupResource::collection($Groups),
+        'pagination' => [
+            'total' => $Groups->total(),
+            'count' => $Groups->count(),
+            'per_page' => $Groups->perPage(),
+            'current_page' => $Groups->currentPage(),
+            'total_pages' => $Groups->lastPage(),
+            'next_page_url' => $Groups->nextPageUrl(),
+            'prev_page_url' => $Groups->previousPageUrl(),
+        ],
+        'message' => "Show All Groups."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Group::where('groupNum', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->campaign_id) {
+        $query->where('campaign_id', $request->campaign_id);
+    }
+
+    $Groups = $query->get();
+
+    return response()->json([
+        'data' => ShowAllGroupResource::collection($Groups),
+        'message' => "Show All Groups."
+    ]);
+}
 
      public function create(GroupRequest $request)
     {
