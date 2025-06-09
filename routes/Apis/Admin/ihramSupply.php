@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\IhramSupplyController;
 Route::controller(IhramSupplyController::class)->prefix('/adminOrBranchMangerOrStorekeeper')->middleware('adminOrWorker')->group(
     function () {
 
-   Route::get('/showAll/ihramSupply','showAllWitoutPaginate');
+   Route::get('/showAll/ihramSupply','showAllWithoutPaginate');
    Route::get('/showAll/ihramSupply/withPaginate','showAllWithPaginate');
    Route::get('/edit/ihramSupply/{id}','edit');
 
