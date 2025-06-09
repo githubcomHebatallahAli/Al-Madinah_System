@@ -79,7 +79,7 @@ public function showAllWithoutPaginate(Request $request)
         public function showAll()
     {
         $this->authorize('manage_system');
-        $Titles = Title::with('items')->orderBy('created_at', 'desc')
+        $Titles = Title::orderBy('created_at', 'desc')
         ->get();
        $this->loadRelationsForCollection($Titles);
 
