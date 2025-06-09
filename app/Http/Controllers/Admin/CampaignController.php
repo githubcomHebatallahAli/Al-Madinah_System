@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Campaign;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\CampaignRequest;
 use App\Http\Resources\Admin\CampaignResource;
+use App\Http\Resources\Admin\ShowAllCampaignResource;
 
 class CampaignController extends Controller
 {
@@ -22,18 +24,57 @@ class CampaignController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Campaignes = Campaign::orderBy('created_at', 'desc')
-        ->get();
-        $this->loadRelationsForCollection($Campaignes);
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  CampaignResource::collection($Campaignes),
-            'message' => "Show All Campaignes."
-        ]);
+    $searchTerm = $request->input('search', '');
+
+    $query = Campaign::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->office_id) {
+        $query->where('office_id', $request->office_id);
     }
+
+    $Campaigns = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllCampaignResource::collection($Campaigns),
+        'pagination' => [
+            'total' => $Campaigns->total(),
+            'count' => $Campaigns->count(),
+            'per_page' => $Campaigns->perPage(),
+            'current_page' => $Campaigns->currentPage(),
+            'total_pages' => $Campaigns->lastPage(),
+            'next_page_url' => $Campaigns->nextPageUrl(),
+            'prev_page_url' => $Campaigns->previousPageUrl(),
+        ],
+        'message' => "Show All Campaigns."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Campaign::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->office_id) {
+        $query->where('office_id', $request->office_id);
+    }
+
+    $Campaigns = $query->get();
+
+    return response()->json([
+        'data' => ShowAllCampaignResource::collection($Campaigns),
+        'message' => "Show All Campaigns."
+    ]);
+}
 
 
     public function create(CampaignRequest $request)

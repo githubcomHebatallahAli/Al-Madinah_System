@@ -182,9 +182,17 @@ public function showAllWeb()
 
      if (request()->filled('branch_id')) {
         $query->whereHas('branch', function ($q) {
-            $q->where('branches.id', request('branch_id')); // تم التوضيح هنا
+            $q->where('branches.id', request('branch_id')); 
         });
     }
+
+    if (request()->filled('status')) {
+    $query->where('status', request('status'));
+}
+
+if (request()->filled('dashboardAccess')) {
+    $query->where('dashboardAccess', request('dashboardAccess'));
+}
 
     $workers = $query->orderBy('created_at', 'desc')->paginate(10);
 
@@ -213,9 +221,17 @@ public function showAllWithPaginate()
 
      if (request()->filled('branch_id')) {
         $query->whereHas('branch', function ($q) {
-            $q->where('branches.id', request('branch_id')); // تم التوضيح هنا
+            $q->where('branches.id', request('branch_id'));
         });
     }
+
+    if (request()->filled('status')) {
+    $query->where('status', request('status'));
+}
+
+if (request()->filled('dashboardAccess')) {
+    $query->where('dashboardAccess', request('dashboardAccess'));
+}
 
     $workers = $query->orderBy('created_at', 'desc')->paginate(10);
 
