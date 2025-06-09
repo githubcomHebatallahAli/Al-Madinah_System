@@ -17,6 +17,7 @@ class BusRequest extends FormRequest
     {
          return [
         'service_id' => 'required|exists:services,id',
+        'company_id' => 'required|exists:companies,id',
         'status' => 'nullable|in:active,notActive',
         'creationDate' => 'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri' => 'nullable|string',

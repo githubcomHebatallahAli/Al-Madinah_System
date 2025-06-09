@@ -16,6 +16,7 @@ class Hotel extends Model
         'updated_by',
         'updated_by_type',
         'service_id',
+        'company_id',
         'name',
         'place',
         'address',
@@ -34,6 +35,11 @@ class Hotel extends Model
             public function service()
     {
         return $this->belongsTo(Service::class);
+    }
+    
+           public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
         public function shipmentItems()

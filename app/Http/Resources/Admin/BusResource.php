@@ -15,6 +15,8 @@ class BusResource extends JsonResource
             "id" => $this -> id,
             'service_id' => $this->service?->id,
             'service_name' => $this->service?->name,
+            'company_id' => $this->company?->id,
+            'company_name' => $this->company?->name,
             'busNum' => $this -> busNum,
             'busModel' => $this-> busModel,
             'plateNum' => $this-> plateNum ,

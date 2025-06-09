@@ -40,7 +40,7 @@ class IhramSupplyController extends Controller
     {
         $this->authorize('create',IhramSupply::class);
        $data = array_merge($request->only([
-            'service_id', 'name','store_id','size',
+            'service_id','company_id', 'name','store_id','size',
             'description','quantity','sellingPrice','purchesPrice'
         ]), $this->prepareCreationMetaData());
 
@@ -70,7 +70,7 @@ public function update(IhramSupplyRequest $request, string $id)
     $this->authorize('update',$IhramSupply);
     $oldData = $IhramSupply->toArray();
 
-    $updateData = $request->only(['status','service_id','name','store_id','size',
+    $updateData = $request->only(['status','service_id','company_id','name','store_id','size',
             'description','quantity','sellingPrice','purchesPrice'
             ]);
 

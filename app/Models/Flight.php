@@ -16,6 +16,7 @@ class Flight extends Model
         'updated_by',
         'updated_by_type',
         'service_id',
+        'company_id',
         'class',
         'seatNum',
         'direction',
@@ -35,6 +36,11 @@ class Flight extends Model
             public function service()
     {
         return $this->belongsTo(Service::class);
+    }
+
+           public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
         public function shipmentItems()

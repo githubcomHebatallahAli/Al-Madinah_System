@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Bus;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Http\Resources\Admin\BusResource;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllBusResource;
 
 class BusController extends Controller
 {
@@ -22,18 +24,57 @@ class BusController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Buses = Bus::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Buses);
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  BusResource::collection($Buses),
-            'message' => "Show All Buses."
-        ]);
+    $searchTerm = $request->input('search', '');
+
+    $query = Bus::where('seatNum', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->company_id) {
+        $query->where('company_id', $request->company_id);
     }
+
+    $Buses = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllBusResource::collection($Buses),
+        'pagination' => [
+            'total' => $Buses->total(),
+            'count' => $Buses->count(),
+            'per_page' => $Buses->perPage(),
+            'current_page' => $Buses->currentPage(),
+            'total_pages' => $Buses->lastPage(),
+            'next_page_url' => $Buses->nextPageUrl(),
+            'prev_page_url' => $Buses->previousPageUrl(),
+        ],
+        'message' => "Show All Buss."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Bus::where('seatNum', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->company_id) {
+        $query->where('company_id', $request->company_id);
+    }
+
+    $Buss = $query->get();
+
+    return response()->json([
+        'data' => ShowAllBusResource::collection($Buss),
+        'message' => "Show All Buses."
+    ]);
+}
 
 
     // public function create(BusRequest $request)
@@ -54,7 +95,7 @@ class BusController extends Controller
         $this->authorize('manage_system');
 
         $data = array_merge($request->only([
-            'service_id', 'busNum', 'busModel', 'plateNum',
+            'service_id','company_id', 'busNum', 'busModel', 'plateNum',
             'seatNum', 'quantity', 'sellingPrice', 'purchesPrice',
             'seatMap'
         ]), $this->prepareCreationMetaData());
@@ -130,7 +171,7 @@ class BusController extends Controller
         $oldData = $Bus->toArray();
 
         $updateData = $request->only([
-            'status', 'service_id', 'busNum', 'busModel', 'plateNum',
+            'status', 'service_id','company_id', 'busNum', 'busModel', 'plateNum',
             'seatNum', 'quantity', 'sellingPrice', 'purchesPrice',
             'seatMap'
         ]);

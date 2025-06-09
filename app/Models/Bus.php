@@ -16,6 +16,7 @@ class Bus extends Model
         'updated_by',
         'updated_by_type',
         'service_id',
+        'company_id',
         'busNum',
         'busModel',
         'plateNum',
@@ -31,9 +32,15 @@ class Bus extends Model
         'changed_data'
     ];
 
-            public function service()
+        public function service()
     {
         return $this->belongsTo(Service::class);
+    }
+    
+
+        public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
         public function drivers()
@@ -83,7 +90,7 @@ public function generateDefaultSeatMap($seatsPerRow = null)
     $regularRows = floor(($this->seatNum - $minLastRowSeats) / $seatsPerRow);
     $remainingSeats = $this->seatNum - ($regularRows * $seatsPerRow);
 
-    
+
     if ($remainingSeats > 0 && $remainingSeats < $minLastRowSeats) {
         $regularRows--;
         $remainingSeats = $this->seatNum - ($regularRows * $seatsPerRow);

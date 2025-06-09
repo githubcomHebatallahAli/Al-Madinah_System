@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('ihram_supplies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('store_id')->constrained('stores')->cascadeOnDelete();
             $table->string('name');
             $table->enum('size', ['child', 'adult'])->nullable();

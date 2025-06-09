@@ -38,6 +38,26 @@ class Company extends Model
         return $this->hasMany(Supplier::class);
     }
 
+        public function buses()
+    {
+        return $this->hasMany(Bus::class);
+    }
+
+        public function hotels()
+    {
+        return $this->hasMany(Hotel::class);
+    }
+
+        public function flights()
+    {
+        return $this->hasMany(Flight::class);
+    }
+
+        public function ihramSuppliers()
+    {
+        return $this->hasMany(IhramSupply::class);
+    }
+
 
 
     public function creator()
