@@ -174,7 +174,7 @@ public function showAllWithPaginate()
         });
     }
 
-    $workers = $query->orderBy('created_at', 'desc')->get();
+    $workers = $query->orderBy('created_at', 'desc')->paginate(10);
 
     $this->loadRelationsForCollection($workers);
 
