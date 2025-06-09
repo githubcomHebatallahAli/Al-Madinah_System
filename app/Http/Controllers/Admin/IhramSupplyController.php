@@ -102,7 +102,7 @@ public function showAllWithoutPaginate(Request $request)
 
     public function create(IhramSupplyRequest $request)
     {
-        $this->authorize('create',IhramSupply::class);
+        // $this->authorize('create',IhramSupply::class);
        $data = array_merge($request->only([
             'ihram_item_id','company_id','store_id',
             'description','quantity','sellingPrice','purchesPrice'
@@ -123,7 +123,7 @@ public function showAllWithoutPaginate(Request $request)
                 'message' => "IhramSupply not found."
             ], 404);
             }
-             $this->authorize('edit',$IhramSupply);
+            //  $this->authorize('edit',$IhramSupply);
 
     return $this->respondWithResource($IhramSupply, "IhramSupply retrieved for editing.");
         }
@@ -131,7 +131,7 @@ public function showAllWithoutPaginate(Request $request)
 public function update(IhramSupplyRequest $request, string $id)
 {
     $IhramSupply = IhramSupply::findOrFail($id);
-    $this->authorize('update',$IhramSupply);
+    // $this->authorize('update',$IhramSupply);
     $oldData = $IhramSupply->toArray();
 
     $updateData = $request->only(['status','ihram_item_id','company_id','store_id',
@@ -168,7 +168,7 @@ public function update(IhramSupplyRequest $request, string $id)
     public function active(string $id)
     {
         $IhramSupply = IhramSupply::findOrFail($id);
-        $this->authorize('active',$IhramSupply);
+        // $this->authorize('active',$IhramSupply);
 
         return $this->changeStatusSimple($IhramSupply, 'active');
     }
@@ -176,7 +176,7 @@ public function update(IhramSupplyRequest $request, string $id)
     public function notActive(string $id)
     {
         $IhramSupply = IhramSupply::findOrFail($id);
-        $this->authorize('notActive',$IhramSupply);
+        // $this->authorize('notActive',$IhramSupply);
 
         return $this->changeStatusSimple($IhramSupply, 'notActive');
     }
