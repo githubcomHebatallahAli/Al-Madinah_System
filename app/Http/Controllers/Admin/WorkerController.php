@@ -37,7 +37,7 @@ public function showAllWorkerLoginWeb(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
+    $query = WorkerLogin::with(['worker', 'worker.title', 'role'])
         ->orderBy('created_at', 'desc');
 
     if ($request->search) {
@@ -53,6 +53,12 @@ public function showAllWorkerLoginWeb(Request $request)
             $q->where('name', 'like', '%'.$request->title_name.'%');
         });
     }
+
+    if ($request->branch_id) {
+    $query->whereHas('worker.title', function($q) use ($request) {
+        $q->where('branch_id', $request->branch_id);
+    });
+}
 
     $workers = $query->paginate(10);
 
@@ -75,7 +81,7 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
+    $query = WorkerLogin::with(['worker', 'worker.title', 'role'])
         ->orderBy('created_at', 'desc');
 
     if ($request->search) {
@@ -91,6 +97,12 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
             $q->where('name', 'like', '%'.$request->title_name.'%');
         });
     }
+
+    if ($request->branch_id) {
+    $query->whereHas('worker.title', function($q) use ($request) {
+        $q->where('branch_id', $request->branch_id);
+    });
+}
 
     $workers = $query->get();
 
