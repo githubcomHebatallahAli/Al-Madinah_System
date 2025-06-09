@@ -13,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\PaymentMethodRequest;
 use App\Http\Resources\Admin\PaymentMethodResource;
+use App\Http\Resources\Admin\ShowAllPaymentMethodResource;
 
 class PaymentMethodController extends Controller
 {
@@ -23,16 +24,43 @@ class PaymentMethodController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
+        public function showAllWithPaginate(Request $request)
     {
         $this->authorize('manage_system');
-        $PaymentMethods = PaymentMethod::orderBy('created_at', 'desc')->get();
 
-         $this->loadRelationsForCollection($PaymentMethods);
+        $searchTerm = $request->input('search', '');
+       $PaymentMethod = PaymentMethod::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->paginate(10);
 
         return response()->json([
-            'data' => PaymentMethodResource::collection($PaymentMethods),
-            'message' => "All PaymentMethods retrieved successfully."
+            'data' =>  ShowAllPaymentMethodResource::collection($PaymentMethod),
+              'pagination' => [
+                        'total' => $PaymentMethod->total(),
+                        'count' => $PaymentMethod->count(),
+                        'per_page' => $PaymentMethod->perPage(),
+                        'current_page' => $PaymentMethod->currentPage(),
+                        'total_pages' => $PaymentMethod->lastPage(),
+                        'next_page_url' => $PaymentMethod->nextPageUrl(),
+                        'prev_page_url' => $PaymentMethod->previousPageUrl(),
+                    ],
+            'message' => "Show All Payment Method."
+        ]);
+    }
+    
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $searchTerm = $request->input('search', '');
+       $PaymentMethod = PaymentMethod::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->get();
+
+
+        return response()->json([
+            'data' =>  ShowAllPaymentMethodResource::collection($PaymentMethod),
+            'message' => "Show All Payment Method."
         ]);
     }
 

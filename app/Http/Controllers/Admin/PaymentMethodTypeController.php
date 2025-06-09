@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Models\PaymentMethodType;
 use App\Traits\HandleAddedByTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\PaymentMethodTypeRequest;
 use App\Http\Resources\Admin\PaymentMethodTypeResource;
+use App\Http\Resources\Admin\ShowAllPaymentMethodTypeResource;
 
 class PaymentMethodTypeController extends Controller
 {
@@ -22,16 +24,43 @@ class PaymentMethodTypeController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
+        public function showAllWithPaginate(Request $request)
     {
         $this->authorize('manage_system');
-        $PaymentMethodTypes = PaymentMethodType::orderBy('created_at', 'desc')->get();
 
-         $this->loadRelationsForCollection($PaymentMethodTypes);
+        $searchTerm = $request->input('search', '');
+       $PaymentMethodType = PaymentMethodType::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->paginate(10);
 
         return response()->json([
-            'data' => PaymentMethodTypeResource::collection($PaymentMethodTypes),
-            'message' => "All PaymentMethodTypes retrieved successfully."
+            'data' =>  ShowAllPaymentMethodTypeResource::collection($PaymentMethodType),
+              'pagination' => [
+                        'total' => $PaymentMethodType->total(),
+                        'count' => $PaymentMethodType->count(),
+                        'per_page' => $PaymentMethodType->perPage(),
+                        'current_page' => $PaymentMethodType->currentPage(),
+                        'total_pages' => $PaymentMethodType->lastPage(),
+                        'next_page_url' => $PaymentMethodType->nextPageUrl(),
+                        'prev_page_url' => $PaymentMethodType->previousPageUrl(),
+                    ],
+            'message' => "Show All Payment Method Type."
+        ]);
+    }
+
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $searchTerm = $request->input('search', '');
+       $PaymentMethodType = PaymentMethodType::where('name', 'like', '%' . $searchTerm . '%')
+       ->orderBy('created_at', 'desc')
+        ->get();
+
+
+        return response()->json([
+            'data' =>  ShowAllPaymentMethodTypeResource::collection($PaymentMethodType),
+            'message' => "Show All Payment Method Type."
         ]);
     }
 
