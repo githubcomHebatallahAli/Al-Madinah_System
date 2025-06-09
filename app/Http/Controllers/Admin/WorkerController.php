@@ -165,38 +165,37 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
 
 
 // Ziad
-public function showAllWeb()
+public function showAllWeb(Request $request)
 {
     $this->authorize('manage_system');
 
     $query = Worker::query();
 
-    if (request()->filled('name')) {
-        $query->where('name', 'like', '%' . request('name') . '%');
+    if ($request->filled('name')) {
+        $query->where('name', 'like', '%' . $request->name . '%');
     }
 
-
-    if (request()->filled('title_id')) {
-        $query->where('title_id', request('title_id'));
+    if ($request->filled('title_id')) {
+        $query->where('title_id', $request->title_id);
     }
 
-     if (request()->filled('branch_id')) {
-        $query->whereHas('branch', function ($q) {
-            $q->where('branches.id', request('branch_id')); 
+    if ($request->filled('branch_id')) {
+        $query->whereHas('branch', function ($q) use ($request) {
+            $q->where('branches.id', $request->branch_id);
         });
     }
 
-    if (request()->filled('status')) {
-    $query->where('status', request('status'));
-}
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
 
-if (request()->filled('dashboardAccess')) {
-    $query->where('dashboardAccess', request('dashboardAccess'));
-}
+    if ($request->filled('dashboardAccess') && in_array($request->dashboardAccess, ['ok', 'notOk'])) {
+        $query->where('dashboardAccess', $request->dashboardAccess);
+    }
 
-    $workers = $query->orderBy('created_at', 'desc')->paginate(10);
+    $workers = $query->orderBy('created_at', 'desc')->get();
 
-    $this->loadRelationsForCollection($workers);
+
 
     return response()->json([
         'data' => WorkerWebResource::collection($workers),
@@ -204,38 +203,37 @@ if (request()->filled('dashboardAccess')) {
     ]);
 }
 
-public function showAllWithPaginate()
+
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
     $query = Worker::query();
 
-    if (request()->filled('name')) {
-        $query->where('name', 'like', '%' . request('name') . '%');
+    if ($request->filled('name')) {
+        $query->where('name', 'like', '%' . $request->name . '%');
     }
 
-
-    if (request()->filled('title_id')) {
-        $query->where('title_id', request('title_id'));
+    if ($request->filled('title_id')) {
+        $query->where('title_id', $request->title_id);
     }
 
-     if (request()->filled('branch_id')) {
-        $query->whereHas('branch', function ($q) {
-            $q->where('branches.id', request('branch_id'));
+    if ($request->filled('branch_id')) {
+        $query->whereHas('branch', function ($q) use ($request) {
+            $q->where('branches.id', $request->branch_id);
         });
     }
 
-    if (request()->filled('status')) {
-    $query->where('status', request('status'));
-}
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
 
-if (request()->filled('dashboardAccess')) {
-    $query->where('dashboardAccess', request('dashboardAccess'));
-}
+    if ($request->filled('dashboardAccess') && in_array($request->dashboardAccess, ['ok', 'notOk'])) {
+        $query->where('dashboardAccess', $request->dashboardAccess);
+    }
 
     $workers = $query->orderBy('created_at', 'desc')->paginate(10);
 
-    $this->loadRelationsForCollection($workers);
 
     return response()->json([
         'data' => WorkerWebResource::collection($workers),
@@ -245,10 +243,13 @@ if (request()->filled('dashboardAccess')) {
             'per_page' => $workers->perPage(),
             'current_page' => $workers->currentPage(),
             'total_pages' => $workers->lastPage(),
+            'next_page_url' => $workers->nextPageUrl(),
+            'prev_page_url' => $workers->previousPageUrl(),
         ],
         'message' => "Show All Workers."
     ]);
 }
+
 
 
 
