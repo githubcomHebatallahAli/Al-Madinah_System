@@ -72,6 +72,8 @@ public function showAllWorkerLoginWeb(Request $request)
 }
 
 
+
+
 public function showAllWorkerLogin(Request $request)
 {
   $this->authorize('manage_users');
@@ -128,7 +130,7 @@ public function showAllWeb()
     $this->loadRelationsForCollection($workers);
 
          return response()->json([
-             'data' =>  WorkerResource::collection($workers),
+             'data' =>  WorkerWebResource::collection($workers),
              'message' => "Show All Workers."
         ]);
     }
@@ -141,19 +143,17 @@ public function showAllWeb()
     $query = Branch::with(['titles.workers'])
         ->orderBy('created_at', 'desc');
 
-    // فلتر بالبرانش (id الفرع)
     if ($request->filled('branch_id')) {
         $query->where('id', $request->branch_id);
     }
 
-    // فلتر بالتايتل (id العنوان)
     if ($request->filled('title_id')) {
         $query->whereHas('titles', function ($q) use ($request) {
             $q->where('id', $request->title_id);
         });
     }
 
-    // سيرش باسم العامل داخل العناوين والعمال
+
     if ($request->filled('worker_name')) {
         $search = $request->worker_name;
         $query->whereHas('titles.workers', function ($q) use ($search) {
@@ -161,11 +161,7 @@ public function showAllWeb()
         });
     }
 
-    // Pagination
     $branches = $query->paginate(10);
-
-    // لو عندك دالة لتحميل علاقات إضافية
-    // $this->loadRelationsForCollection($branches->getCollection());
 
     return response()->json([
         'data' => ShowAllWorkerResource::collection($branches),
