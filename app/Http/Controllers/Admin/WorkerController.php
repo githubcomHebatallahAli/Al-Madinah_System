@@ -74,107 +74,126 @@ public function showAllWorkerLoginWeb(Request $request)
 
 
 
-public function showAllWorkerLogin(Request $request)
-{
-  $this->authorize('manage_users');
+// public function showAllWorkerLogin(Request $request)
+// {
+//   $this->authorize('manage_users');
 
-    $query = Branch::with([
-        'titles.workers.workerLogin.role'
-    ])->orderBy('created_at', 'desc');
+//     $query = Branch::with([
+//         'titles.workers.workerLogin.role'
+//     ])->orderBy('created_at', 'desc');
 
-    if ($request->filled('branch_id')) {
-        $query->where('id', $request->branch_id);
-    }
+//     if ($request->filled('branch_id')) {
+//         $query->where('id', $request->branch_id);
+//     }
 
-    if ($request->filled('title_id')) {
-        $query->whereHas('titles', function($q) use ($request) {
-            $q->where('id', $request->title_id);
-        });
-    }
-    if ($request->filled('role_id') || $request->filled('worker_name')) {
-        $query->whereHas('titles.workers.workerLogin', function($q) use ($request) {
-            if ($request->filled('role_id')) {
-                $q->where('role_id', $request->role_id);
-            }
-            if ($request->filled('worker_name')) {
-                $search = $request->worker_name;
-                $q->whereHas('worker', function($q2) use ($search) {
-                    $q2->where('name', 'like', "%{$search}%");
-                });
-            }
-        });
-    }
+//     if ($request->filled('title_id')) {
+//         $query->whereHas('titles', function($q) use ($request) {
+//             $q->where('id', $request->title_id);
+//         });
+//     }
+//     if ($request->filled('role_id') || $request->filled('worker_name')) {
+//         $query->whereHas('titles.workers.workerLogin', function($q) use ($request) {
+//             if ($request->filled('role_id')) {
+//                 $q->where('role_id', $request->role_id);
+//             }
+//             if ($request->filled('worker_name')) {
+//                 $search = $request->worker_name;
+//                 $q->whereHas('worker', function($q2) use ($search) {
+//                     $q2->where('name', 'like', "%{$search}%");
+//                 });
+//             }
+//         });
+//     }
 
-    $branches = $query->paginate(10);
+//     $branches = $query->paginate(10);
 
-    return response()->json([
-        'data' => ShowAllWorkerLoginResource::collection($branches),
-        'pagination' => [
-            'total' => $branches->total(),
-            'count' => $branches->count(),
-            'per_page' => $branches->perPage(),
-            'current_page' => $branches->currentPage(),
-            'total_pages' => $branches->lastPage(),
-        ],
-        'message' => "Workers login data retrieved successfully."
-    ]);
-}
+//     return response()->json([
+//         'data' => ShowAllWorkerLoginResource::collection($branches),
+//         'pagination' => [
+//             'total' => $branches->total(),
+//             'count' => $branches->count(),
+//             'per_page' => $branches->perPage(),
+//             'current_page' => $branches->currentPage(),
+//             'total_pages' => $branches->lastPage(),
+//         ],
+//         'message' => "Workers login data retrieved successfully."
+//     ]);
+// }
 
 
 // Ziad
 public function showAllWeb()
-    {
-        $this->authorize('manage_system');
-        $workers = Worker::orderBy('created_at', 'desc')->get();
-
-    $this->loadRelationsForCollection($workers);
-
-         return response()->json([
-             'data' =>  WorkerWebResource::collection($workers),
-             'message' => "Show All Workers."
-        ]);
-    }
-
-
-    public function showAll(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = Branch::with(['titles.workers'])
-        ->orderBy('created_at', 'desc');
+    $query = Worker::query();
 
-    if ($request->filled('branch_id')) {
-        $query->where('id', $request->branch_id);
+    if (request()->filled('name')) {
+        $query->where('name', 'like', '%' . request('name') . '%');
     }
 
-    if ($request->filled('title_id')) {
-        $query->whereHas('titles', function ($q) use ($request) {
-            $q->where('id', $request->title_id);
+
+    if (request()->filled('title_id')) {
+        $query->where('title_id', request('title_id'));
+    }
+
+    if (request()->filled('branch_id')) {
+        $query->whereHas('branch', function ($q) {
+            $q->where('id', request('branch_id'));
         });
     }
 
+    $workers = $query->orderBy('created_at', 'desc')->get();
 
-    if ($request->filled('worker_name')) {
-        $search = $request->worker_name;
-        $query->whereHas('titles.workers', function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%");
-        });
-    }
-
-    $branches = $query->paginate(10);
+    $this->loadRelationsForCollection($workers);
 
     return response()->json([
-        'data' => ShowAllWorkerResource::collection($branches),
-        'pagination' => [
-            'total' => $branches->total(),
-            'count' => $branches->count(),
-            'per_page' => $branches->perPage(),
-            'current_page' => $branches->currentPage(),
-            'total_pages' => $branches->lastPage(),
-        ],
-        'message' => "Show All Workers with filters and search."
+        'data' => WorkerWebResource::collection($workers),
+        'message' => "Show All Workers."
     ]);
 }
+
+
+
+//     public function showAll(Request $request)
+// {
+//     $this->authorize('manage_system');
+
+//     $query = Branch::with(['titles.workers'])
+//         ->orderBy('created_at', 'desc');
+
+//     if ($request->filled('branch_id')) {
+//         $query->where('id', $request->branch_id);
+//     }
+
+//     if ($request->filled('title_id')) {
+//         $query->whereHas('titles', function ($q) use ($request) {
+//             $q->where('id', $request->title_id);
+//         });
+//     }
+
+
+//     if ($request->filled('worker_name')) {
+//         $search = $request->worker_name;
+//         $query->whereHas('titles.workers', function ($q) use ($search) {
+//             $q->where('name', 'like', "%{$search}%");
+//         });
+//     }
+
+//     $branches = $query->paginate(10);
+
+//     return response()->json([
+//         'data' => ShowAllWorkerResource::collection($branches),
+//         'pagination' => [
+//             'total' => $branches->total(),
+//             'count' => $branches->count(),
+//             'per_page' => $branches->perPage(),
+//             'current_page' => $branches->currentPage(),
+//             'total_pages' => $branches->lastPage(),
+//         ],
+//         'message' => "Show All Workers with filters and search."
+//     ]);
+// }
 
 
 
