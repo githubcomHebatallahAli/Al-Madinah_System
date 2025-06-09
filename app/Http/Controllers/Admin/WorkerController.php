@@ -71,6 +71,37 @@ public function showAllWorkerLoginWeb(Request $request)
     ]);
 }
 
+public function showAllWorkerLoginWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $query = WorkerLogin::with(['worker', 'worker.title', 'worker.store', 'role'])
+        ->orderBy('created_at', 'desc');
+
+    if ($request->search) {
+        $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
+    }
+
+    if ($request->role_id) {
+        $query->where('role_id', $request->role_id);
+    }
+
+    if ($request->title_name) {
+        $query->whereHas('worker.title', function($q) use ($request) {
+            $q->where('name', 'like', '%'.$request->title_name.'%');
+        });
+    }
+
+    $workers = $query->get();
+
+    $this->loadRelationsForCollection($workers->getCollection());
+
+    return response()->json([
+        'data' => ShowAllWorkerLoginWebResource::collection($workers),
+        'message' => "Workers Login data retrieved successfully."
+    ]);
+}
+
 
 
 

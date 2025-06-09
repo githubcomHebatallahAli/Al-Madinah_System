@@ -10,6 +10,7 @@ Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->midd
     function () {
 
    Route::get('/showAll/workerLogin','showAllWorkerLoginWeb');
+   Route::get('/showAll/workerLogin/withoutPaginate','showAllWorkerLoginWithoutPaginate');
    Route::get('/showAll/worker','showAllWeb');
    Route::get('/showAll/worker/withPaginate','showAllWithPaginate');
 
