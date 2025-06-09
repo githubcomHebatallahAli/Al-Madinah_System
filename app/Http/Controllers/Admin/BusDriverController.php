@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\BusDriver;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\BusDriverRequest;
 use App\Http\Resources\Admin\BusDriverResource;
+use App\Http\Resources\Admin\ShowAllBusDriverResource;
 
 class BusDriverController extends Controller
 {
@@ -22,18 +24,57 @@ class BusDriverController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
-    {
-        $this->authorize('manage_system');
-        $BusDrivers = BusDriver::orderBy('created_at', 'desc')->get();
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-         $this->loadRelationsForCollection($BusDrivers);
+    $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' => BusDriverResource::collection($BusDrivers),
-            'message' => "All BusDrivers retrieved successfully."
-        ]);
+    $query = busDriver::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->bus_id) {
+        $query->where('bus_id', $request->bus_id);
     }
+
+    $busDrivers = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllBusDriverResource::collection($busDrivers),
+        'pagination' => [
+            'total' => $busDrivers->total(),
+            'count' => $busDrivers->count(),
+            'per_page' => $busDrivers->perPage(),
+            'current_page' => $busDrivers->currentPage(),
+            'total_pages' => $busDrivers->lastPage(),
+            'next_page_url' => $busDrivers->nextPageUrl(),
+            'prev_page_url' => $busDrivers->previousPageUrl(),
+        ],
+        'message' => "Show All Bus Driverss."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = busDriver::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->bus_id) {
+        $query->where('bus_id', $request->bus_id);
+    }
+
+    $busDrivers = $query->get();
+
+    return response()->json([
+        'data' => ShowAllbusDriverResource::collection($busDrivers),
+        'message' => "Show All Bus Drivers."
+    ]);
+}
 
      public function create(BusDriverRequest $request)
     {
