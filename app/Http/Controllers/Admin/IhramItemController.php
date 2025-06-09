@@ -30,10 +30,17 @@ class IhramItemController extends Controller
 
     $searchTerm = $request->input('search', '');
 
-    $query = ihramItem::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+   $query = ihramItem::query();
 
+if ($searchTerm = $request->input('search')) {
+    $query->where('name', 'like', '%' . $searchTerm . '%');
+}
 
+if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+    $query->where('status', $request->status);
+}
+
+$query->orderBy('created_at', 'desc');
 
     $ihramItems = $query->paginate(10);
 
@@ -59,13 +66,19 @@ public function showAllWithoutPaginate(Request $request)
 
     $searchTerm = $request->input('search', '');
 
-    $query = ihramItem::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+   $query = ihramItem::query();
 
+if ($searchTerm = $request->input('search')) {
+    $query->where('name', 'like', '%' . $searchTerm . '%');
+}
 
+if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+    $query->where('status', $request->status);
+}
+
+$query->orderBy('created_at', 'desc');
 
     $ihramItems = $query->get();
-
     return response()->json([
         'data' => ShowAllIhramItemResource::collection($ihramItems),
         'message' => "Show All Ihram Items."

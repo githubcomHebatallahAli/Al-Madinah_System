@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\IhramSupply;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\IhramSupplyRequest;
 use App\Http\Resources\Admin\IhramSupplyResource;
+use App\Http\Resources\Admin\ShowAllIhramSupplyResource;
 
 class IhramSupplyController extends Controller
 {
@@ -22,18 +24,80 @@ class IhramSupplyController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('showAll',IhramSupply::class);
-        $IhramSupplies = IhramSupply::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($IhramSupplies);
+public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  IhramSupplyResource::collection($IhramSupplies),
-            'message' => "Show All IhramSupplyies."
-        ]);
+    $query = IhramSupply::query();
+
+
+    if ($request->filled('ihram_item_id')) {
+        $query->where('ihram_item_id', $request->ihram_item_id);
     }
+
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
+    }
+
+    if ($request->filled('store_id')) {
+        $query->where('store_id', $request->store_id);
+    }
+
+       if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $query->orderBy('created_at', 'desc');
+
+    $ihramSupplies = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllIhramSupplyResource::collection($ihramSupplies),
+        'pagination' => [
+            'total' => $ihramSupplies->total(),
+            'count' => $ihramSupplies->count(),
+            'per_page' => $ihramSupplies->perPage(),
+            'current_page' => $ihramSupplies->currentPage(),
+            'total_pages' => $ihramSupplies->lastPage(),
+            'next_page_url' => $ihramSupplies->nextPageUrl(),
+            'prev_page_url' => $ihramSupplies->previousPageUrl(),
+        ],
+        'message' => "Show All Ihram Supplies."
+    ]);
+}
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $query = IhramSupply::query();
+
+    if ($request->filled('ihram_item_id')) {
+        $query->where('ihram_item_id', $request->ihram_item_id);
+    }
+
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
+    }
+
+    if ($request->filled('store_id')) {
+        $query->where('store_id', $request->store_id);
+    }
+
+     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $query->orderBy('created_at', 'desc');
+
+    $ihramSupplies = $query->get();
+
+    return response()->json([
+        'data' => ShowAllIhramSupplyResource::collection($ihramSupplies),
+        'message' => "Show All Ihram Supplies."
+    ]);
+}
+
 
 
     public function create(IhramSupplyRequest $request)
