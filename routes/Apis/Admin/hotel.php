@@ -9,7 +9,8 @@ use App\Http\Controllers\Admin\HotelController;
 Route::controller(HotelController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
-   Route::get('/showAll/hotel','showAll');
+   Route::get('/showAll/hotel','showAllWithoutPaginate');
+   Route::get('/showAll/hotel/withPaginate','showAllWithPaginate');
    Route::post('/create/hotel', 'create');
    Route::get('/edit/hotel/{id}','edit');
    Route::post('/update/hotel/{id}', 'update');

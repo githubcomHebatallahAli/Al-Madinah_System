@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Hotel;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Resources\Admin\HotelResource;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllHotelResource;
 
 
 class HotelController extends Controller
@@ -23,18 +25,66 @@ class HotelController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Hoteles = Hotel::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Hoteles);
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  HotelResource::collection($Hoteles),
-            'message' => "Show All Hoteles."
-        ]);
+    $searchTerm = $request->input('search', '');
+
+    $query = Hotel::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->company_id) {
+        $query->where('company_id', $request->company_id);
     }
+
+      if ($request->has('place') && in_array($request->place, ['Mecca', 'Almadinah'])) {
+        $query->where('place', $request->place);
+    }
+
+    $Hotels = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllHotelResource::collection($Hotels),
+        'pagination' => [
+            'total' => $Hotels->total(),
+            'count' => $Hotels->count(),
+            'per_page' => $Hotels->perPage(),
+            'current_page' => $Hotels->currentPage(),
+            'total_pages' => $Hotels->lastPage(),
+            'next_page_url' => $Hotels->nextPageUrl(),
+            'prev_page_url' => $Hotels->previousPageUrl(),
+        ],
+        'message' => "Show All Hotels."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Hotel::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+  if ($request->company_id) {
+        $query->where('company_id', $request->company_id);
+    }
+
+      if ($request->has('place') && in_array($request->place, ['Mecca', 'Almadinah'])) {
+        $query->where('place', $request->place);
+    }
+
+
+    $Hotels = $query->get();
+
+    return response()->json([
+        'data' => ShowAllHotelResource::collection($Hotels),
+        'message' => "Show All Hotels."
+    ]);
+}
 
 
     public function create(HotelRequest $request)
