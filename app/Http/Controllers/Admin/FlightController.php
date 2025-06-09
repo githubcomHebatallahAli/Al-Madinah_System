@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Flight;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\FlightResource;
+use App\Http\Resources\Admin\ShowAllFlightResource;
 
 class FlightController extends Controller
 {
@@ -22,18 +24,60 @@ class FlightController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Flightes = Flight::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Flightes);
+public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  FlightResource::collection($Flightes),
-            'message' => "Show All Flightes."
-        ]);
+    $query = Flight::query()->orderBy('created_at', 'desc');
+
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
     }
+
+        if ($request->filled('direction')) {
+        $query->where('direction', $request->direction);
+    }
+
+    $Flights = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllFlightResource::collection($Flights),
+        'pagination' => [
+            'total' => $Flights->total(),
+            'count' => $Flights->count(),
+            'per_page' => $Flights->perPage(),
+            'current_page' => $Flights->currentPage(),
+            'total_pages' => $Flights->lastPage(),
+            'next_page_url' => $Flights->nextPageUrl(),
+            'prev_page_url' => $Flights->previousPageUrl(),
+        ],
+        'message' => "Show All Flights."
+    ]);
+}
+
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $query = Flight::query()->orderBy('created_at', 'desc');
+
+
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
+    }
+       if ($request->filled('direction')) {
+        $query->where('direction', $request->direction);
+    }
+
+    $Flights = $query->get();
+
+    return response()->json([
+        'data' => ShowAllFlightResource::collection($Flights),
+        'message' => "Show All Flights."
+    ]);
+}
 
 
     public function create(FlightRequest $request)
