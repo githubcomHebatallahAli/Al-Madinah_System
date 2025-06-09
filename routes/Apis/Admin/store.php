@@ -12,7 +12,6 @@ Route::post('/create/store', 'create');
 Route::post('/update/store/{id}', 'update');
 Route::patch('notActive/store/{id}', 'notActive');
 Route::patch('active/store/{id}', 'active');
-// Route::get('/showAll/store/withoutPaginate','showAllWithoutPaginate');
    });
 Route::controller(StoreController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {

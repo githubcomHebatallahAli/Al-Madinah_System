@@ -63,7 +63,7 @@ class BranchController extends Controller
     }
         public function showAllWithoutPaginate(Request $request)
     {
-        $this->authorize('manage_users');
+        $this->authorize('manage_system');
 
         $searchTerm = $request->input('search', '');
        $Branches = Branch::where('name', 'like', '%' . $searchTerm . '%')
@@ -76,7 +76,6 @@ class BranchController extends Controller
             'message' => "Show All Branches."
         ]);
     }
-
 
     public function create(BranchRequest $request)
     {

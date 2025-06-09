@@ -24,61 +24,59 @@ class StoreController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Stores = Store::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Stores);
 
-        return response()->json([
-            'data' =>  StoreResource::collection($Stores),
-            'message' => "Show All Stores."
-        ]);
+
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Store::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
     }
 
-    // ===================
+    $Stores = $query->paginate(10);
 
-              public function showAllWithPaginate(Request $request)
-    {
-        $this->authorize('manage_system');
+    return response()->json([
+        'data' => ShowAllStoreResource::collection($Stores),
+        'pagination' => [
+            'total' => $Stores->total(),
+            'count' => $Stores->count(),
+            'per_page' => $Stores->perPage(),
+            'current_page' => $Stores->currentPage(),
+            'total_pages' => $Stores->lastPage(),
+            'next_page_url' => $Stores->nextPageUrl(),
+            'prev_page_url' => $Stores->previousPageUrl(),
+        ],
+        'message' => "Show All Stores."
+    ]);
+}
 
-        $searchTerm = $request->input('search', '');
-       $Stores = Store::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->paginate(10);
-        $this->loadRelationsForCollection($Stores);
 
-        return response()->json([
-            'data' =>  ShowAllStoreResource::collection($Stores),
-              'pagination' => [
-                        'total' => $Stores->total(),
-                        'count' => $Stores->count(),
-                        'per_page' => $Stores->perPage(),
-                        'current_page' => $Stores->currentPage(),
-                        'total_pages' => $Stores->lastPage(),
-                        'next_page_url' => $Stores->nextPageUrl(),
-                        'prev_page_url' => $Stores->previousPageUrl(),
-                    ],
-            'message' => "Show All Stores."
-        ]);
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Store::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
     }
 
-        public function showAllWithoutPaginate(Request $request)
-    {
-        $this->authorize('manage_system');
+    $Stores = $query->get();
 
-        $searchTerm = $request->input('search', '');
-       $Stores = Store::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->get();
-        $this->loadRelationsForCollection($Stores);
-
-        return response()->json([
-            'data' =>  ShowAllStoreResource::collection($Stores),
-            'message' => "Show All Stores."
-        ]);
-    }
+    return response()->json([
+        'data' => ShowAllStoreResource::collection($Stores),
+        'message' => "Show All Stores."
+    ]);
+}
 
 
     public function create(StoreRequest $request)
