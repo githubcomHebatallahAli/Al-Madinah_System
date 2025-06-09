@@ -76,6 +76,19 @@ public function showAllWithoutPaginate(Request $request)
     ]);
 }
 
+        public function showAll()
+    {
+        $this->authorize('manage_system');
+        $Titles = Title::with('items')->orderBy('created_at', 'desc')
+        ->get();
+       $this->loadRelationsForCollection($Titles);
+
+        return response()->json([
+            'data' =>  TitleResource::collection($Titles),
+            'message' => "Show All Titles."
+        ]);
+    }
+
      public function create(TitleRequest $request)
     {
         $this->authorize('manage_system');
