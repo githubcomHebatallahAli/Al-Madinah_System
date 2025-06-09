@@ -11,6 +11,8 @@ Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->midd
 
    Route::get('/showAll/workerLogin','showAllWorkerLoginWeb');
    Route::get('/showAll/worker','showAllWeb');
+   Route::get('/showAll/worker/withPaginate','showAllWithPaginate');
+
    Route::post('/create/worker', 'create');
    Route::get('/edit/worker/{id}','edit');
    Route::post('/update/worker/{id}', 'update');

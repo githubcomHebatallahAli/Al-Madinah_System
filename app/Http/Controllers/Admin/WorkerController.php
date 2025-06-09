@@ -143,12 +143,50 @@ public function showAllWeb()
         });
     }
 
+    $workers = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    $this->loadRelationsForCollection($workers);
+
+    return response()->json([
+        'data' => WorkerWebResource::collection($workers),
+        'message' => "Show All Workers."
+    ]);
+}
+
+public function showAllWithPaginate()
+{
+    $this->authorize('manage_system');
+
+    $query = Worker::query();
+
+    if (request()->filled('name')) {
+        $query->where('name', 'like', '%' . request('name') . '%');
+    }
+
+
+    if (request()->filled('title_id')) {
+        $query->where('title_id', request('title_id'));
+    }
+
+     if (request()->filled('branch_id')) {
+        $query->whereHas('branch', function ($q) {
+            $q->where('branches.id', request('branch_id')); // تم التوضيح هنا
+        });
+    }
+
     $workers = $query->orderBy('created_at', 'desc')->get();
 
     $this->loadRelationsForCollection($workers);
 
     return response()->json([
         'data' => WorkerWebResource::collection($workers),
+        'pagination' => [
+            'total' => $workers->total(),
+            'count' => $workers->count(),
+            'per_page' => $workers->perPage(),
+            'current_page' => $workers->currentPage(),
+            'total_pages' => $workers->lastPage(),
+        ],
         'message' => "Show All Workers."
     ]);
 }
