@@ -55,6 +55,11 @@ class Service extends Model
         return $this->hasMany(Hotel::class);
     }
 
+        public function ihramItems()
+    {
+        return $this->hasMany(IhramItem::class);
+    }
+
 
 
     public function creator()

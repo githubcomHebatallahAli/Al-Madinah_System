@@ -29,6 +29,11 @@ class IhramItem extends Model
     {
         return $this->hasMany(IhramSupply::class);
     }
+    
+                public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
 
         public function creator()
 {
