@@ -137,9 +137,9 @@ public function showAllWeb()
         $query->where('title_id', request('title_id'));
     }
 
-    if (request()->filled('branch_id')) {
+     if (request()->filled('branch_id')) {
         $query->whereHas('branch', function ($q) {
-            $q->where('id', request('branch_id'));
+            $q->where('branches.id', request('branch_id')); // تم التوضيح هنا
         });
     }
 
