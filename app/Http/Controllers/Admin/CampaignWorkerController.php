@@ -10,6 +10,7 @@ use App\Traits\HandleAddedByTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\CampaignWorkerResource;
+use App\Http\Resources\Admin\ShowAllDelegatesCampaignResource;
 
 class CampaignWorkerController extends Controller
 {
@@ -131,7 +132,7 @@ class CampaignWorkerController extends Controller
         return response()->json([
             'campaign_id' => (int)$campaignId,
             'campaign_name' => $campaign->name,
-            'workers' => CampaignWorkerResource::collection($workers),
+            'workers' => ShowAllDelegatesCampaignResource::collection($workers),
             'count' => $campaign->workersCount,
             'message' => 'تم جلب بيانات مندوبي الحملة بنجاح'
         ], 200);

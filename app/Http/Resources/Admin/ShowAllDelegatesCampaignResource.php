@@ -15,6 +15,12 @@ class ShowAllDelegatesCampaignResource extends JsonResource
             'title_id' => $this->title->id,
             'title_name' => $this->title->name ?? null,
             'name' => $this->name,
+               'branch' => $this->whenLoaded('branch', function () {
+                return [
+                    'id' => $this->branch->id,
+                    'name' => $this->branch->name
+                ];
+            }),
 
             'pivot' => $this->whenPivotLoaded('campaign_workers', function () {
                 return [
@@ -22,14 +28,9 @@ class ShowAllDelegatesCampaignResource extends JsonResource
                 ];
             }),
 
-  
 
-            'branch' => $this->whenLoaded('branch', function () {
-                return [
-                    'id' => $this->branch->id,
-                    'name' => $this->branch->name
-                ];
-            }),
+
+
         ];
     }
 }
