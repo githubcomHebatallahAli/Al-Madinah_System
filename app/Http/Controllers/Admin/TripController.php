@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Trip;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Http\Resources\Admin\TripResource;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
+use App\Http\Resources\Admin\ShowAllTripResource;
 
 class TripController extends Controller
 {
@@ -22,18 +24,58 @@ class TripController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Trips = Trip::orderBy('created_at', 'desc')->get();
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_users');
 
-         $this->loadRelationsForCollection($Trips);
+    $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' => TripResource::collection($Trips),
-            'message' => "All Trips retrieved successfully."
-        ]);
+    $query = Trip::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
     }
+
+    $Trips = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllTripResource::collection($Trips),
+        'pagination' => [
+            'total' => $Trips->total(),
+            'count' => $Trips->count(),
+            'per_page' => $Trips->perPage(),
+            'current_page' => $Trips->currentPage(),
+            'total_pages' => $Trips->lastPage(),
+            'next_page_url' => $Trips->nextPageUrl(),
+            'prev_page_url' => $Trips->previousPageUrl(),
+        ],
+        'message' => "Show All Trips."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_users');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Trip::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    $Trips = $query->get();
+
+    return response()->json([
+        'data' => ShowAllTripResource::collection($Trips),
+        'message' => "Show All Trips."
+    ]);
+}
+
 
      public function create(TripRequest $request)
     {
