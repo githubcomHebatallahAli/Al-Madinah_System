@@ -34,8 +34,8 @@ public function showAllWithPaginate(Request $request)
         $query->where('company_id', $request->company_id);
     }
 
-        if ($request->filled('direction')) {
-        $query->where('direction', $request->direction);
+     if ($request->filled('direction')) {
+        $query->where('direction', 'like', '%' . $request->direction . '%');
     }
 
     $Flights = $query->paginate(10);
@@ -67,8 +67,9 @@ public function showAllWithoutPaginate(Request $request)
     if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
-       if ($request->filled('direction')) {
-        $query->where('direction', $request->direction);
+
+     if ($request->filled('direction')) {
+        $query->where('direction', 'like', '%' . $request->direction . '%');
     }
 
     $Flights = $query->get();
