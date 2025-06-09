@@ -66,7 +66,7 @@ class StoreController extends Controller
 
         public function showAllWithoutPaginate(Request $request)
     {
-        $this->authorize('manage_users');
+        $this->authorize('manage_system');
 
         $searchTerm = $request->input('search', '');
        $Stores = Store::where('name', 'like', '%' . $searchTerm . '%')
