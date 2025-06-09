@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\IhramItemController;
 Route::controller(IhramItemController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
-   Route::get('/showAll/ihramItem','showAllWitoutPaginate');
+   Route::get('/showAll/ihramItem','showAllWithoutPaginate');
    Route::get('/showAll/ihramItem/withPaginate','showAllWithPaginate');
    Route::get('/edit/ihramItem/{id}','edit');
     Route::post('/create/ihramItem', 'create');
