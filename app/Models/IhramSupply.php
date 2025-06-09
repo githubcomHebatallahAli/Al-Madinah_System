@@ -15,11 +15,9 @@ class IhramSupply extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'service_id',
         'company_id',
         'store_id',
-        'name',
-        'size',
+        'ihram_item_id',
         'description',
         'quantity',
         'sellingPrice',
@@ -31,9 +29,9 @@ class IhramSupply extends Model
         'changed_data'
     ];
 
-        public function service()
+        public function ihramItem()
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(IhramItem::class);
     }
 
         public function company()

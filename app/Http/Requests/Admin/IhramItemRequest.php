@@ -6,9 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 
-class IhramSupplyRequest extends FormRequest
+class IhramItemRequest extends FormRequest
 {
-
+  
     public function authorize(): bool
     {
         return true;
@@ -18,20 +18,17 @@ class IhramSupplyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ihram_item_id' => 'required|exists:ihram_items,id',
-            'company_id' => 'required|exists:companies,id',
-            'store_id' => 'required|exists:stores,id',
+            'service_id' =>'required|exists:services,id',
+            'name'=>'required|string',
+            'size' =>'nullable|in:child,adult',
+            'description'=>'nullable|string',
             'status' => 'nullable|in:active,notActive',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
-            'quantity'=>'required|string',
-            'description'=>'nullable|string',
-            'sellingPrice'=> 'required|numeric|min:0|max:99999.99',
-            'purchesPrice'=> 'required|numeric|min:0|max:99999.99',
         ];
     }
 
-                  public function failedValidation(Validator $validator)
+                      public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'success'   => false,

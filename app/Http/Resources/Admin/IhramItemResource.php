@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class IhramSupplyResource extends JsonResource
+class IhramItemResource extends JsonResource
 {
     use AddedByResourceTrait;
 
@@ -14,17 +14,11 @@ class IhramSupplyResource extends JsonResource
     {
         return [
             "id" => $this -> id,
-            'ihram_item_id' => $this->ihramItem?->id,
-            'ihram_item_name' => $this->ihramItem?->name,
-            'company_id' => $this->company?->id,
-            'company_name' => $this->company?->name,
-            'store_id' => $this->store?->id,
-            'store_name' => $this->store?->name,
+            'service_id' => $this->service?->id,
+            'service_name' => $this->service?->name,
+            'name'=> $this-> name,
+            'size'=> $this-> size,
             'description' => $this->description,
-            'quantity' => $this-> quantity,
-            'sellingPrice' => $this-> sellingPrice,
-            'purchesPrice' => $this-> purchesPrice,
-            'profit' => $this-> profit,
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,

@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ihram_supplies', function (Blueprint $table) {
+        Schema::create('ihram_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ihram_item_id')->constrained('ihram_items')->cascadeOnDelete();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
-            $table->foreignId('store_id')->constrained('stores')->cascadeOnDelete();
+            $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
+            $table->string('name');
+            $table->enum('size', ['child', 'adult'])->nullable();
             $table->text('description')->nullable();
-            $table->integer('quantity')->default(0);
-            $table->decimal('sellingPrice');
-            $table->decimal('purchesPrice');
-            $table->decimal('profit')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -29,6 +25,7 @@ return new class extends Migration
             $table->string('creationDateHijri')->nullable();
             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->json('changed_data')->nullable();
+
             $table->timestamps();
         });
     }
@@ -38,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ihram_supplies');
+        Schema::dropIfExists('ihram_items');
     }
 };
