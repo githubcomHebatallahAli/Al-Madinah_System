@@ -24,57 +24,61 @@ class BusController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Bus::query()->orderBy('created_at', 'desc');
 
-    $query = Bus::where('seatNum', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('seatNum')) {
+        $query->where('seatNum', $request->seatNum); 
+    }
 
-    if ($request->company_id) {
+    if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-    $Buses = $query->paginate(10);
+    $buses = $query->paginate(10);
 
     return response()->json([
-        'data' => ShowAllBusResource::collection($Buses),
+        'data' => ShowAllBusResource::collection($buses),
         'pagination' => [
-            'total' => $Buses->total(),
-            'count' => $Buses->count(),
-            'per_page' => $Buses->perPage(),
-            'current_page' => $Buses->currentPage(),
-            'total_pages' => $Buses->lastPage(),
-            'next_page_url' => $Buses->nextPageUrl(),
-            'prev_page_url' => $Buses->previousPageUrl(),
+            'total' => $buses->total(),
+            'count' => $buses->count(),
+            'per_page' => $buses->perPage(),
+            'current_page' => $buses->currentPage(),
+            'total_pages' => $buses->lastPage(),
+            'next_page_url' => $buses->nextPageUrl(),
+            'prev_page_url' => $buses->previousPageUrl(),
         ],
-        'message' => "Show All Buss."
+        'message' => "Show All Buses."
     ]);
 }
+
 
 
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Bus::query()->orderBy('created_at', 'desc');
 
-    $query = Bus::where('seatNum', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('seatNum')) {
+        $query->where('seatNum', $request->seatNum); // فلتر دقيق
+    }
 
-    if ($request->company_id) {
+    if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-    $Buss = $query->get();
+    $buses = $query->get();
 
     return response()->json([
-        'data' => ShowAllBusResource::collection($Buss),
+        'data' => ShowAllBusResource::collection($buses),
         'message' => "Show All Buses."
     ]);
 }
+
 
 
     // public function create(BusRequest $request)
