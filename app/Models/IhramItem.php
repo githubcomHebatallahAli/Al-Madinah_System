@@ -21,7 +21,8 @@ class IhramItem extends Model
         'changed_data',
         'name',
         'size',
-        'description'
+        'description',
+        'service_id'
     ];
 
         public function ihramSupplies()
