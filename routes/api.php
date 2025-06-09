@@ -26,4 +26,5 @@ require __DIR__ . '/Apis/Admin/paymentMethod.php';
 require __DIR__ . '/Apis/Admin/paymentMethodType.php';
 require __DIR__ . '/Apis/Admin/shipmentInvoice.php';
 require __DIR__ . '/Apis/Admin/busInvoice.php';
+require __DIR__ . '/Apis/Admin/ihramItem.php';
 

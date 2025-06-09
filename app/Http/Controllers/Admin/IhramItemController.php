@@ -25,6 +25,7 @@ class IhramItemController extends Controller
 
         public function showAll()
     {
+         $this->authorize('manage_system');
         $IhramSupplies = IhramItem::orderBy('created_at', 'desc')
         ->get();
        $this->loadRelationsForCollection($IhramSupplies);
@@ -38,6 +39,7 @@ class IhramItemController extends Controller
 
     public function create(IhramItemRequest $request)
     {
+         $this->authorize('manage_system');
 
        $data = array_merge($request->only([
             'service_id','name','size',
@@ -51,6 +53,7 @@ class IhramItemController extends Controller
 
         public function edit(string $id)
         {
+             $this->authorize('manage_system');
 
         $IhramItem = IhramItem::find($id);
 
@@ -65,6 +68,7 @@ class IhramItemController extends Controller
 
 public function update(IhramItemRequest $request, string $id)
 {
+     $this->authorize('manage_system');
     $IhramItem = IhramItem::findOrFail($id);
     $oldData = $IhramItem->toArray();
 
@@ -101,12 +105,14 @@ public function update(IhramItemRequest $request, string $id)
 
     public function active(string $id)
     {
+         $this->authorize('manage_system');
         $IhramItem = IhramItem::findOrFail($id);
         return $this->changeStatusSimple($IhramItem, 'active');
     }
 
     public function notActive(string $id)
     {
+         $this->authorize('manage_system');
         $IhramItem = IhramItem::findOrFail($id);
         return $this->changeStatusSimple($IhramItem, 'notActive');
     }
