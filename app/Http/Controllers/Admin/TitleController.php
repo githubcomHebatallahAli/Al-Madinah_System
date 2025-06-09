@@ -24,61 +24,57 @@ class TitleController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
-    {
-        $this->authorize('manage_system');
-        $titles = Title::orderBy('created_at', 'desc')->get();
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-         $this->loadRelationsForCollection($titles);
+    $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' => TitleResource::collection($titles),
-            'message' => "All titles retrieved successfully."
-        ]);
+    $query = Title::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
     }
 
-    // ==================
+    $Titles = $query->paginate(10);
 
-          public function showAllWithPaginate(Request $request)
-    {
-        $this->authorize('manage_users');
+    return response()->json([
+        'data' => ShowAllTitleResource::collection($Titles),
+        'pagination' => [
+            'total' => $Titles->total(),
+            'count' => $Titles->count(),
+            'per_page' => $Titles->perPage(),
+            'current_page' => $Titles->currentPage(),
+            'total_pages' => $Titles->lastPage(),
+            'next_page_url' => $Titles->nextPageUrl(),
+            'prev_page_url' => $Titles->previousPageUrl(),
+        ],
+        'message' => "Show All Titles."
+    ]);
+}
 
-        $searchTerm = $request->input('search', '');
-       $Titles = Title::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->paginate(10);
-        $this->loadRelationsForCollection($Titles);
 
-        return response()->json([
-            'data' =>  ShowAllTitleResource::collection($Titles),
-              'pagination' => [
-                        'total' => $Titles->total(),
-                        'count' => $Titles->count(),
-                        'per_page' => $Titles->perPage(),
-                        'current_page' => $Titles->currentPage(),
-                        'total_pages' => $Titles->lastPage(),
-                        'next_page_url' => $Titles->nextPageUrl(),
-                        'prev_page_url' => $Titles->previousPageUrl(),
-                    ],
-            'message' => "Show All Titles."
-        ]);
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Title::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
     }
 
-        public function showAllWithoutPaginate(Request $request)
-    {
-        $this->authorize('manage_users');
+    $Titles = $query->get();
 
-        $searchTerm = $request->input('search', '');
-       $Titles = Title::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->get();
-        $this->loadRelationsForCollection($Titles);
-
-        return response()->json([
-            'data' =>  ShowAllTitleResource::collection($Titles),
-            'message' => "Show All Titles."
-        ]);
-    }
+    return response()->json([
+        'data' => ShowAllTitleResource::collection($Titles),
+        'message' => "Show All Titles."
+    ]);
+}
 
      public function create(TitleRequest $request)
     {
