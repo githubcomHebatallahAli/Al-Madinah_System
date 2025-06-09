@@ -12,9 +12,11 @@ Route::controller(IhramSupplyController::class)->prefix('/adminOrBranchMangerOrS
    Route::get('/showAll/ihramSupply','showAllWitoutPaginate');
    Route::get('/showAll/ihramSupply/withPaginate','showAllWithPaginate');
    Route::get('/edit/ihramSupply/{id}','edit');
+
+
    });
 
-Route::controller(IhramSupplyController::class)->prefix('/Storekeeper')->middleware('worker')->group(
+Route::controller(IhramSupplyController::class)->prefix('/Storekeeper')->middleware('adminOrWorker')->group(
     function () {
    Route::post('/create/ihramSupply', 'create');
    Route::post('/update/ihramSupply/{id}', 'update');
