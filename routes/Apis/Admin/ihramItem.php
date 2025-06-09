@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\IhramItemController;
 
 
-Route::controller(IhramItemController::class)->prefix('/adminOrBranchMangerOrStorekeeper')->middleware('adminOrWorker')->group(
+Route::controller(IhramItemController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
    Route::get('/showAll/ihramItem','showAllWitoutPaginate');
