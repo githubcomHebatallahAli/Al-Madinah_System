@@ -31,7 +31,7 @@ public function showAllWithPaginate(Request $request)
     $query = Bus::query()->orderBy('created_at', 'desc');
 
     if ($request->filled('seatNum')) {
-        $query->where('seatNum', $request->seatNum); 
+        $query->where('seatNum', $request->seatNum);
     }
 
     if ($request->filled('company_id')) {
@@ -64,7 +64,7 @@ public function showAllWithoutPaginate(Request $request)
     $query = Bus::query()->orderBy('created_at', 'desc');
 
     if ($request->filled('seatNum')) {
-        $query->where('seatNum', $request->seatNum); // فلتر دقيق
+        $query->where('seatNum', $request->seatNum); 
     }
 
     if ($request->filled('company_id')) {

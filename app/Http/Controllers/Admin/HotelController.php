@@ -95,6 +95,10 @@ public function showAllWithoutPaginate(Request $request)
             'description','communication','quantity','sellingPrice','purchesPrice'
         ]), $this->prepareCreationMetaData());
 
+              if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
+        $data['profit'] = $data['sellingPrice'] - $data['purchesPrice'];
+    }
+
         $Hotel = Hotel::create($data);
 
          return $this->respondWithResource($Hotel, "Hotel created successfully.");
@@ -123,6 +127,12 @@ public function update(HotelRequest $request, string $id)
     $updateData = $request->only(['status', 'service_id','company_id','name','place','address',
             'description','communication','quantity','sellingPrice','purchesPrice'
             ]);
+
+                     if (isset($updateData['sellingPrice']) || isset($updateData['purchesPrice'])) {
+        $sellingPrice = $updateData['sellingPrice'] ?? $Hotel->sellingPrice;
+        $purchesPrice = $updateData['purchesPrice'] ?? $Hotel->purchesPrice;
+        $updateData['profit'] = $sellingPrice - $purchesPrice;
+    }
 
     $updateData = array_merge(
         $updateData,

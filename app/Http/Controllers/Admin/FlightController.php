@@ -89,6 +89,10 @@ public function showAllWithoutPaginate(Request $request)
             ,'quantity','sellingPrice','purchesPrice','DateTimeTrip','DateTimeTripHijri'
         ]), $this->prepareCreationMetaData());
 
+              if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
+        $data['profit'] = $data['sellingPrice'] - $data['purchesPrice'];
+    }
+
         $Flight = Flight::create($data);
 
          return $this->respondWithResource($Flight, "Flight created successfully.");
@@ -118,6 +122,12 @@ public function update(FlightRequest $request, string $id)
             ,'quantity','sellingPrice','purchesPrice','DateTimeTrip','DateTimeTripHijri',
             'class','seatNum'
             ]);
+
+                     if (isset($updateData['sellingPrice']) || isset($updateData['purchesPrice'])) {
+        $sellingPrice = $updateData['sellingPrice'] ?? $Flight->sellingPrice;
+        $purchesPrice = $updateData['purchesPrice'] ?? $Flight->purchesPrice;
+        $updateData['profit'] = $sellingPrice - $purchesPrice;
+    }
 
     $updateData = array_merge(
         $updateData,

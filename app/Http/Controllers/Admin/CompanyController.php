@@ -94,6 +94,8 @@ if ($request->filled('type') && in_array($request->type, ['direct', 'supply'])) 
             'service_id', 'name', 'address','communication','description','type'
         ]), $this->prepareCreationMetaData());
 
+        
+
         $Company = Company::create($data);
 
          return $this->respondWithResource($Company, "Company created successfully.");

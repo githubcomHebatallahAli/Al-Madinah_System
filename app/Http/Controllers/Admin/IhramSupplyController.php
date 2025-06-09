@@ -108,6 +108,10 @@ public function showAllWithoutPaginate(Request $request)
             'description','quantity','sellingPrice','purchesPrice'
         ]), $this->prepareCreationMetaData());
 
+             if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
+        $data['profit'] = $data['sellingPrice'] - $data['purchesPrice'];
+    }
+
         $IhramSupply = IhramSupply::create($data);
 
          return $this->respondWithResource($IhramSupply, "IhramSupply created successfully.");
@@ -137,6 +141,12 @@ public function update(IhramSupplyRequest $request, string $id)
     $updateData = $request->only(['status','ihram_item_id','company_id','store_id',
             'description','quantity','sellingPrice','purchesPrice'
             ]);
+
+                     if (isset($updateData['sellingPrice']) || isset($updateData['purchesPrice'])) {
+        $sellingPrice = $updateData['sellingPrice'] ?? $IhramSupply->sellingPrice;
+        $purchesPrice = $updateData['purchesPrice'] ?? $IhramSupply->purchesPrice;
+        $updateData['profit'] = $sellingPrice - $purchesPrice;
+    }
 
     $updateData = array_merge(
         $updateData,
