@@ -13,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\IhramItemRequest;
 use App\Http\Resources\Admin\IhramItemResource;
+use App\Http\Resources\Admin\ShowAllIhramItemResource;
 
 class IhramItemController extends Controller
 {
@@ -23,18 +24,53 @@ class IhramItemController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-         $this->authorize('manage_system');
-        $IhramSupplies = IhramItem::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($IhramSupplies);
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  IhramItemResource::collection($IhramSupplies),
-            'message' => "Show All Ihram Items."
-        ]);
-    }
+    $searchTerm = $request->input('search', '');
+
+    $query = ihramItem::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+
+
+    $ihramItems = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllIhramItemResource::collection($ihramItems),
+        'pagination' => [
+            'total' => $ihramItems->total(),
+            'count' => $ihramItems->count(),
+            'per_page' => $ihramItems->perPage(),
+            'current_page' => $ihramItems->currentPage(),
+            'total_pages' => $ihramItems->lastPage(),
+            'next_page_url' => $ihramItems->nextPageUrl(),
+            'prev_page_url' => $ihramItems->previousPageUrl(),
+        ],
+        'message' => "Show All Ihram Items."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = ihramItem::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+
+
+    $ihramItems = $query->get();
+
+    return response()->json([
+        'data' => ShowAllIhramItemResource::collection($ihramItems),
+        'message' => "Show All Ihram Items."
+    ]);
+}
 
 
     public function create(IhramItemRequest $request)
