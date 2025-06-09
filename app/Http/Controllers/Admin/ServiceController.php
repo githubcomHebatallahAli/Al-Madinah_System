@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Service;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Http\Requests\Admin\ServiceRequest;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Resources\Admin\ServiceResource;
+use App\Http\Resources\Admin\ShowAllServiceResource;
 
 
 class ServiceController extends Controller
@@ -23,18 +25,57 @@ class ServiceController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-    public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Services = Service::orderBy('created_at', 'desc')->get();
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-         $this->loadRelationsForCollection($Services);
+    $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' => ServiceResource::collection($Services),
-            'message' => "All Services retrieved successfully."
-        ]);
+    $query = Service::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
     }
+
+    $Services = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllServiceResource::collection($Services),
+        'pagination' => [
+            'total' => $Services->total(),
+            'count' => $Services->count(),
+            'per_page' => $Services->perPage(),
+            'current_page' => $Services->currentPage(),
+            'total_pages' => $Services->lastPage(),
+            'next_page_url' => $Services->nextPageUrl(),
+            'prev_page_url' => $Services->previousPageUrl(),
+        ],
+        'message' => "Show All Services."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Service::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->branch_id) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    $Services = $query->get();
+
+    return response()->json([
+        'data' => ShowAllServiceResource::collection($Services),
+        'message' => "Show All Services."
+    ]);
+}
 
      public function create(ServiceRequest $request)
     {
