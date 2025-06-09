@@ -13,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\SupplierRequest;
 use App\Http\Resources\Admin\SupplierResource;
+use App\Http\Resources\Admin\ShowAllSupplierResource;
 
 class SupplierController extends Controller
 {
@@ -23,18 +24,57 @@ class SupplierController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Supplies = Supplier::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Supplies);
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  SupplierResource::collection($Supplies),
-            'message' => "Show All Supplies."
-        ]);
+    $searchTerm = $request->input('search', '');
+
+    $query = Supplier::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->company_id) {
+        $query->where('company_id', $request->company_id);
     }
+
+    $Suppliers = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllSupplierResource::collection($Suppliers),
+        'pagination' => [
+            'total' => $Suppliers->total(),
+            'count' => $Suppliers->count(),
+            'per_page' => $Suppliers->perPage(),
+            'current_page' => $Suppliers->currentPage(),
+            'total_pages' => $Suppliers->lastPage(),
+            'next_page_url' => $Suppliers->nextPageUrl(),
+            'prev_page_url' => $Suppliers->previousPageUrl(),
+        ],
+        'message' => "Show All Suppliers."
+    ]);
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Supplier::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+    if ($request->company_id) {
+        $query->where('company_id', $request->company_id);
+    }
+
+    $Suppliers = $query->get();
+
+    return response()->json([
+        'data' => ShowAllSupplierResource::collection($Suppliers),
+        'message' => "Show All Suppliers."
+    ]);
+}
 
 
     public function create(SupplierRequest $request)
