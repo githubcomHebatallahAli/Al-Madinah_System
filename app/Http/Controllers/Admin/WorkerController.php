@@ -94,7 +94,7 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
 
     $workers = $query->get();
 
-    $this->loadRelationsForCollection($workers->getCollection());
+     $this->loadRelationsForCollection($workers);
 
     return response()->json([
         'data' => ShowAllWorkerLoginWebResource::collection($workers),
