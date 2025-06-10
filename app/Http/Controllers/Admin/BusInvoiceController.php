@@ -159,13 +159,13 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
         ->toArray();
 
     // جلب المقاعد المحجوزة مسبقًا على نفس الرحلة والباص (من فواتير أخرى)
-    $alreadyBookedSeats = DB::table('bus_invoice_pilgrim')
-        ->join('bus_invoices', 'bus_invoice_pilgrim.bus_invoice_id', '=', 'bus_invoices.id')
+    $alreadyBookedSeats = DB::table('bus_invoice_pilgrims')
+        ->join('bus_invoices', 'bus_invoice_pilgrims.bus_invoice_id', '=', 'bus_invoices.id')
         ->where('bus_invoices.bus_id', $invoice->bus_id)
         ->where('bus_invoices.trip_id', $invoice->trip_id)
         ->where('bus_invoice_id', '!=', $invoice->id) // استثناء الفاتورة الحالية
-        ->whereIn('bus_invoice_pilgrim.seatNumber', $requestedSeats)
-        ->pluck('bus_invoice_pilgrim.seatNumber')
+        ->whereIn('bus_invoice_pilgrims.seatNumber', $requestedSeats)
+        ->pluck('bus_invoice_pilgrims.seatNumber')
         ->map(fn($s) => strtoupper(trim($s)))
         ->toArray();
 
