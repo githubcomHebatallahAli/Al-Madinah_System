@@ -130,11 +130,11 @@ class BusInvoice extends Model
         });
 
 
-   static::updated(function ($invoice) {
-    if ($invoice->bus && $invoice->bus->seatNum == $invoice->bus->total_bookedSeats) {
-        $invoice->bus->update(['status' => 'full']);
-    }
-});
+//    static::updated(function ($invoice) {
+//     if ($invoice->bus && $invoice->bus->seatNum == $invoice->bus->total_bookedSeats) {
+//         $invoice->bus->update(['status' => 'full']);
+//     }
+// });
 
 
     }
