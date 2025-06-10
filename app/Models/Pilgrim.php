@@ -50,7 +50,7 @@ class Pilgrim extends Model
 
         public function busInvoices()
 {
-    return $this->belongsToMany(busInvoice::class, 'bus_invoice_pilgrims')
+    return $this->belongsToMany(BusInvoice::class, 'bus_invoice_pilgrims')
         ->withPivot([
             'seatNumber',
             'seatPrice',
