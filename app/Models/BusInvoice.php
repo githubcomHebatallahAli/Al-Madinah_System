@@ -31,7 +31,14 @@ class BusInvoice extends Model
         'bookedSeats',
         'invoiceStatus',
         'reason',
-        'paymentStatus'
+        'paymentStatus',
+          'creationDate',
+        'creationDateHijri',
+        'changed_data',
+          'added_by',
+        'added_by_type',
+        'updated_by',
+        'updated_by_type',
     ];
 
     public function mainPilgrim()

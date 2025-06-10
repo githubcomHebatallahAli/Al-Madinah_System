@@ -71,7 +71,7 @@ class BusInvoiceResource extends JsonResource
             'worker_id' => $this->worker?->id,
             'worker_name' => $this->worker?->name,
             'payment_method_type_id' => $this->paymentMethodType?->id,
-            'payment_method_type_type' => $this->paymentMethodType?->type,
+            'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
             'travelDate' => $this->travelDate,
             'travelDateHijri' => $this->travelDateHijri,
@@ -106,11 +106,11 @@ class BusInvoiceResource extends JsonResource
         ];
     }
 
-    protected function getPilgrimName($pilgrim): string
-    {
-        // يمكنك تعديل هذا بناءً على هيكل بيانات المعتمر لديك
-        return $pilgrim->first_name . ' ' . $pilgrim->last_name;
-    }
+    // protected function getPilgrimName($pilgrim): string
+    // {
+    //     // يمكنك تعديل هذا بناءً على هيكل بيانات المعتمر لديك
+    //     return $pilgrim->first_name . ' ' . $pilgrim->last_name;
+    // }
 
     }
 
