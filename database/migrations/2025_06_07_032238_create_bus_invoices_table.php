@@ -34,7 +34,7 @@ return new class extends Migration
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
-            $table->integer('bookedSeats')->default(0);
+            // $table->integer('bookedSeats')->default(0);
             $table->json('seatMap')->nullable();
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');

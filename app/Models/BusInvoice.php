@@ -29,7 +29,7 @@ class BusInvoice extends Model
         'tax',
         'total',
         'paidAmount',
-        'bookedSeats',
+        // 'bookedSeats',
         'invoiceStatus',
         'reason',
         'paymentStatus',
@@ -226,20 +226,18 @@ public function getBookedSeats()
 
 }
 
-// BusInvoice.php
+
+
+// app/Models/BusInvoice.php
 
 public function getBookedSeatsAttribute(): int
 {
-    return collect($this->seatMap)
-        ->where('status', 'booked')
-        ->count();
+    return collect($this->seatMap)->where('status', 'booked')->count();
 }
 
 public function getAvailableSeatsAttribute(): int
 {
-    return collect($this->seatMap)
-        ->where('status', 'available')
-        ->count();
+    return collect($this->seatMap)->where('status', 'available')->count();
 }
 
 
