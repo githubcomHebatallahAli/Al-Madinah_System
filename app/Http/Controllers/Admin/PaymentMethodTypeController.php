@@ -34,6 +34,10 @@ public function showAllWithPaginate(Request $request)
         $query->where('payment_method_id', $request->payment_method_id);
     }
 
+        if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
     $PaymentMethodType = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
@@ -61,6 +65,11 @@ public function showAllWithoutPaginate(Request $request)
     if ($request->has('payment_method_id')) {
         $query->where('payment_method_id', $request->payment_method_id);
     }
+
+        if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
 
     $PaymentMethodType = $query->orderBy('created_at', 'desc')->get();
 

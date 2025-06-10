@@ -25,20 +25,25 @@ class GroupController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Group::query();
 
-    $query = Group::where('groupNum', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('groupNum', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->campaign_id) {
+    if ($request->filled('campaign_id')) {
         $query->where('campaign_id', $request->campaign_id);
     }
 
-    $Groups = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Groups = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllGroupResource::collection($Groups),
@@ -55,27 +60,32 @@ class GroupController extends Controller
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Group::query();
 
-    $query = Group::where('groupNum', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('groupNum', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->campaign_id) {
+    if ($request->filled('campaign_id')) {
         $query->where('campaign_id', $request->campaign_id);
     }
 
-    $Groups = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Groups = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'data' => ShowAllGroupResource::collection($Groups),
         'message' => "Show All Groups."
     ]);
 }
+
 
      public function create(GroupRequest $request)
     {

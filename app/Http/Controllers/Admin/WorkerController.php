@@ -62,7 +62,7 @@ public function showAllWorkerLoginWeb(Request $request)
 
     $workers = $query->paginate(10);
 
-    $this->loadRelationsForCollection($workers->getCollection());
+    // $this->loadRelationsForCollection($workers->getCollection());
 
     return response()->json([
         'data' => ShowAllWorkerLoginWebResource::collection($workers),
@@ -106,7 +106,7 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
 
     $workers = $query->get();
 
-     $this->loadRelationsForCollection($workers);
+    //  $this->loadRelationsForCollection($workers);
 
     return response()->json([
         'data' => ShowAllWorkerLoginWebResource::collection($workers),

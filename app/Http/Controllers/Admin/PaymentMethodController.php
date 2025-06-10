@@ -24,45 +24,73 @@ class PaymentMethodController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAllWithPaginate(Request $request)
-    {
-        $this->authorize('manage_system');
+public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        $searchTerm = $request->input('search', '');
-       $PaymentMethod = PaymentMethod::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->paginate(10);
+    // $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' =>  ShowAllPaymentMethodResource::collection($PaymentMethod),
-              'pagination' => [
-                        'total' => $PaymentMethod->total(),
-                        'count' => $PaymentMethod->count(),
-                        'per_page' => $PaymentMethod->perPage(),
-                        'current_page' => $PaymentMethod->currentPage(),
-                        'total_pages' => $PaymentMethod->lastPage(),
-                        'next_page_url' => $PaymentMethod->nextPageUrl(),
-                        'prev_page_url' => $PaymentMethod->previousPageUrl(),
-                    ],
-            'message' => "Show All Payment Method."
-        ]);
+    $query = PaymentMethod::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
-    
-        public function showAllWithoutPaginate(Request $request)
-    {
-        $this->authorize('manage_system');
 
-        $searchTerm = $request->input('search', '');
-       $PaymentMethod = PaymentMethod::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->get();
+    // if (!empty($searchTerm)) {
+    //     $query->where('name', 'like', '%' . $searchTerm . '%');
+    // }
 
 
-        return response()->json([
-            'data' =>  ShowAllPaymentMethodResource::collection($PaymentMethod),
-            'message' => "Show All Payment Method."
-        ]);
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    $PaymentMethod = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllPaymentMethodResource::collection($PaymentMethod),
+        'pagination' => [
+            'total' => $PaymentMethod->total(),
+            'count' => $PaymentMethod->count(),
+            'per_page' => $PaymentMethod->perPage(),
+            'current_page' => $PaymentMethod->currentPage(),
+            'total_pages' => $PaymentMethod->lastPage(),
+            'next_page_url' => $PaymentMethod->nextPageUrl(),
+            'prev_page_url' => $PaymentMethod->previousPageUrl(),
+        ],
+        'message' => "Show All Payment Method."
+    ]);
+}
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    // $searchTerm = $request->input('search', '');
+
+    $query = PaymentMethod::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
+
+    // if (!empty($searchTerm)) {
+    //     $query->where('name', 'like', '%' . $searchTerm . '%');
+    // }
+
+
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    $PaymentMethod = $query->orderBy('created_at', 'desc')->get();
+
+    return response()->json([
+        'data' => ShowAllPaymentMethodResource::collection($PaymentMethod),
+        'message' => "Show All Payment Method."
+    ]);
+}
+
 
      public function create(PaymentMethodRequest $request)
     {

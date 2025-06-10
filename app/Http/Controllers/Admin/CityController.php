@@ -39,45 +39,73 @@ class CityController extends Controller
     }
 
     // ========
-        public function showAllWithPaginate(Request $request)
-    {
-        $this->authorize('manage_users');
+public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_users');
 
-        $searchTerm = $request->input('search', '');
-       $Cities = City::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->paginate(10);
-        $this->loadRelationsForCollection($Cities);
+    // $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' =>  ShowAllCityResource::collection($Cities),
-              'pagination' => [
-                        'total' => $Cities->total(),
-                        'count' => $Cities->count(),
-                        'per_page' => $Cities->perPage(),
-                        'current_page' => $Cities->currentPage(),
-                        'total_pages' => $Cities->lastPage(),
-                        'next_page_url' => $Cities->nextPageUrl(),
-                        'prev_page_url' => $Cities->previousPageUrl(),
-                    ],
-            'message' => "Show All Cities."
-        ]);
+    $query = City::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
-        public function showAllWithoutPaginate(Request $request)
-    {
-        $this->authorize('manage_users');
 
-        $searchTerm = $request->input('search', '');
-       $Cities = City::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->get();
-        $this->loadRelationsForCollection($Cities);
 
-        return response()->json([
-            'data' =>  ShowAllCityResource::collection($Cities),
-            'message' => "Show All Cities."
-        ]);
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    // if (!empty($searchTerm)) {
+    //     $query->where('name', 'like', '%' . $searchTerm . '%');
+    // }
+
+    $Cities = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllCityResource::collection($Cities),
+        'pagination' => [
+            'total' => $Cities->total(),
+            'count' => $Cities->count(),
+            'per_page' => $Cities->perPage(),
+            'current_page' => $Cities->currentPage(),
+            'total_pages' => $Cities->lastPage(),
+            'next_page_url' => $Cities->nextPageUrl(),
+            'prev_page_url' => $Cities->previousPageUrl(),
+        ],
+        'message' => "Show All Cities."
+    ]);
+}
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_users');
+
+    // $searchTerm = $request->input('search', '');
+
+    $query = City::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
+
+    // if (!empty($searchTerm)) {
+    //     $query->where('name', 'like', '%' . $searchTerm . '%');
+    // }
+
+
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    $Cities = $query->orderBy('created_at', 'desc')->get();
+
+    return response()->json([
+        'data' => ShowAllCityResource::collection($Cities),
+        'message' => "Show All Cities."
+    ]);
+}
+
 
 
     public function create(CityRequest $request)

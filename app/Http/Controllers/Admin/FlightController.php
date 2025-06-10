@@ -28,17 +28,21 @@ public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = Flight::query()->orderBy('created_at', 'desc');
+    $query = Flight::query();
 
     if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-     if ($request->filled('direction')) {
+    if ($request->filled('direction')) {
         $query->where('direction', 'like', '%' . $request->direction . '%');
     }
 
-    $Flights = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Flights = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllFlightResource::collection($Flights),
@@ -55,30 +59,32 @@ public function showAllWithPaginate(Request $request)
     ]);
 }
 
-
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = Flight::query()->orderBy('created_at', 'desc');
-
+    $query = Flight::query();
 
     if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-     if ($request->filled('direction')) {
+    if ($request->filled('direction')) {
         $query->where('direction', 'like', '%' . $request->direction . '%');
     }
 
-    $Flights = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Flights = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'data' => ShowAllFlightResource::collection($Flights),
         'message' => "Show All Flights."
     ]);
 }
+
 
 
     public function create(FlightRequest $request)

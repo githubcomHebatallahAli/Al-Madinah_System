@@ -25,31 +25,36 @@ class ServiceController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Service::query();
 
-    $query = Service::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Services = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $services = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
-        'data' => ShowAllServiceResource::collection($Services),
+        'data' => ShowAllServiceResource::collection($services),
         'pagination' => [
-            'total' => $Services->total(),
-            'count' => $Services->count(),
-            'per_page' => $Services->perPage(),
-            'current_page' => $Services->currentPage(),
-            'total_pages' => $Services->lastPage(),
-            'next_page_url' => $Services->nextPageUrl(),
-            'prev_page_url' => $Services->previousPageUrl(),
+            'total' => $services->total(),
+            'count' => $services->count(),
+            'per_page' => $services->perPage(),
+            'current_page' => $services->currentPage(),
+            'total_pages' => $services->lastPage(),
+            'next_page_url' => $services->nextPageUrl(),
+            'prev_page_url' => $services->previousPageUrl(),
         ],
         'message' => "Show All Services."
     ]);
@@ -60,22 +65,28 @@ public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Service::query();
 
-    $query = Service::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Services = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $services = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
-        'data' => ShowAllServiceResource::collection($Services),
+        'data' => ShowAllServiceResource::collection($services),
         'message' => "Show All Services."
     ]);
 }
+
 
      public function create(ServiceRequest $request)
     {

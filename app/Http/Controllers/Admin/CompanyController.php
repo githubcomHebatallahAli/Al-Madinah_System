@@ -25,24 +25,32 @@ class CompanyController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    // $searchTerm = $request->input('search', '');
 
-    $query = Company::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    // $query = Company::where('name', 'like', '%' . $searchTerm . '%');
+    $query = Company::query();
 
-    if ($request->service_id) {
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    if ($request->filled('service_id')) {
         $query->where('service_id', $request->service_id);
     }
 
-      if ($request->has('type') && in_array($request->type, ['direct', 'supply'])) {
+    if ($request->filled('type') && in_array($request->type, ['direct', 'supply'])) {
         $query->where('type', $request->type);
     }
 
-    $Companies = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Companies = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllCompanyResource::collection($Companies),
@@ -59,32 +67,38 @@ class CompanyController extends Controller
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    // $searchTerm = $request->input('search', '');
 
-    $query = Company::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    // $query = Company::where('name', 'like', '%' . $searchTerm . '%');
+    $query = Company::query();
 
-    if ($request->service_id) {
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+    if ($request->filled('service_id')) {
         $query->where('service_id', $request->service_id);
     }
 
-if ($request->filled('type') && in_array($request->type, ['direct', 'supply'])) {
-    $query->where('type', $request->type);
-}
+    if ($request->filled('type') && in_array($request->type, ['direct', 'supply'])) {
+        $query->where('type', $request->type);
+    }
 
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
 
-    $Companies = $query->get();
+    $Companies = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'data' => ShowAllCompanyResource::collection($Companies),
         'message' => "Show All Companies."
     ]);
 }
+
 
 
     public function create(CompanyRequest $request)
@@ -94,7 +108,7 @@ if ($request->filled('type') && in_array($request->type, ['direct', 'supply'])) 
             'service_id', 'name', 'address','communication','description','type'
         ]), $this->prepareCreationMetaData());
 
-        
+
 
         $Company = Company::create($data);
 

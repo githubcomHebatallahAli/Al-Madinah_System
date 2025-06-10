@@ -24,20 +24,28 @@ class BusDriverController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    // $searchTerm = $request->input('search', '');
 
-    $query = busDriver::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    // $query = BusDriver::where('name', 'like', '%' . $searchTerm . '%');
+    $query = BusDriver::query();
 
-    if ($request->bus_id) {
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    if ($request->filled('bus_id')) {
         $query->where('bus_id', $request->bus_id);
     }
 
-    $busDrivers = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $busDrivers = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllBusDriverResource::collection($busDrivers),
@@ -50,31 +58,39 @@ class BusDriverController extends Controller
             'next_page_url' => $busDrivers->nextPageUrl(),
             'prev_page_url' => $busDrivers->previousPageUrl(),
         ],
-        'message' => "Show All Bus Driverss."
+        'message' => "Show All Bus Drivers."
     ]);
 }
-
 
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
+     $query = BusDriver::query();
 
-    $searchTerm = $request->input('search', '');
+    // $searchTerm = $request->input('search', '');
 
-    $query = busDriver::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    // $query = BusDriver::where('name', 'like', '%' . $searchTerm . '%');
 
-    if ($request->bus_id) {
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    if ($request->filled('bus_id')) {
         $query->where('bus_id', $request->bus_id);
     }
 
-    $busDrivers = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $busDrivers = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
-        'data' => ShowAllbusDriverResource::collection($busDrivers),
+        'data' => ShowAllBusDriverResource::collection($busDrivers),
         'message' => "Show All Bus Drivers."
     ]);
 }
+
 
      public function create(BusDriverRequest $request)
     {

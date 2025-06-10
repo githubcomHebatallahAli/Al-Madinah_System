@@ -37,45 +37,70 @@ class BranchController extends Controller
         ]);
     }
     // ==================
-      public function showAllWithPaginate(Request $request)
-    {
-         $this->authorize('manage_system');
+public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        $searchTerm = $request->input('search', '');
-       $Branches = Branch::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->paginate(10);
-        $this->loadRelationsForCollection($Branches);
+    // $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' =>  ShowAllBranchResource::collection($Branches),
-              'pagination' => [
-                        'total' => $Branches->total(),
-                        'count' => $Branches->count(),
-                        'per_page' => $Branches->perPage(),
-                        'current_page' => $Branches->currentPage(),
-                        'total_pages' => $Branches->lastPage(),
-                        'next_page_url' => $Branches->nextPageUrl(),
-                        'prev_page_url' => $Branches->previousPageUrl(),
-                    ],
-            'message' => "Show All Branches."
-        ]);
+    $query = Branch::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
-        public function showAllWithoutPaginate(Request $request)
-    {
-        $this->authorize('manage_system');
 
-        $searchTerm = $request->input('search', '');
-       $Branches = Branch::where('name', 'like', '%' . $searchTerm . '%')
-       ->orderBy('created_at', 'desc')
-        ->get();
-        $this->loadRelationsForCollection($Branches);
+    // if (!empty($searchTerm)) {
+    //     $query->where('name', 'like', '%' . $searchTerm . '%');
+    // }
+    if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
 
-        return response()->json([
-            'data' =>  ShowAllBranchResource::collection($Branches),
-            'message' => "Show All Branches."
-        ]);
+    $Branches = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllBranchResource::collection($Branches),
+        'pagination' => [
+            'total' => $Branches->total(),
+            'count' => $Branches->count(),
+            'per_page' => $Branches->perPage(),
+            'current_page' => $Branches->currentPage(),
+            'total_pages' => $Branches->lastPage(),
+            'next_page_url' => $Branches->nextPageUrl(),
+            'prev_page_url' => $Branches->previousPageUrl(),
+        ],
+        'message' => "Show All Branches."
+    ]);
+}
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    // $searchTerm = $request->input('search', '');
+
+    $query = Branch::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
+
+    // if (!empty($searchTerm)) {
+    //     $query->where('name', 'like', '%' . $searchTerm . '%');
+    // }
+
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
+}
+
+    $Branches = $query->orderBy('created_at', 'desc')->get();
+
+    return response()->json([
+        'data' => ShowAllBranchResource::collection($Branches),
+        'message' => "Show All Branches."
+    ]);
+}
+
 
     public function create(BranchRequest $request)
     {

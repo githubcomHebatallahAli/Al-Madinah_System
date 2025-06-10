@@ -25,24 +25,29 @@ class HotelController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Hotel::query();
 
-    $query = Hotel::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->company_id) {
+    if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-      if ($request->has('place') && in_array($request->place, ['Mecca', 'Almadinah'])) {
+    if ($request->filled('place') && in_array($request->place, ['Mecca', 'Almadinah'])) {
         $query->where('place', $request->place);
     }
 
-    $Hotels = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Hotels = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllHotelResource::collection($Hotels),
@@ -59,32 +64,36 @@ class HotelController extends Controller
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Hotel::query();
 
-    $query = Hotel::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-  if ($request->company_id) {
+    if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-      if ($request->has('place') && in_array($request->place, ['Mecca', 'Almadinah'])) {
+    if ($request->filled('place') && in_array($request->place, ['Mecca', 'Almadinah'])) {
         $query->where('place', $request->place);
     }
 
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
 
-    $Hotels = $query->get();
+    $Hotels = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'data' => ShowAllHotelResource::collection($Hotels),
         'message' => "Show All Hotels."
     ]);
 }
+
 
 
     public function create(HotelRequest $request)

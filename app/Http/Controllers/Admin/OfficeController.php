@@ -25,20 +25,25 @@ class OfficeController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Office::query();
 
-    $query = Office::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Offices = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Offices = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllOfficeResource::collection($Offices),
@@ -55,27 +60,32 @@ class OfficeController extends Controller
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Office::query();
 
-    $query = Office::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Offices = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $Offices = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'data' => ShowAllOfficeResource::collection($Offices),
         'message' => "Show All Offices."
     ]);
 }
+
 
      public function create(OfficeRequest $request)
     {

@@ -28,12 +28,17 @@ class IhramItemController extends Controller
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    // $searchTerm = $request->input('search', '');
 
    $query = ihramItem::query();
 
-if ($searchTerm = $request->input('search')) {
-    $query->where('name', 'like', '%' . $searchTerm . '%');
+// if ($searchTerm = $request->input('search')) {
+//     $query->where('name', 'like', '%' . $searchTerm . '%');
+// }
+
+
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
 }
 
 if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
@@ -64,12 +69,16 @@ public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    // $searchTerm = $request->input('search', '');
 
    $query = ihramItem::query();
 
-if ($searchTerm = $request->input('search')) {
-    $query->where('name', 'like', '%' . $searchTerm . '%');
+// if ($searchTerm = $request->input('search')) {
+//     $query->where('name', 'like', '%' . $searchTerm . '%');
+// }
+
+        if ($request->filled('search')) {
+    $query->where('name', 'like', '%' . $request->search . '%');
 }
 
 if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {

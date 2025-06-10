@@ -24,57 +24,67 @@ class TitleController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Title::query();
 
-    $query = Title::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Titles = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $titles = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
-        'data' => ShowAllTitleResource::collection($Titles),
+        'data' => ShowAllTitleResource::collection($titles),
         'pagination' => [
-            'total' => $Titles->total(),
-            'count' => $Titles->count(),
-            'per_page' => $Titles->perPage(),
-            'current_page' => $Titles->currentPage(),
-            'total_pages' => $Titles->lastPage(),
-            'next_page_url' => $Titles->nextPageUrl(),
-            'prev_page_url' => $Titles->previousPageUrl(),
+            'total' => $titles->total(),
+            'count' => $titles->count(),
+            'per_page' => $titles->perPage(),
+            'current_page' => $titles->currentPage(),
+            'total_pages' => $titles->lastPage(),
+            'next_page_url' => $titles->nextPageUrl(),
+            'prev_page_url' => $titles->previousPageUrl(),
         ],
         'message' => "Show All Titles."
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Title::query();
 
-    $query = Title::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Titles = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $titles = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
-        'data' => ShowAllTitleResource::collection($Titles),
+        'data' => ShowAllTitleResource::collection($titles),
         'message' => "Show All Titles."
     ]);
 }
+
 
         public function showAll()
     {

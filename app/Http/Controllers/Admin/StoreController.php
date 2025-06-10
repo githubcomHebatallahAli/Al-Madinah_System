@@ -26,54 +26,63 @@ class StoreController extends Controller
 
 
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Store::query();
 
-    $query = Store::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Stores = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $stores = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
-        'data' => ShowAllStoreResource::collection($Stores),
+        'data' => ShowAllStoreResource::collection($stores),
         'pagination' => [
-            'total' => $Stores->total(),
-            'count' => $Stores->count(),
-            'per_page' => $Stores->perPage(),
-            'current_page' => $Stores->currentPage(),
-            'total_pages' => $Stores->lastPage(),
-            'next_page_url' => $Stores->nextPageUrl(),
-            'prev_page_url' => $Stores->previousPageUrl(),
+            'total' => $stores->total(),
+            'count' => $stores->count(),
+            'per_page' => $stores->perPage(),
+            'current_page' => $stores->currentPage(),
+            'total_pages' => $stores->lastPage(),
+            'next_page_url' => $stores->nextPageUrl(),
+            'prev_page_url' => $stores->previousPageUrl(),
         ],
         'message' => "Show All Stores."
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $searchTerm = $request->input('search', '');
+    $query = Store::query();
 
-    $query = Store::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Stores = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $stores = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
-        'data' => ShowAllStoreResource::collection($Stores),
+        'data' => ShowAllStoreResource::collection($stores),
         'message' => "Show All Stores."
     ]);
 }

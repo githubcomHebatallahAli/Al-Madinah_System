@@ -24,57 +24,67 @@ class TripController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
- public function showAllWithPaginate(Request $request)
+public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_users');
 
-    $searchTerm = $request->input('search', '');
+    $query = Trip::query();
 
-    $query = Trip::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Trips = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $trips = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
-        'data' => ShowAllTripResource::collection($Trips),
+        'data' => ShowAllTripResource::collection($trips),
         'pagination' => [
-            'total' => $Trips->total(),
-            'count' => $Trips->count(),
-            'per_page' => $Trips->perPage(),
-            'current_page' => $Trips->currentPage(),
-            'total_pages' => $Trips->lastPage(),
-            'next_page_url' => $Trips->nextPageUrl(),
-            'prev_page_url' => $Trips->previousPageUrl(),
+            'total' => $trips->total(),
+            'count' => $trips->count(),
+            'per_page' => $trips->perPage(),
+            'current_page' => $trips->currentPage(),
+            'total_pages' => $trips->lastPage(),
+            'next_page_url' => $trips->nextPageUrl(),
+            'prev_page_url' => $trips->previousPageUrl(),
         ],
         'message' => "Show All Trips."
     ]);
 }
 
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_users');
 
-    $searchTerm = $request->input('search', '');
+    $query = Trip::query();
 
-    $query = Trip::where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc');
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
 
-    if ($request->branch_id) {
+    if ($request->filled('branch_id')) {
         $query->where('branch_id', $request->branch_id);
     }
 
-    $Trips = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $trips = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
-        'data' => ShowAllTripResource::collection($Trips),
+        'data' => ShowAllTripResource::collection($trips),
         'message' => "Show All Trips."
     ]);
 }
+
 
 
      public function create(TripRequest $request)

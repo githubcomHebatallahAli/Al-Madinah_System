@@ -28,7 +28,7 @@ public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = Bus::query()->orderBy('created_at', 'desc');
+    $query = Bus::query();
 
     if ($request->filled('seatNum')) {
         $query->where('seatNum', $request->seatNum);
@@ -38,7 +38,11 @@ public function showAllWithPaginate(Request $request)
         $query->where('company_id', $request->company_id);
     }
 
-    $buses = $query->paginate(10);
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $buses = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'data' => ShowAllBusResource::collection($buses),
@@ -55,29 +59,32 @@ public function showAllWithPaginate(Request $request)
     ]);
 }
 
-
-
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    $query = Bus::query()->orderBy('created_at', 'desc');
+    $query = Bus::query();
 
     if ($request->filled('seatNum')) {
-        $query->where('seatNum', $request->seatNum); 
+        $query->where('seatNum', $request->seatNum);
     }
 
     if ($request->filled('company_id')) {
         $query->where('company_id', $request->company_id);
     }
 
-    $buses = $query->get();
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $buses = $query->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'data' => ShowAllBusResource::collection($buses),
         'message' => "Show All Buses."
     ]);
 }
+
 
 
 

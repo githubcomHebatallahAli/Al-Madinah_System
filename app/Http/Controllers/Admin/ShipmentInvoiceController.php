@@ -28,64 +28,64 @@ class ShipmentInvoiceController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-public function showAll(Request $request)
-{
-    $companyId = $request->input('company_id');
-    $serviceId = $request->input('service_id');
-    $branchId = $request->input('branch_id');
-    $invoiceStatus = $request->input('invoice');
+// public function showAll(Request $request)
+// {
+//     $companyId = $request->input('company_id');
+//     $serviceId = $request->input('service_id');
+//     $branchId = $request->input('branch_id');
+//     $invoiceStatus = $request->input('invoice');
 
-    $query = ShipmentInvoice::with([
-        'shipment.company',
-        'shipment.supplier.company.service'
-    ])
-    ->when($companyId, function ($q) use ($companyId) {
-        $q->where(function ($subQuery) use ($companyId) {
-            $subQuery->whereHas('shipment.company', function ($q1) use ($companyId) {
-                $q1->where('id', $companyId);
-            })->orWhereHas('shipment.supplier.company', function ($q2) use ($companyId) {
-                $q2->where('id', $companyId);
-            });
-        });
-    })
-    ->when($serviceId, function ($q) use ($serviceId) {
-        $q->whereHas('shipment.supplier.company', function ($q2) use ($serviceId) {
-            $q2->where('service_id', $serviceId);
-        });
-    })
-    ->when($branchId, function ($q) use ($branchId) {
-        $q->whereHas('shipment.supplier.company.service', function ($q2) use ($branchId) {
-            $q2->where('branch_id', $branchId);
-        });
-    })
-    ->when($invoiceStatus === 'paid', fn($q) => $q->where('invoice', 'paid'))
-    ->when($invoiceStatus === 'pending', fn($q) => $q->where('invoice', 'pending'))
-    ->orderBy('created_at', 'desc');
+//     $query = ShipmentInvoice::with([
+//         'shipment.company',
+//         'shipment.supplier.company.service'
+//     ])
+//     ->when($companyId, function ($q) use ($companyId) {
+//         $q->where(function ($subQuery) use ($companyId) {
+//             $subQuery->whereHas('shipment.company', function ($q1) use ($companyId) {
+//                 $q1->where('id', $companyId);
+//             })->orWhereHas('shipment.supplier.company', function ($q2) use ($companyId) {
+//                 $q2->where('id', $companyId);
+//             });
+//         });
+//     })
+//     ->when($serviceId, function ($q) use ($serviceId) {
+//         $q->whereHas('shipment.supplier.company', function ($q2) use ($serviceId) {
+//             $q2->where('service_id', $serviceId);
+//         });
+//     })
+//     ->when($branchId, function ($q) use ($branchId) {
+//         $q->whereHas('shipment.supplier.company.service', function ($q2) use ($branchId) {
+//             $q2->where('branch_id', $branchId);
+//         });
+//     })
+//     ->when($invoiceStatus === 'paid', fn($q) => $q->where('invoice', 'paid'))
+//     ->when($invoiceStatus === 'pending', fn($q) => $q->where('invoice', 'pending'))
+//     ->orderBy('created_at', 'desc');
 
-    $shipmentInvoices = $query->paginate(10);
+//     $shipmentInvoices = $query->paginate(10);
 
-    // الإحصائيات
-    $totalPaidAmount = ShipmentInvoice::sum('paidAmount');
-    $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
+//     // الإحصائيات
+//     $totalPaidAmount = ShipmentInvoice::sum('paidAmount');
+//     $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
 
-    return response()->json([
-        'data' => ShowAllShipmentInvoiceResource::collection($shipmentInvoices),
-        'pagination' => [
-            'total' => $shipmentInvoices->total(),
-            'count' => $shipmentInvoices->count(),
-            'per_page' => $shipmentInvoices->perPage(),
-            'current_page' => $shipmentInvoices->currentPage(),
-            'total_pages' => $shipmentInvoices->lastPage(),
-            'next_page_url' => $shipmentInvoices->nextPageUrl(),
-            'prev_page_url' => $shipmentInvoices->previousPageUrl(),
-        ],
-        'statistics' => [
-            'paid_amount' => $totalPaidAmount,
-            'remaining_amount' => $totalRemainingAmount,
-        ],
-        'message' => "تم عرض فواتير الشحن بنجاح.",
-    ]);
-}
+//     return response()->json([
+//         'data' => ShowAllShipmentInvoiceResource::collection($shipmentInvoices),
+//         'pagination' => [
+//             'total' => $shipmentInvoices->total(),
+//             'count' => $shipmentInvoices->count(),
+//             'per_page' => $shipmentInvoices->perPage(),
+//             'current_page' => $shipmentInvoices->currentPage(),
+//             'total_pages' => $shipmentInvoices->lastPage(),
+//             'next_page_url' => $shipmentInvoices->nextPageUrl(),
+//             'prev_page_url' => $shipmentInvoices->previousPageUrl(),
+//         ],
+//         'statistics' => [
+//             'paid_amount' => $totalPaidAmount,
+//             'remaining_amount' => $totalRemainingAmount,
+//         ],
+//         'message' => "تم عرض فواتير الشحن بنجاح.",
+//     ]);
+// }
 
 
 
