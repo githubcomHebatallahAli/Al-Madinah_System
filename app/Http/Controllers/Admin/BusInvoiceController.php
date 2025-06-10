@@ -100,7 +100,7 @@ if (!$workerBelongsToCampaign) {
 
         }
 
-
+$bus = Bus::findOrFail($validated['bus_id']);
         $invoiceData = array_merge([
             'main_pilgrim_id'         => $validated['main_pilgrim_id'] ?? null,
             'trip_id'                 => $validated['trip_id'],
@@ -119,10 +119,9 @@ if (!$workerBelongsToCampaign) {
             'invoiceStatus'=> $validated['invoiceStatus'] ?? 'pending',
             'paymentStatus'           => $validated['paymentStatus'] ?? 'pending',
             'reason'                  => $validated['reason'] ?? null,
+                'seatMap'                 => $bus->seatMap,
         ], $this->prepareCreationMetaData());
 
-        $bus = Bus::findOrFail($validated['bus_id']);
-    $validated['seatMap'] = $bus->seatMap;
 
         $invoice = BusInvoice::create($invoiceData);
 
