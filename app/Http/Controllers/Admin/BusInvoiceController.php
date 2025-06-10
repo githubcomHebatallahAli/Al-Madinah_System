@@ -150,10 +150,12 @@ if (!$workerBelongsToCampaign) {
 protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
 {
     $bus = $invoice->bus;
-    throw_unless($bus, new \Exception("Bus not found"));
+    throw_unless($bus, new \Exception("لم يتم العثور على الباص"));
 
-    $availableSeats = $bus->available_seats;
-    $availableSeatsMap = collect($availableSeats)->keyBy('seatNumber'); // تحويل لـ map للبحث السريع
+    // الحصول على المقاعد مع تطبيع المفاتيح
+    $availableSeatsMap = collect($bus->seatMap)
+        ->filter(fn($seat) => ($seat['status'] ?? '') === 'available')
+        ->keyBy(fn($seat) => strtoupper(trim($seat['seatNumber'])));
 
     $pilgrimsToAttach = [];
     $seatNumbersUsed = [];
@@ -161,20 +163,25 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
     foreach ($pilgrimsData as $pilgrim) {
         throw_unless(
             isset($pilgrim['id'], $pilgrim['seatNumber']),
-            new \Exception("Invalid pilgrim data structure")
+            new \Exception("بيانات المعتمر غير صالحة")
         );
 
-        $seatNumber = $pilgrim['seatNumber'];
-        $seatInfo = $availableSeatsMap[$seatNumber] ?? null;
+        $seatNumber = strtoupper(trim($pilgrim['seatNumber']));
+        $seatInfo = $availableSeatsMap->get($seatNumber);
 
+        // تحسين رسالة الخطأ
         throw_unless(
             $seatInfo,
-            new \Exception("Seat {$seatNumber} is not available or does not exist")
+            new \Exception(sprintf(
+                "المقعد %s غير متاح. المقاعد المتاحة: %s",
+                $seatNumber,
+                $availableSeatsMap->keys()->join(', ')
+            ))
         );
 
         throw_if(
             in_array($seatNumber, $seatNumbersUsed),
-            new \Exception("Seat {$seatNumber} is assigned to multiple pilgrims")
+            new \Exception("المقعد {$seatNumber} محجوز لأكثر من معتمر")
         );
 
         $seatNumbersUsed[] = $seatNumber;
@@ -191,8 +198,8 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
     }
 
     throw_if(
-        count($pilgrimsToAttach) > ($bus->seatNum - $bus->total_bookedSeats),
-        new \Exception("Bus capacity exceeded")
+        count($pilgrimsToAttach) > ($bus->seatNum - $bus->total_booked_seats),
+        new \Exception("تم تجاوز سعة الباص")
     );
 
     $invoice->pilgrims()->attach($pilgrimsToAttach);
