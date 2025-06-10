@@ -191,11 +191,11 @@ public function getAvailableSeatsAttribute()
 
     public function updateSeatMapAfterBooking(): void
 {
-    // احصل على جميع المقاعد المحجوزة في هذه الفاتورة
-    $bookedSeats = $this->pilgrims()
-                        ->wherePivot('status', 'booked')
-                        ->pluck('pivot.seatNumber')
-                        ->toArray();
+   $bookedSeats = $this->pilgrims()
+    ->wherePivot('status', 'booked')
+    ->pluck('seatNumber') // ✅ استبدل هذا السطر
+    ->toArray();
+
 
     // احصل على نسخة seatMap الحالية
     $seatMap = $this->seatMap ?? [];
@@ -220,9 +220,10 @@ public function getAvailableSeatsAttribute()
 public function getBookedSeats()
 {
     return $this->pilgrims()
-                ->wherePivot('status', 'booked')
-                ->pluck('pivot.seatNumber')
-                ->toArray();
+    ->wherePivot('status', 'booked')
+    ->pluck('seatNumber') // ✅ استبدل هذا السطر
+    ->toArray();
+
 }
 
         public function creator()
