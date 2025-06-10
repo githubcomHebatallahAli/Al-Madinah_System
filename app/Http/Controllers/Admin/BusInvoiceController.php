@@ -175,16 +175,17 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
         );
 
         $seatNumbersUsed[] = $seatNumber;
+$pilgrimsToAttach[$pilgrim['id']] = [
+    'seatNumber' => $seatNumber,
+    'seatPrice' => $pilgrim['seatPrice'] ?? 0,
+    'status' => $pilgrim['status'] ?? 'booked',
+    'creationDate' => now(),
+    'creationDateHijri' => $this->getHijriDate(),
+    'type' => $seatExists['type'] ?? null,
+    'position' => $seatExists['position'] ?? null,
+];
 
-        $pilgrimsToAttach[$pilgrim['id']] = [
-            'seatNumber' => $seatNumber,
-            'seatPrice' => $pilgrim['seatPrice'] ?? 0,
-            'status' => $pilgrim['status'] ?? 'booked',
-            'creationDate' => now(),
-            'creationDateHijri' => $this->getHijriDate(),
-            'type' => $pilgrim['type'] ?? null,
-            'position' => $pilgrim['position'] ?? null,
-        ];
+
     }
 
     // تحديث الحالة داخل الـ seatMap
