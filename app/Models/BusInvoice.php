@@ -190,7 +190,16 @@ class BusInvoice extends Model
     $this->seatMap = $updatedSeatMap;
     $this->save();
 }
+ public function getBookedSeatsAttribute(): int
+{
+    if (empty($this->seatMap)) {
+        return 0;
+    }
 
+    return collect($this->seatMap)
+        ->where('status', 'booked')
+        ->count();
+}
 
 public function getBookedSeats()
 {
@@ -205,15 +214,18 @@ public function getBookedSeats()
 
 // app/Models/BusInvoice.php
 
-public function getBookedSeatsAttribute(): int
-{
-    return collect($this->seatMap)->where('status', 'booked')->count();
-}
-
 public function getAvailableSeatsAttribute(): int
 {
-    return collect($this->seatMap)->where('status', 'available')->count();
+    if (empty($this->seatMap)) {
+        return 0;
+    }
+
+    return collect($this->seatMap)
+        ->where('status', 'available')
+        ->count();
 }
+
+
 
 
         public function creator()
