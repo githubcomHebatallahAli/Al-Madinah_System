@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Pilgrim;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
@@ -12,6 +13,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\PilgrimsRequest;
 use App\Http\Resources\Admin\PilgrimsResource;
+use App\Http\Resources\Admin\ShowAllPilgrimsResource;
 
 
 class PilgrimsController extends Controller
@@ -23,19 +25,89 @@ class PilgrimsController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
-        public function showAll()
-    {
-        $this->authorize('showAll',Pilgrim::class);
+ public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        $Pilgrims = Pilgrim::orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Pilgrims);
+    $searchTerm = $request->input('search', '');
 
-        return response()->json([
-            'data' =>  PilgrimsResource::collection($Pilgrims),
-            'message' => "Show All Pilgrims."
-        ]);
+    $query = Pilgrim::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+           if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
     }
+
+       if ($request->filled('gender') && in_array($request->gender, ['male', 'female','child'])) {
+        $query->where('gender', $request->gender);
+    }
+
+    if ($request->filled('nationality')) {
+    $query->where('nationality', $request->nationality);
+}
+
+    if ($request->filled('fromDate')) {
+    $query->whereDate('creationDate', '>=', $request->fromDate);
+}
+
+if ($request->filled('toDate')) {
+    $query->whereDate('creationDate', '<=', $request->toDate);
+
+    $Pligrims = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllPilgrimsResource::collection($Pligrims),
+        'pagination' => [
+            'total' => $Pligrims->total(),
+            'count' => $Pligrims->count(),
+            'per_page' => $Pligrims->perPage(),
+            'current_page' => $Pligrims->currentPage(),
+            'total_pages' => $Pligrims->lastPage(),
+            'next_page_url' => $Pligrims->nextPageUrl(),
+            'prev_page_url' => $Pligrims->previousPageUrl(),
+        ],
+        'message' => "Show All Pligrims."
+    ]);
+}
+}
+
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $searchTerm = $request->input('search', '');
+
+    $query = Pilgrim::where('name', 'like', '%' . $searchTerm . '%')
+        ->orderBy('created_at', 'desc');
+
+       if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+       if ($request->filled('gender') && in_array($request->gender, ['male', 'female','child'])) {
+        $query->where('gender', $request->gender);
+    }
+
+    if ($request->filled('nationality')) {
+    $query->where('nationality', $request->nationality);
+}
+
+    if ($request->filled('fromDate')) {
+    $query->whereDate('creationDate', '>=', $request->fromDate);
+}
+
+if ($request->filled('toDate')) {
+    $query->whereDate('creationDate', '<=', $request->toDate);
+}
+
+    $Pligrims = $query->get();
+
+    return response()->json([
+        'data' => ShowAllPilgrimsResource::collection($Pligrims),
+        'message' => "Show All Pligrims."
+    ]);
+}
 
 
     public function create(PilgrimsRequest $request)

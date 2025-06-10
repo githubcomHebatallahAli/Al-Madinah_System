@@ -7,13 +7,17 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ShowAllPilgrimsResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            "id" => $this -> id,
+            'name' => $this -> name,
+            'phoNum' => $this -> phoNum,
+            'nationality' => $this -> nationality,
+            'gender'=>$this->gender,
+            'status' => $this-> status,
+            'creationDate'=> $this-> creationDate,
+        ];
     }
 }

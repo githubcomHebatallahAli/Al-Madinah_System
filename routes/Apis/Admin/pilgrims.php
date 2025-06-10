@@ -9,7 +9,8 @@ use App\Http\Controllers\Admin\PilgrimsController;
 Route::controller(PilgrimsController::class)->prefix('/adminOrBranchMangerOrDelegate')->middleware('adminOrWorker')->group(
     function () {
 
-   Route::get('/showAll/pilgrims','showAll');
+   Route::get('/showAll/pilgrims','showAllWithoutPaginate');
+   Route::get('/showAll/pilgrims/withPaginate','showAllWithPaginate');
    Route::get('/edit/pilgrims/{id}','edit');
    });
 
