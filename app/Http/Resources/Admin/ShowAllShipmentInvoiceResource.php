@@ -11,21 +11,15 @@ class ShowAllShipmentInvoiceResource extends JsonResource
     public function toArray(Request $request): array
     {
                return [
-        'payment_method' => $this->when($this->relationLoaded('paymentMethodType') && $this->paymentMethodType && $this->paymentMethodType->relationLoaded('paymentMethod'), function () {
-            return [
-                'id' => $this->paymentMethodType->paymentMethod->id ?? null,
-                'name' => $this->paymentMethodType->paymentMethod->name ?? null,
-            ];
-        }),
-
-            'payment_method_type' => $this->whenLoaded('paymentMethodType', function () {
-    return [
-       'payment_method_type_id' => $this->paymentMethodType->id ?? null,
-        'type' => $this->paymentMethodType->type ?? null,
-        'by' => $this->paymentMethodType->by ?? null,
-
-    ];
-}),
+                'payment_method' => $this->when(
+            $this->relationLoaded('paymentMethodType') && $this->paymentMethodType && $this->paymentMethodType->relationLoaded('paymentMethod'),
+            function () {
+                return [
+                    'id' => $this->paymentMethodType->paymentMethod->id ?? null,
+                    'name' => $this->paymentMethodType->paymentMethod->name ?? null,
+                ];
+            }
+        ),
 
     'shipment' => $this->whenLoaded('shipment', function () {
     return [
