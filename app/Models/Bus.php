@@ -240,14 +240,14 @@ public function markSeatsAsAvailable(array $seatNumbers)
     $this->save();
 }
 
-public function getTotalBookedSeatsAttribute()
-{
-    return DB::table('bus_invoice_pilgrims')
-        ->join('bus_invoices', 'bus_invoice_pilgrims.bus_invoice_id', '=', 'bus_invoices.id')
-        ->where('bus_invoices.bus_id', $this->id)
+// public function getTotalBookedSeatsAttribute()
+// {
+//     return DB::table('bus_invoice_pilgrims')
+//         ->join('bus_invoices', 'bus_invoice_pilgrims.bus_invoice_id', '=', 'bus_invoices.id')
+//         ->where('bus_invoices.bus_id', $this->id)
 
-        ->count();
-}
+//         ->count();
+// }
 
 
 }
