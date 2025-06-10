@@ -39,6 +39,7 @@ class BusInvoice extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
+        'seatMap',
     ];
 
     public function mainPilgrim()
@@ -88,13 +89,7 @@ class BusInvoice extends Model
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-    // public function pilgrims()
-    // {
-    //     return $this->belongsToMany(Pilgrim::class)
-    //         ->withPivot(['seatNumber', 'seatPrice', 'status',
-    //         'type','position', 'status_reason'])
-    //         ->withTimestamps();
-    // }
+
 
     public function pilgrims()
 {
@@ -111,15 +106,6 @@ class BusInvoice extends Model
         ])
         ->withTimestamps();
 }
-
-
-    // دوال مساعدة
-    // public function calculateTotal(): void
-    // {
-    //     $this->subtotal = $this->pilgrims()->sum('seatPrice');
-    //     $this->total = $this->subtotal - $this->discount + $this->tax;
-    //     $this->save();
-    // }
 
     public function calculateTotal(): void
 {
@@ -169,7 +155,6 @@ class BusInvoice extends Model
         );
 
     } catch (\Exception $e) {
-        // Fallback بدون withTrashed
         $lastNumber = static::max('id') ?? 0;
         return sprintf(
             'BUS-%04d/%s',
@@ -196,11 +181,38 @@ class BusInvoice extends Model
     }
 
 
-    // دالة للتأكد من عدم تجاوز سعة الباص
+
     public function checkSeatAvailability($requestedSeats)
     {
         return $this->available_seats >= $requestedSeats;
     }
+
+    public function updateSeatMapAfterBooking(): void
+{
+    // احصل على جميع المقاعد المحجوزة في هذه الفاتورة
+    $bookedSeats = $this->pilgrims()
+                        ->wherePivot('status', 'booked')
+                        ->pluck('pivot.seatNumber')
+                        ->toArray();
+
+    // احصل على نسخة seatMap الحالية
+    $seatMap = $this->seatMap ?? [];
+
+    // تحديث حالة المقاعد
+    $updatedSeatMap = array_map(function ($seat) use ($bookedSeats) {
+        $seatNumber = strtoupper(trim($seat['seatNumber'] ?? ''));
+
+        if (in_array($seatNumber, $bookedSeats)) {
+            $seat['status'] = 'booked';
+        }
+
+        return $seat;
+    }, $seatMap);
+
+    // حفظ التحديث
+    $this->seatMap = $updatedSeatMap;
+    $this->save();
+}
 
 
 
@@ -224,5 +236,6 @@ public function updater()
     'tax' => 'decimal:2',
     'total' => 'decimal:2',
     'paidAmount' => 'decimal:2',
+    'seatMap' => 'array',
 ];
 }

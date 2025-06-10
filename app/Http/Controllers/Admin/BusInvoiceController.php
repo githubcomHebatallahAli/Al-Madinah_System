@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Bus;
 use App\Models\Worker;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
@@ -120,14 +121,16 @@ if (!$workerBelongsToCampaign) {
             'reason'                  => $validated['reason'] ?? null,
         ], $this->prepareCreationMetaData());
 
+        $bus = Bus::findOrFail($validated['bus_id']);
+    $validated['seatMap'] = $bus->seatMap;
+
         $invoice = BusInvoice::create($invoiceData);
 
         $this->validateAndAttachPilgrims($invoice, $pilgrims);
 
-
         $invoice->calculateTotal();
         $invoice->updateSeatsCount();
-
+         $invoice->updateSeatMapAfterBooking();
 
         $invoice->load([
             'mainPilgrim', 'trip', 'campaign', 'office', 'group',
@@ -145,16 +148,9 @@ if (!$workerBelongsToCampaign) {
 }
 
 
-
-
 protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
 {
-    $bus = $invoice->bus;
-    throw_unless($bus, new \Exception("لم يتم العثور على الباص"));
-
-    // الحصول على المقاعد مع تطبيع المفاتيح
-    $availableSeatsMap = collect($bus->seatMap)
-        ->filter(fn($seat) => ($seat['status'] ?? '') === 'available')
+    $invoiceSeatMap = collect($invoice->seatMap)
         ->keyBy(fn($seat) => strtoupper(trim($seat['seatNumber'])));
 
     $pilgrimsToAttach = [];
@@ -167,44 +163,44 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
         );
 
         $seatNumber = strtoupper(trim($pilgrim['seatNumber']));
-        $seatInfo = $availableSeatsMap->get($seatNumber);
+        $seatInfo = $invoiceSeatMap->get($seatNumber);
 
-        // تحسين رسالة الخطأ
         throw_unless(
-            $seatInfo,
-            new \Exception(sprintf(
-                "المقعد %s غير متاح. المقاعد المتاحة: %s",
-                $seatNumber,
-                $availableSeatsMap->keys()->join(', ')
-            ))
+            $seatInfo && ($seatInfo['status'] ?? '') === 'available',
+            new \Exception("المقعد رقم {$seatNumber} غير متاح أو غير موجود.")
         );
 
         throw_if(
             in_array($seatNumber, $seatNumbersUsed),
-            new \Exception("المقعد {$seatNumber} محجوز لأكثر من معتمر")
+            new \Exception("المقعد رقم {$seatNumber} تم استخدامه أكثر من مرة.")
         );
 
         $seatNumbersUsed[] = $seatNumber;
 
         $pilgrimsToAttach[$pilgrim['id']] = [
             'seatNumber' => $seatNumber,
-            'seatPrice' => $pilgrim['seatPrice'],
-            'type' => $seatInfo['type'],
-            'position' => $seatInfo['position'],
-            'status' => 'booked',
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate()
+            'seatPrice' => $pilgrim['seatPrice'] ?? 0,
+            'status' => $pilgrim['status'] ?? 'booked',
+            'creationDate' => now(),
+            'creationDateHijri' => $this->getHijriDate(),
+            'type' => $pilgrim['type'] ?? null,
+            'position' => $pilgrim['position'] ?? null,
         ];
+
+        // تحديث حالة المقعد داخل النسخة المؤقتة من seatMap
+        $invoiceSeatMap[$seatNumber]['status'] = 'booked';
     }
 
-    throw_if(
-        count($pilgrimsToAttach) > ($bus->seatNum - $bus->total_booked_seats),
-        new \Exception("تم تجاوز سعة الباص")
-    );
-
+    // تنفيذ الربط
     $invoice->pilgrims()->attach($pilgrimsToAttach);
-    
+
+    // تحديث seatMap داخل الفاتورة وتخزينها
+    $invoice->update([
+        'seatMap' => $invoiceSeatMap->values()->all(), // نرجعها كـ array بسيطة مش keyed
+    ]);
 }
+
+
 
 
     public function edit(BusInvoice $busInvoice)

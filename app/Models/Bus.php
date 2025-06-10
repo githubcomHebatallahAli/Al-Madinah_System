@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+
 use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -201,12 +203,12 @@ protected function determineSeatPosition($col, $seatsPerRow)
 
 
 
-    public function getTotalBookedSeatsAttribute()
-    {
-        return $this->busInvoices()->sum('bookedSeats');
-    }
+    // public function getTotalBookedSeatsAttribute()
+    // {
+    //     return $this->busInvoices()->sum('bookedSeats');
+    // }
 
-    // في Bus.php
+    
 public function markSeatsAsBooked(array $seatNumbers)
 {
     $seatMap = collect($this->seatMap);
@@ -222,7 +224,7 @@ public function markSeatsAsBooked(array $seatNumbers)
     $this->save();
 }
 
-// إضافة دالة في Bus.php للإلغاء
+
 public function markSeatsAsAvailable(array $seatNumbers)
 {
     $seatMap = collect($this->seatMap);
@@ -238,7 +240,14 @@ public function markSeatsAsAvailable(array $seatNumbers)
     $this->save();
 }
 
+public function getTotalBookedSeatsAttribute()
+{
+    return DB::table('bus_invoice_pilgrim')
+        ->join('bus_invoices', 'bus_invoice_pilgrim.bus_invoice_id', '=', 'bus_invoices.id')
+        ->where('bus_invoices.bus_id', $this->id)
 
+        ->count();
+}
 
 
 }
