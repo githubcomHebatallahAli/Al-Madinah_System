@@ -91,9 +91,9 @@ public function showAll(Request $request)
 
 public function showAllWithPaginate(Request $request)
 {
-     $query = ShipmentInvoice::with([
-
-        'paymentMethodType'
+   $query = ShipmentInvoice::with([
+        'shipment',
+        'paymentMethodType.paymentMethod'
     ]);
 
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
