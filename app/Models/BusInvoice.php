@@ -168,19 +168,19 @@ class BusInvoice extends Model
 
 
 
-public function getAvailableSeatsAttribute()
-{
-    $seatMap = $this->bus->seatMap ?? [];
+// public function getAvailableSeatsAttribute()
+// {
+//     $seatMap = $this->bus->seatMap ?? [];
 
-    $bookedSeats = $this->pilgrims()
-                        ->wherePivot('status', 'booked')
-                        ->pluck('seatNumber') // <-- التعديل هنا فقط
-                        ->toArray();
+//     $bookedSeats = $this->pilgrims()
+//                         ->wherePivot('status', 'booked')
+//                         ->pluck('seatNumber') // <-- التعديل هنا فقط
+//                         ->toArray();
 
-    return array_filter($seatMap, function ($seat) use ($bookedSeats) {
-        return !in_array($seat['seatNumber'], $bookedSeats);
-    });
-}
+//     return array_filter($seatMap, function ($seat) use ($bookedSeats) {
+//         return !in_array($seat['seatNumber'], $bookedSeats);
+//     });
+// }
 
 
 
@@ -226,6 +226,23 @@ public function getBookedSeats()
 
 }
 
+// BusInvoice.php
+
+public function getBookedSeatsAttribute(): int
+{
+    return collect($this->seatMap)
+        ->where('status', 'booked')
+        ->count();
+}
+
+public function getAvailableSeatsAttribute(): int
+{
+    return collect($this->seatMap)
+        ->where('status', 'available')
+        ->count();
+}
+
+
         public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');
@@ -235,6 +252,12 @@ public function updater()
 {
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
+
+protected $appends = [
+    'bookedSeats',
+    'availableSeats',
+];
+
 
 
 
