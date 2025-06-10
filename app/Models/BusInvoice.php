@@ -124,17 +124,7 @@ class BusInvoice extends Model
             $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
         });
 
-            static::updated(function ($invoice) {
-        if ($invoice->bus && $invoice->travelDate) {
-            $bookedSeats = $invoice->bus->getBookedSeatsForDate($invoice->travelDate);
 
-            if ($bookedSeats >= $invoice->bus->seatNum) {
-                $invoice->bus->update(['status' => 'full']);
-            } else {
-                $invoice->bus->update(['status' => 'available']);
-            }
-        }
-    });
     }
 
     public function generateInvoiceNumber()
