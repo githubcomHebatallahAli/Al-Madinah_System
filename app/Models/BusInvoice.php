@@ -6,6 +6,7 @@ use App\Traits\HijriDateTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class BusInvoice extends Model
 {
@@ -216,7 +217,13 @@ public function getAvailableSeatsAttribute()
 }
 
 
-
+public function getBookedSeats()
+{
+    return $this->pilgrims()
+                ->wherePivot('status', 'booked')
+                ->pluck('pivot.seatNumber')
+                ->toArray();
+}
 
         public function creator()
 {
