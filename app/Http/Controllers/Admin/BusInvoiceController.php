@@ -145,12 +145,9 @@ $bus = Bus::findOrFail($validated['bus_id']);
         return $this->handleError($e, 'حدث خطأ أثناء إنشاء فاتورة الباص.');
     }
 }
-
-
 protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
 {
-    $invoiceSeatMap = collect($invoice->seatMap)
-        ->keyBy(fn($seat) => strtoupper(trim($seat['seatNumber'])));
+    $seatMap = collect($invoice->seatMap); // استخدام موحد
 
     $pilgrimsToAttach = [];
     $seatNumbersUsed = [];
@@ -162,10 +159,14 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
         );
 
         $seatNumber = strtoupper(trim($pilgrim['seatNumber']));
-        $seatInfo = $invoiceSeatMap->get($seatNumber);
+
+        // ابحث عن المقعد
+        $seatIndex = $seatMap->search(function ($seat) use ($seatNumber) {
+            return strtoupper(trim($seat['seatNumber'])) === $seatNumber;
+        });
 
         throw_unless(
-            $seatInfo && ($seatInfo['status'] ?? '') === 'available',
+            $seatIndex !== false && ($seatMap[$seatIndex]['status'] ?? '') === 'available',
             new \Exception("المقعد رقم {$seatNumber} غير متاح أو غير موجود.")
         );
 
@@ -176,6 +177,9 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
 
         $seatNumbersUsed[] = $seatNumber;
 
+        // تحديث الحالة داخل الـ seatMap
+        $seatMap[$seatIndex]['status'] = 'booked';
+
         $pilgrimsToAttach[$pilgrim['id']] = [
             'seatNumber' => $seatNumber,
             'seatPrice' => $pilgrim['seatPrice'] ?? 0,
@@ -185,9 +189,6 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
             'type' => $pilgrim['type'] ?? null,
             'position' => $pilgrim['position'] ?? null,
         ];
-
-        // تحديث حالة المقعد داخل النسخة المؤقتة من seatMap
-        $invoiceSeatMap[$seatNumber]['status'] = 'booked';
     }
 
     // تنفيذ الربط
@@ -195,9 +196,10 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
 
     // تحديث seatMap داخل الفاتورة وتخزينها
     $invoice->update([
-        'seatMap' => $invoiceSeatMap->values()->all(), // نرجعها كـ array بسيطة مش keyed
+        'seatMap' => $seatMap->values()->all(), // تأكد إنها Indexed Array
     ]);
 }
+
 
 
 
