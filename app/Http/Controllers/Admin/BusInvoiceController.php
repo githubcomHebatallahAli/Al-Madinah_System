@@ -155,18 +155,11 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
     $bus = $invoice->bus;
     throw_unless($bus, new \Exception("لم يتم العثور على الباص"));
 
-    // الحصول على المقاعد مع تطبيع المفاتيح
-    // $availableSeatsMap = collect($bus->seatMap)
-    //     ->filter(fn($seat) => ($seat['status'] ?? '') === 'available')
-    //     ->keyBy(fn($seat) => strtoupper(trim($seat['seatNumber'])));
-// ===
- $bus->refresh(); // نضمن أحدث بيانات seatMap
     $availableSeatsMap = collect($bus->seatMap)
         ->filter(fn($seat) => ($seat['status'] ?? '') === 'available')
         ->keyBy(fn($seat) => strtoupper(trim($seat['seatNumber'])));
 
-        // ========
-        
+
     $pilgrimsToAttach = [];
     $seatNumbersUsed = [];
 
