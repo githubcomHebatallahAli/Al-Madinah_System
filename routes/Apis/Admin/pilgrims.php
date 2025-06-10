@@ -14,7 +14,7 @@ Route::controller(PilgrimsController::class)->prefix('/adminOrBranchMangerOrDele
    Route::get('/edit/pilgrims/{id}','edit');
    });
 
-Route::controller(PilgrimsController::class)->prefix('/delegate')->middleware('worker')->group(
+Route::controller(PilgrimsController::class)->prefix('/delegate')->middleware('adminOrWorker')->group(
     function () {
    Route::post('/create/pilgrims', 'create');
    Route::post('/update/pilgrims/{id}', 'update');
