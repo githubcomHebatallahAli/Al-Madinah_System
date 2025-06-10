@@ -30,6 +30,11 @@ class BusDriver extends Model
         return $this->belongsTo(Bus::class);
     }
 
+                public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
+
     public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');

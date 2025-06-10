@@ -59,6 +59,10 @@ class BusInvoice extends Model
     {
         return $this->belongsTo(Office::class);
     }
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
 
 
 

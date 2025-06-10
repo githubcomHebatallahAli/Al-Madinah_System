@@ -32,6 +32,11 @@ class Office extends Model
         return $this->hasMany(Campaign::class);
     }
 
+                public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
+
             public function branch()
     {
         return $this->belongsTo(Branch::class);

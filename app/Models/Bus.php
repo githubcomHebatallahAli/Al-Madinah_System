@@ -36,7 +36,12 @@ class Bus extends Model
     {
         return $this->belongsTo(Service::class);
     }
-    
+
+            public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
+
 
         public function company()
     {
@@ -194,10 +199,7 @@ protected function determineSeatPosition($col, $seatsPerRow)
 
 
 
-    public function busInvoices()
-    {
-        return $this->hasMany(BusInvoice::class);
-    }
+
 
     public function getTotalBookedSeatsAttribute()
     {

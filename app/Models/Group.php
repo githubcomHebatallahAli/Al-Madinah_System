@@ -29,6 +29,12 @@ class Group extends Model
         return $this->belongsTo(Campaign::class);
     }
 
+        public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
+
+
 
 public function creator()
 {

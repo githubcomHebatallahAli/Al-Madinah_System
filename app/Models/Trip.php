@@ -32,6 +32,11 @@ class Trip extends Model
         return $this->belongsTo(Branch::class);
     }
 
+            public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
+
 
 public function creator()
 {

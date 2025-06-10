@@ -45,6 +45,10 @@ public function workers()
     return $this->hasMany(Group::class);
 }
 
+            public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
 
 
 public function creator()

@@ -34,6 +34,11 @@ class PaymentMethodType extends Model
     return $this->hasMany(ShipmentInvoice::class);
 }
 
+            public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
+
         public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');

@@ -80,6 +80,10 @@ public function updater()
         return $this->hasOneThrough(Branch::class, Title::class, 'id', 'id', 'title_id', 'branch_id');
     }
 
+                public function busInvoices()
+    {
+        return $this->hasMany(BusInvoice::class);
+    }
 
 
 
