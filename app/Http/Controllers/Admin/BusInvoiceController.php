@@ -145,6 +145,8 @@ $bus = Bus::findOrFail($validated['bus_id']);
         return $this->handleError($e, 'حدث خطأ أثناء إنشاء فاتورة الباص.');
     }
 }
+
+
 protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
 {
     $seatMap = collect($invoice->seatMap); // استخدام موحد
@@ -160,13 +162,10 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
 
         $seatNumber = strtoupper(trim($pilgrim['seatNumber']));
 
-        // ابحث عن المقعد
-        $seatIndex = $seatMap->search(function ($seat) use ($seatNumber) {
-            return strtoupper(trim($seat['seatNumber'])) === $seatNumber;
-        });
+        $seatExists = $seatMap->firstWhere('seatNumber', $seatNumber);
 
         throw_unless(
-            $seatIndex !== false && ($seatMap[$seatIndex]['status'] ?? '') === 'available',
+            $seatExists && ($seatExists['status'] ?? '') === 'available',
             new \Exception("المقعد رقم {$seatNumber} غير متاح أو غير موجود.")
         );
 
@@ -175,61 +174,36 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
             new \Exception("المقعد رقم {$seatNumber} تم استخدامه أكثر من مرة.")
         );
 
-$seatNumbersUsed = [];
-$pilgrimsToAttach = [];
+        $seatNumbersUsed[] = $seatNumber;
 
-$seatMap = collect($invoice->seatMap); // جمع المقاعد الأصلية
+        $pilgrimsToAttach[$pilgrim['id']] = [
+            'seatNumber' => $seatNumber,
+            'seatPrice' => $pilgrim['seatPrice'] ?? 0,
+            'status' => $pilgrim['status'] ?? 'booked',
+            'creationDate' => now(),
+            'creationDateHijri' => $this->getHijriDate(),
+            'type' => $pilgrim['type'] ?? null,
+            'position' => $pilgrim['position'] ?? null,
+        ];
+    }
 
-foreach ($pilgrimsData as $pilgrim) {
-    throw_unless(
-        isset($pilgrim['id'], $pilgrim['seatNumber']),
-        new \Exception("بيانات المعتمر غير صالحة")
-    );
+    // تحديث الحالة داخل الـ seatMap
+    $updatedSeatMap = $seatMap->map(function ($seat) use ($seatNumbersUsed) {
+        if (in_array(strtoupper(trim($seat['seatNumber'])), $seatNumbersUsed)) {
+            $seat['status'] = 'booked';
+        }
+        return $seat;
+    });
 
-    $seatNumber = strtoupper(trim($pilgrim['seatNumber']));
+    // ربط المعتمرين
+    $invoice->pilgrims()->attach($pilgrimsToAttach);
 
-    $seatExists = $seatMap->firstWhere('seatNumber', $seatNumber);
-
-    throw_unless(
-        $seatExists && ($seatExists['status'] ?? '') === 'available',
-        new \Exception("المقعد رقم {$seatNumber} غير متاح أو غير موجود.")
-    );
-
-    throw_if(
-        in_array($seatNumber, $seatNumbersUsed),
-        new \Exception("المقعد رقم {$seatNumber} تم استخدامه أكثر من مرة.")
-    );
-
-    $seatNumbersUsed[] = $seatNumber;
-
-    $pilgrimsToAttach[$pilgrim['id']] = [
-        'seatNumber' => $seatNumber,
-        'seatPrice' => $pilgrim['seatPrice'] ?? 0,
-        'status' => $pilgrim['status'] ?? 'booked',
-        'creationDate' => now(),
-        'creationDateHijri' => $this->getHijriDate(),
-        'type' => $pilgrim['type'] ?? null,
-        'position' => $pilgrim['position'] ?? null,
-    ];
+    // تحديث الـ seatMap داخل الفاتورة
+    $invoice->update([
+        'seatMap' => $updatedSeatMap->values()->all(),
+    ]);
 }
 
-// تحديث الحالة داخل الـ seatMap عبر map()
-$updatedSeatMap = $seatMap->map(function ($seat) use ($seatNumbersUsed) {
-    if (in_array(strtoupper(trim($seat['seatNumber'])), $seatNumbersUsed)) {
-        $seat['status'] = 'booked';
-    }
-    return $seat;
-});
-
-// ربط المعتمرين
-$invoice->pilgrims()->attach($pilgrimsToAttach);
-
-// تحديث الـ seatMap داخل الفاتورة
-$invoice->update([
-    'seatMap' => $updatedSeatMap->values()->all(), // تأكد إنها indexed array
-]);
-    }
-}
 
 
 
