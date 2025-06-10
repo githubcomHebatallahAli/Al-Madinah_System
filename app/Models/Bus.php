@@ -208,7 +208,7 @@ protected function determineSeatPosition($col, $seatsPerRow)
     //     return $this->busInvoices()->sum('bookedSeats');
     // }
 
-    
+
 public function markSeatsAsBooked(array $seatNumbers)
 {
     $seatMap = collect($this->seatMap);
@@ -242,8 +242,8 @@ public function markSeatsAsAvailable(array $seatNumbers)
 
 public function getTotalBookedSeatsAttribute()
 {
-    return DB::table('bus_invoice_pilgrim')
-        ->join('bus_invoices', 'bus_invoice_pilgrim.bus_invoice_id', '=', 'bus_invoices.id')
+    return DB::table('bus_invoice_pilgrims')
+        ->join('bus_invoices', 'bus_invoice_pilgrims.bus_invoice_id', '=', 'bus_invoices.id')
         ->where('bus_invoices.bus_id', $this->id)
 
         ->count();
