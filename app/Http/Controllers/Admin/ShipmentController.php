@@ -48,6 +48,15 @@ public function showAllWithPaginate(Request $request)
         $query->where('status', $request->status);
     }
 
+    if ($request->filled('fromDate')) {
+    $query->whereDate('creationDate', '>=', $request->fromDate);
+}
+
+if ($request->filled('toDate')) {
+    $query->whereDate('creationDate', '<=', $request->toDate);
+}
+
+
     $query->orderBy('created_at', 'desc');
 
     $Shipments = $query->paginate(10);
@@ -84,6 +93,15 @@ public function showAllWithoutPaginate(Request $request)
      if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
         $query->where('status', $request->status);
     }
+
+    if ($request->filled('fromDate')) {
+    $query->whereDate('creationDate', '>=', $request->fromDate);
+}
+
+if ($request->filled('toDate')) {
+    $query->whereDate('creationDate', '<=', $request->toDate);
+}
+
 
     $query->orderBy('created_at', 'desc');
 
