@@ -117,11 +117,6 @@ class BusInvoice extends Model
 }
 
 
-    // public function updateSeatsCount(): void
-    // {
-    //     $this->bookedSeats = $this->pilgrims()->count();
-    //     $this->save();
-    // }
 
       protected static function booted()
     {
@@ -129,14 +124,17 @@ class BusInvoice extends Model
             $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
         });
 
+            static::updated(function ($invoice) {
+        if ($invoice->bus && $invoice->travelDate) {
+            $bookedSeats = $invoice->bus->getBookedSeatsForDate($invoice->travelDate);
 
-//    static::updated(function ($invoice) {
-//     if ($invoice->bus && $invoice->bus->seatNum == $invoice->bus->total_bookedSeats) {
-//         $invoice->bus->update(['status' => 'full']);
-//     }
-// });
-
-
+            if ($bookedSeats >= $invoice->bus->seatNum) {
+                $invoice->bus->update(['status' => 'full']);
+            } else {
+                $invoice->bus->update(['status' => 'available']);
+            }
+        }
+    });
     }
 
     public function generateInvoiceNumber()
@@ -168,19 +166,6 @@ class BusInvoice extends Model
 
 
 
-// public function getAvailableSeatsAttribute()
-// {
-//     $seatMap = $this->bus->seatMap ?? [];
-
-//     $bookedSeats = $this->pilgrims()
-//                         ->wherePivot('status', 'booked')
-//                         ->pluck('seatNumber') // <-- التعديل هنا فقط
-//                         ->toArray();
-
-//     return array_filter($seatMap, function ($seat) use ($bookedSeats) {
-//         return !in_array($seat['seatNumber'], $bookedSeats);
-//     });
-// }
 
 
 
@@ -268,4 +253,7 @@ protected $appends = [
     'paidAmount' => 'decimal:2',
     'seatMap' => 'array',
 ];
+
+
+
 }

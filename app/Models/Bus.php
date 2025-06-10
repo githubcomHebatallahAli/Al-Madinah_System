@@ -208,6 +208,18 @@ protected function determineSeatPosition($col, $seatsPerRow)
         return $this->busInvoices()->sum('bookedSeats');
     }
 
+    public function getBookedSeatsForDate($travelDate): int
+{
+    return $this->busInvoices()
+        ->whereDate('travelDate', $travelDate)
+        ->with('pilgrims')
+        ->get()
+        ->sum(function ($invoice) {
+            return collect($invoice->seatMap)->where('status', 'booked')->count();
+        });
+}
+
+
 
 public function markSeatsAsBooked(array $seatNumbers)
 {
