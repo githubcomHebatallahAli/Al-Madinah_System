@@ -14,7 +14,6 @@ use App\Http\Controllers\Controller;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
-use App\Http\Resources\Admin\ShipmentResource;
 use App\Http\Requests\Admin\ShipmentInvoiceRequest;
 use App\Http\Requests\Admin\UpdatePaidAmountRequest;
 use App\Http\Resources\Admin\ShipmentInvoiceResource;
@@ -31,58 +30,161 @@ class ShipmentInvoiceController extends Controller
 
 public function showAll(Request $request)
 {
-    $searchTerm = $request->input('search', '');
-    $invoiceStatus = $request->input('invoice', '');
+    $companyId = $request->input('company_id');
     $serviceId = $request->input('service_id');
     $branchId = $request->input('branch_id');
+    $invoiceStatus = $request->input('invoice');
 
-    $query = ShipmentInvoice::with(['shipment.supplier.company.service'])
-        ->when($searchTerm, function ($q) use ($searchTerm) {
-            $q->whereHas('shipment.supplier.company', function ($q3) use ($searchTerm) {
-                $q3->where('name', 'like', "%{$searchTerm}%");
+    $query = ShipmentInvoice::with([
+        'shipment.company',
+        'shipment.supplier.company.service'
+    ])
+    ->when($companyId, function ($q) use ($companyId) {
+        $q->where(function ($subQuery) use ($companyId) {
+            $subQuery->whereHas('shipment.company', function ($q1) use ($companyId) {
+                $q1->where('id', $companyId);
+            })->orWhereHas('shipment.supplier.company', function ($q2) use ($companyId) {
+                $q2->where('id', $companyId);
             });
-        })
-        ->when($serviceId, function ($q) use ($serviceId) {
-            $q->whereHas('shipment.supplier.company', function ($q2) use ($serviceId) {
-                $q2->where('service_id', $serviceId);
-            });
-        })
-        ->when($branchId, function ($q) use ($branchId) {
-            $q->whereHas('shipment.supplier.company.service', function ($q2) use ($branchId) {
-                $q2->where('branch_id', $branchId);
-            });
-        })
-        ->when($invoiceStatus === 'paid', function ($q) {
-            $q->where('invoice', 'paid');
-        })
-        ->when($invoiceStatus === 'pending', function ($q) {
-            $q->where('invoice', 'pending');
-        })
-        ->orderBy('created_at', 'desc');
+        });
+    })
+    ->when($serviceId, function ($q) use ($serviceId) {
+        $q->whereHas('shipment.supplier.company', function ($q2) use ($serviceId) {
+            $q2->where('service_id', $serviceId);
+        });
+    })
+    ->when($branchId, function ($q) use ($branchId) {
+        $q->whereHas('shipment.supplier.company.service', function ($q2) use ($branchId) {
+            $q2->where('branch_id', $branchId);
+        });
+    })
+    ->when($invoiceStatus === 'paid', fn($q) => $q->where('invoice', 'paid'))
+    ->when($invoiceStatus === 'pending', fn($q) => $q->where('invoice', 'pending'))
+    ->orderBy('created_at', 'desc');
 
-    $ShipmentInvoices = $query->paginate(10);
+    $shipmentInvoices = $query->paginate(10);
 
+    // الإحصائيات
     $totalPaidAmount = ShipmentInvoice::sum('paidAmount');
     $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
 
     return response()->json([
-        'data' => ShowAllShipmentInvoiceResource::collection($ShipmentInvoices),
+        'data' => ShowAllShipmentInvoiceResource::collection($shipmentInvoices),
         'pagination' => [
-            'total' => $ShipmentInvoices->total(),
-            'count' => $ShipmentInvoices->count(),
-            'per_page' => $ShipmentInvoices->perPage(),
-            'current_page' => $ShipmentInvoices->currentPage(),
-            'total_pages' => $ShipmentInvoices->lastPage(),
-            'next_page_url' => $ShipmentInvoices->nextPageUrl(),
-            'prev_page_url' => $ShipmentInvoices->previousPageUrl(),
+            'total' => $shipmentInvoices->total(),
+            'count' => $shipmentInvoices->count(),
+            'per_page' => $shipmentInvoices->perPage(),
+            'current_page' => $shipmentInvoices->currentPage(),
+            'total_pages' => $shipmentInvoices->lastPage(),
+            'next_page_url' => $shipmentInvoices->nextPageUrl(),
+            'prev_page_url' => $shipmentInvoices->previousPageUrl(),
         ],
         'statistics' => [
             'paid_amount' => $totalPaidAmount,
             'remaining_amount' => $totalRemainingAmount,
         ],
-        'message' => "تم عرض الفواتير بنجاح.",
+        'message' => "تم عرض فواتير الشحن بنجاح.",
     ]);
 }
+
+
+
+public function showAllWithPaginate(Request $request)
+{
+    $query = ShipmentInvoice::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('fromDate')) {
+        $query->whereDate('creationDate', '>=', $request->fromDate);
+    }
+
+    if ($request->filled('toDate')) {
+        $query->whereDate('creationDate', '<=', $request->toDate);
+    }
+
+    if ($request->filled('invoice') && in_array($request->invoice, ['paid', 'pending'])) {
+        $query->where('invoice', $request->invoice);
+    }
+
+    if ($request->filled('shipment_id')) {
+        $query->where('shipment_id', $request->shipment_id);
+    }
+
+    if ($request->filled('payment_method_type_id')) {
+        $query->where('payment_method_type_id', $request->payment_method_type_id);
+    }
+
+    $shipmentInvoices = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    $totalPaidAmount = ShipmentInvoice::sum('paidAmount');
+    $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
+
+    return response()->json([
+        'data' => ShowAllShipmentInvoiceResource::collection($shipmentInvoices),
+        'pagination' => [
+            'total' => $shipmentInvoices->total(),
+            'count' => $shipmentInvoices->count(),
+            'per_page' => $shipmentInvoices->perPage(),
+            'current_page' => $shipmentInvoices->currentPage(),
+            'total_pages' => $shipmentInvoices->lastPage(),
+            'next_page_url' => $shipmentInvoices->nextPageUrl(),
+            'prev_page_url' => $shipmentInvoices->previousPageUrl(),
+        ],
+        'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+            'remaining_amount' => $totalRemainingAmount,
+        ],
+        'message' => "تم عرض فواتير الشحن بنجاح.",
+    ]);
+}
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $query = ShipmentInvoice::query();
+
+    if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('fromDate')) {
+        $query->whereDate('creationDate', '>=', $request->fromDate);
+    }
+
+    if ($request->filled('toDate')) {
+        $query->whereDate('creationDate', '<=', $request->toDate);
+    }
+
+    if ($request->filled('invoice') && in_array($request->invoice, ['paid', 'pending'])) {
+        $query->where('invoice', $request->invoice);
+    }
+
+    if ($request->filled('shipment_id')) {
+        $query->where('shipment_id', $request->shipment_id);
+    }
+
+    if ($request->filled('payment_method_type_id')) {
+        $query->where('payment_method_type_id', $request->payment_method_type_id);
+    }
+
+    $shipmentInvoices = $query->orderBy('created_at', 'desc')->get();
+
+    $totalPaidAmount = ShipmentInvoice::sum('paidAmount');
+    $totalRemainingAmount = ShipmentInvoice::where('invoice', 'pending')->sum('remainingAmount');
+
+    return response()->json([
+        'data' => ShowAllShipmentInvoiceResource::collection($shipmentInvoices),
+        'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+            'remaining_amount' => $totalRemainingAmount,
+        ],
+        'message' => "تم عرض فواتير الشحن بنجاح.",
+    ]);
+}
+
+
 
 
 public function create(ShipmentInvoiceRequest $request): JsonResponse
