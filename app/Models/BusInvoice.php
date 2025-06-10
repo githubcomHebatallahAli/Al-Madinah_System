@@ -167,19 +167,18 @@ class BusInvoice extends Model
 
 
 
-  public function getAvailableSeatsAttribute()
-    {
-        $seatMap = $this->bus->seatMap ?? [];
-        $bookedSeats = $this->pilgrims()
-                            ->wherePivot('status', 'booked')
-                            ->pluck('pivot.seatNumber')
-                            ->toArray();
+public function getAvailableSeatsAttribute()
+{
+    $seatMap = $this->bus->seatMap ?? [];
+    $bookedSeats = $this->pilgrims()
+                        ->wherePivot('status', 'booked')
+                        ->pluck('bus_invoice_pilgrims.seatNumber') // التعديل هنا
+                        ->toArray();
 
-        return array_filter($seatMap, function ($seat) use ($bookedSeats) {
-            return !in_array($seat['seatNumber'], $bookedSeats);
-        });
-    }
-
+    return array_filter($seatMap, function ($seat) use ($bookedSeats) {
+        return !in_array($seat['seatNumber'], $bookedSeats);
+    });
+}
 
 
     public function checkSeatAvailability($requestedSeats)
