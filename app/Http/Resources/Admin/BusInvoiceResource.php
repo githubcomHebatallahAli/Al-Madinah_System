@@ -94,7 +94,7 @@ class BusInvoiceResource extends JsonResource
                 return $this->pilgrims->map(function ($pilgrim) {
                     return [
                         'id' => $pilgrim->id,
-                        'name' => $this->getPilgrimName($pilgrim),
+                        'name' => $pilgrim->name ?? '-',
                         'seatNumber' => $pilgrim->pivot->seatNumber,
                         'seatPrice' => $pilgrim->pivot->seatPrice,
                         'status' => $pilgrim->pivot->status,
