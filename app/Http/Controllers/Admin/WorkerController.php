@@ -44,6 +44,10 @@ public function showAllWorkerLoginWeb(Request $request)
         $query->whereHas('worker', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
     }
 
+        if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
     if ($request->role_id) {
         $query->where('role_id', $request->role_id);
     }
@@ -98,6 +102,10 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
         });
     }
 
+        if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
     if ($request->branch_id) {
     $query->whereHas('worker.title', function($q) use ($request) {
         $q->where('branch_id', $request->branch_id);
@@ -105,8 +113,6 @@ public function showAllWorkerLoginWithoutPaginate(Request $request)
 }
 
     $workers = $query->get();
-
-    //  $this->loadRelationsForCollection($workers);
 
     return response()->json([
         'data' => ShowAllWorkerLoginWebResource::collection($workers),

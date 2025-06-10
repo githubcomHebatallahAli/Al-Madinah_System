@@ -203,6 +203,8 @@ protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrim
     );
 
     $invoice->pilgrims()->attach($pilgrimsToAttach);
+      $seatNumbers = collect($pilgrimsData)->pluck('seatNumber')->toArray();
+    $invoice->bus->markSeatsAsBooked($seatNumbers);
 }
 
 

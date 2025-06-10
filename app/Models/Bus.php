@@ -206,6 +206,38 @@ protected function determineSeatPosition($col, $seatsPerRow)
         return $this->busInvoices()->sum('bookedSeats');
     }
 
+    // في Bus.php
+public function markSeatsAsBooked(array $seatNumbers)
+{
+    $seatMap = collect($this->seatMap);
+
+    $seatMap = $seatMap->map(function ($seat) use ($seatNumbers) {
+        if (in_array($seat['seatNumber'], $seatNumbers)) {
+            $seat['status'] = 'booked';
+        }
+        return $seat;
+    });
+
+    $this->seatMap = $seatMap->toArray();
+    $this->save();
+}
+
+// إضافة دالة في Bus.php للإلغاء
+public function markSeatsAsAvailable(array $seatNumbers)
+{
+    $seatMap = collect($this->seatMap);
+
+    $seatMap = $seatMap->map(function ($seat) use ($seatNumbers) {
+        if (in_array($seat['seatNumber'], $seatNumbers)) {
+            $seat['status'] = 'available';
+        }
+        return $seat;
+    });
+
+    $this->seatMap = $seatMap->toArray();
+    $this->save();
+}
+
 
 
 
