@@ -40,7 +40,7 @@ class BusInvoiceRequest extends FormRequest
         'creationDateHijri'=>'nullable|string',
         'pilgrims' => 'nullable|array',
         'pilgrims.*.id' => 'required|exists:pilgrims,id',
-        'pilgrims.*.name' => 'required|string|min:2|max:255',
+        // 'pilgrims.*.name' => 'required|string|min:2|max:255',
         'pilgrims.*.seatNumber' => 'required|string',
         'pilgrims.*.type' => 'nullable|string',
         'pilgrims.*.position' => 'nullable|string',
