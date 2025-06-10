@@ -203,10 +203,10 @@ protected function determineSeatPosition($col, $seatsPerRow)
 
 
 
-    // public function getTotalBookedSeatsAttribute()
-    // {
-    //     return $this->busInvoices()->sum('bookedSeats');
-    // }
+    public function getTotalBookedSeatsAttribute()
+    {
+        return $this->busInvoices()->sum('bookedSeats');
+    }
 
 
 public function markSeatsAsBooked(array $seatNumbers)
