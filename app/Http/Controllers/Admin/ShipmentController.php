@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Log;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
+use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HasMorphMapTrait;
 use App\Traits\HandleAddedByTrait;
@@ -16,6 +17,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\ShipmentRequest;
 use App\Http\Resources\Admin\ShipmentResource;
+use App\Http\Resources\Admin\ShowAllShipmentResource;
 
 class ShipmentController extends Controller
 {
@@ -27,19 +29,71 @@ class ShipmentController extends Controller
     use HandlesControllerCrudsTrait;
     use HasMorphMapTrait;
 
-        public function showAll()
-    {
-        $this->authorize('manage_system');
-        $Shipments = Shipment::with('items')->orderBy('created_at', 'desc')
-        ->get();
-       $this->loadRelationsForCollection($Shipments);
+public function showAllWithPaginate(Request $request)
+{
+    $this->authorize('manage_system');
 
-        return response()->json([
-            'data' =>  ShipmentResource::collection($Shipments),
-            'message' => "Show All Shipments."
-        ]);
+    $query = Shipment::query();
+
+
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
     }
 
+    if ($request->filled('service_id')) {
+        $query->where('service_id', $request->service_id);
+    }
+
+       if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $query->orderBy('created_at', 'desc');
+
+    $Shipments = $query->paginate(10);
+
+    return response()->json([
+        'data' => ShowAllShipmentResource::collection($Shipments),
+        'pagination' => [
+            'total' => $Shipments->total(),
+            'count' => $Shipments->count(),
+            'per_page' => $Shipments->perPage(),
+            'current_page' => $Shipments->currentPage(),
+            'total_pages' => $Shipments->lastPage(),
+            'next_page_url' => $Shipments->nextPageUrl(),
+            'prev_page_url' => $Shipments->previousPageUrl(),
+        ],
+        'message' => "Show All Shipments."
+    ]);
+}
+
+public function showAllWithoutPaginate(Request $request)
+{
+    $this->authorize('manage_system');
+
+    $query = Shipment::query();
+
+       if ($request->filled('service_id')) {
+        $query->where('service_id', $request->service_id);
+    }
+
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
+    }
+
+     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
+    $query->orderBy('created_at', 'desc');
+
+    $Shipment = $query->get();
+
+    return response()->json([
+        'data' => ShowAllShipmentResource::collection($Shipment),
+        'message' => "Show All Ihram Supplies."
+    ]);
+}
 
 public function create(ShipmentRequest $request)
 {

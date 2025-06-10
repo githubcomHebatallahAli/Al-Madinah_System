@@ -7,13 +7,19 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ShowAllShipmentResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+        'id'=> $this -> id,
+        'service_id' => $this->service?->id,
+        'service_name' => $this->service?->name,
+        'company_id' => $this->company?->id,
+        'company_name' => $this->company?->name,
+        'shipmentItemsCount'=> $this ->shipmentItemsCount,
+        'totalPrice'=> $this ->totalPrice,
+        'status' => $this-> status,
+        'creationDate'=> $this ->creationDate,
+        ];
     }
 }
