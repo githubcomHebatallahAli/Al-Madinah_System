@@ -128,7 +128,7 @@ $bus = Bus::findOrFail($validated['bus_id']);
         $this->validateAndAttachPilgrims($invoice, $pilgrims);
 
         $invoice->calculateTotal();
-        $invoice->updateSeatsCount();
+        // $invoice->updateSeatsCount();
          $invoice->updateSeatMapAfterBooking();
 
         $invoice->load([

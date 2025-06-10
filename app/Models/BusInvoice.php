@@ -117,11 +117,11 @@ class BusInvoice extends Model
 }
 
 
-    public function updateSeatsCount(): void
-    {
-        $this->bookedSeats = $this->pilgrims()->count();
-        $this->save();
-    }
+    // public function updateSeatsCount(): void
+    // {
+    //     $this->bookedSeats = $this->pilgrims()->count();
+    //     $this->save();
+    // }
 
       protected static function booted()
     {
