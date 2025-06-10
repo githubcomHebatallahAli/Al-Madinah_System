@@ -25,8 +25,8 @@ class ShowAllShipmentInvoiceResource extends JsonResource
     return [
     'shipment_id' => $this->shipment->id ?? null,
 
-    // 'service_id' => $this->shipment->service->id ?? null,
-    // 'service_name' => $this->shipment->service->name ?? null,
+    'service_id' => $this->shipment->service->id ?? null,
+    'service_name' => $this->shipment->service->name ?? null,
 
     // 'company_id' => $this->shipment->company->id ?? null,
     // 'company_name' => $this->shipment->company->name ?? null,

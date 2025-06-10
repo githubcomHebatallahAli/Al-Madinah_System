@@ -116,9 +116,6 @@ public function showAllWithPaginate(Request $request)
         $query->where('shipment_id', $request->shipment_id);
     }
 
-    if ($request->filled('payment_method_type_id')) {
-        $query->where('payment_method_type_id', $request->payment_method_type_id);
-    }
 
     $shipmentInvoices = $query->orderBy('created_at', 'desc')->paginate(10);
 
@@ -171,9 +168,6 @@ public function showAllWithoutPaginate(Request $request)
         $query->where('shipment_id', $request->shipment_id);
     }
 
-    if ($request->filled('payment_method_type_id')) {
-        $query->where('payment_method_type_id', $request->payment_method_type_id);
-    }
 
     $shipmentInvoices = $query->orderBy('created_at', 'desc')->get();
 
