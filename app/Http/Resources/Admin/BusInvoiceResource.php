@@ -55,26 +55,20 @@ class BusInvoiceResource extends JsonResource
         'phone' => $this->mainPilgrim->phone
     ];
 }),
-            'bus_id' => $this->bus?->id,
-            'bus_number' => $this->bus?->busNum,
+
             'invoiceNumber' => $this->invoiceNumber,
-            'trip_id' => $this->trip?->id,
-            'trip_name' => $this->trip?->name,
+
             'campaign_id' => $this->campaign?->id,
             'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
             'office_name' => $this->office?->name,
             'group_id' => $this->group?->id,
             'group_num' => $this->group?->groupNum,
-            'bus_driver_id' => $this->busDriver?->id,
-            'bus_driver_name' => $this->busDriver?->name,
             'worker_id' => $this->worker?->id,
             'worker_name' => $this->worker?->name,
             'payment_method_type_id' => $this->paymentMethodType?->id,
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
-            'travelDate' => $this->travelDate,
-            'travelDateHijri' => $this->travelDateHijri,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'tax' => $this->tax,
@@ -101,6 +95,9 @@ class BusInvoiceResource extends JsonResource
                         'status' => $pilgrim->pivot->status,
                         'type' => $pilgrim->pivot->type,
                         'position' => $pilgrim->pivot->position,
+                         'creationDateHijri' => $this->creationDateHijri,
+            'creationDate' => $this->creationDate,
+            'changed_data' => $this->changed_data,
                     ];
                 });
             }),
