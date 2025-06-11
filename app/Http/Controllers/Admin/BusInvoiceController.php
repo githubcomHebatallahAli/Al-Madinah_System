@@ -410,12 +410,12 @@ public function update(Request $request, BusInvoice $busInvoice)
                 $syncData[$pilgrim['id']] = [
                     'seatNumber' => $pilgrim['seatNumber'],
                     'price' => $pilgrim['price'],
-                    'status' => $pilgrim['status'] ?? 'confirmed',
+                    'status' => $pilgrim['status'] ?? 'booked',
                     'reason' => $pilgrim['reason'] ?? null,
                 ];
 
-                
-                $busTrip = $busInvoice->busTrip; // تم تحديث bus_trip_id فوق
+
+                $busTrip = $busInvoice->busTrip;
                 if ($busTrip) {
                     $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
                 }
