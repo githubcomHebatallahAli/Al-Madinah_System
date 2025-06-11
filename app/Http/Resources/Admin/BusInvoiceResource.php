@@ -60,7 +60,7 @@ class BusInvoiceResource extends JsonResource
                         'status' => $pilgrim->pivot->status,
                         'type' => $pilgrim->pivot->type,
                         'position' => $pilgrim->pivot->position,
-                        'changed_data' => $pilgrim->pivot->changed_data,
+                        // 'changed_data' => $pilgrim->pivot->changed_data,
                         // 'creationDateHijri' => $this->creationDateHijri,
                         // 'creationDate' => $this->creationDate,
                         // 'changed_data' => $this->changed_data,
