@@ -111,9 +111,17 @@ public function create(BusInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
-    // التحقق من توفر المقاعد
-    if ($request->has('bus_trip_id')) {
-        $busTrip = BusTrip::findOrFail($request->bus_trip_id);
+    // Initialize variables
+    $busTrip = null;
+    $unavailableSeats = collect();
+
+    // Check seat availability if bus_trip_id is provided
+    if ($request->has('bus_trip_id') && $request->bus_trip_id) {
+        $busTrip = BusTrip::find($request->bus_trip_id);
+
+        if (!$busTrip) {
+            return response()->json(['message' => 'رحلة الباص غير موجودة'], 404);
+        }
 
         if ($request->has('pilgrims')) {
             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber');
@@ -125,7 +133,7 @@ public function create(BusInvoiceRequest $request)
 
             if ($unavailableSeats->isNotEmpty()) {
                 return response()->json([
-                    'message' => 'Some seats are not available',
+                    'message' => 'بعض المقاعد غير متوفرة',
                     'unavailable_seats' => $unavailableSeats
                 ], 422);
             }
@@ -151,6 +159,11 @@ public function create(BusInvoiceRequest $request)
         if ($request->has('pilgrims')) {
             $pilgrimsData = [];
             foreach ($request->pilgrims as $pilgrim) {
+                // Ensure all required pilgrim data exists
+                if (!isset($pilgrim['id'], $pilgrim['seatNumber'], $pilgrim['seatPrice'])) {
+                    throw new \Exception('بيانات الحاج غير مكتملة');
+                }
+
                 $pilgrimsData[$pilgrim['id']] = [
                     'seatNumber' => $pilgrim['seatNumber'],
                     'seatPrice' => $pilgrim['seatPrice'],
@@ -160,7 +173,9 @@ public function create(BusInvoiceRequest $request)
                     'creationDate' => now()->format('Y-m-d'),
                     'creationDateHijri' => $this->getHijriDate(),
                 ];
-                if ($request->has('bus_trip_id')) {
+
+                // Update seat status if bus trip exists
+                if ($busTrip) {
                     $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
                 }
             }
@@ -179,7 +194,26 @@ public function create(BusInvoiceRequest $request)
     }
 }
 
-// Add this helper method to your controller
+protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
+{
+    // Find the seat in the seatMap
+    $seatMap = collect($busTrip->seatMap);
+    $seatIndex = $seatMap->search(function ($item) use ($seatNumber) {
+        return $item['seatNumber'] === $seatNumber;
+    });
+
+    if ($seatIndex === false) {
+        throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
+    }
+
+    // Update the seat status
+    $updatedSeatMap = $seatMap->all();
+    $updatedSeatMap[$seatIndex]['status'] = $status;
+
+    $busTrip->seatMap = $updatedSeatMap;
+    $busTrip->save();
+}
+
 protected function ensureNumeric($value)
 {
     if ($value === null || $value === '') {
@@ -203,20 +237,7 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     }
 }
 
-protected function updateSeatStatusInTrip(BusTrip $busTrip, string $seatNumber, string $status)
-{
-    $seatMap = $busTrip->seatMap;
 
-    foreach ($seatMap as &$seat) {
-        if ($seat['seatNumber'] == $seatNumber) {
-            $seat['status'] = $status;
-            break;
-        }
-    }
-
-    $busTrip->seatMap = $seatMap;
-    $busTrip->save();
-}
 
 
     public function edit(string $id)
