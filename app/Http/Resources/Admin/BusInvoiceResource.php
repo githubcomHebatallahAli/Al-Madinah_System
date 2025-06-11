@@ -48,8 +48,8 @@ class BusInvoiceResource extends JsonResource
             'paymentStatus' => $this->paymentStatus,
             // 'creationDateHijri' => $this->creationDateHijri,
             // 'creationDate' => $this->creationDate,
-            'creationDateHijri' => $this->getHijriDate($this->created_at),
-'creationDate' => $this->created_at,
+            'creationDateHijri' => $this->getHijriDate($this->creationDate),
+'creationDate' => $this->creationDate,
 
             'changed_data' => $this->changed_data,
             'added_by' => $this->addedByAttribute(),
