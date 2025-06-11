@@ -369,15 +369,14 @@ public function update(Request $request, BusInvoice $busInvoice)
     DB::beginTransaction();
 
     try {
-
         $oldBusTrip = $busInvoice->busTrip;
         $oldPilgrims = $busInvoice->pilgrims()->withPivot('seatNumber')->get();
 
-
+        // تفريغ المقاعد القديمة
         if (
-            $request->has('bus_trip_id')
-            && $request->bus_trip_id != $busInvoice->bus_trip_id
-            && $oldBusTrip
+            $request->has('bus_trip_id') &&
+            $request->bus_trip_id != $busInvoice->bus_trip_id &&
+            $oldBusTrip
         ) {
             foreach ($oldPilgrims as $oldPilgrim) {
                 $oldSeat = $oldPilgrim->pivot->seatNumber;
@@ -388,27 +387,32 @@ public function update(Request $request, BusInvoice $busInvoice)
                 }
             }
         }
-$data = [
-    'seatPrice'   => $this->ensureNumeric($request->input('seatPrice')),
-    'discount'    => $this->ensureNumeric($request->input('discount')),
-    'tax'         => $this->ensureNumeric($request->input('tax')),
-    'paidAmount'  => $this->ensureNumeric($request->input('paidAmount')),
-    'subtotal'    => 0,
-    'total'       => 0,
-];
 
-        $busInvoice->fill($request->all());
+        // معالجة القيم الرقمية
+        $data = [
+            'seatPrice'   => $this->ensureNumeric($request->input('seatPrice')),
+            'discount'    => $this->ensureNumeric($request->input('discount')),
+            'tax'         => $this->ensureNumeric($request->input('tax')),
+            'paidAmount'  => $this->ensureNumeric($request->input('paidAmount')),
+            'subtotal'    => 0,
+            'total'       => 0,
+        ];
 
+        // تعبئة الفاتورة بالقيم المعالجة فقط
+        $busInvoice->fill(array_merge($request->except(['seatPrice', 'discount', 'tax', 'paidAmount', 'subtotal', 'total']), $data));
+
+        // التواريخ إذا غير موجودة
         if (empty($busInvoice->creationDate)) {
             $busInvoice->creationDate = now();
         }
 
         if (empty($busInvoice->creationDateHijri)) {
-            $busInvoice->creationDateHijri = $this->getHijriDate(now()); // تعتمد على HijriDateTrait
+            $busInvoice->creationDateHijri = $this->getHijriDate(now());
         }
 
         $busInvoice->save();
 
+        // تحديث المعتمرين والمقاعد
         if ($request->has('pilgrims')) {
             $syncData = [];
 
@@ -419,7 +423,6 @@ $data = [
                     'status' => $pilgrim['status'] ?? 'booked',
                     'reason' => $pilgrim['reason'] ?? null,
                 ];
-
 
                 $busTrip = $busInvoice->busTrip;
                 if ($busTrip) {
@@ -440,6 +443,7 @@ $data = [
         return response()->json(['message' => 'حدث خطأ أثناء التحديث', 'error' => $e->getMessage()], 500);
     }
 }
+
 
 
 
