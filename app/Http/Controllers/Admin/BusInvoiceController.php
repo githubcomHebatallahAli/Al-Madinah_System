@@ -399,58 +399,93 @@ public function update(BusInvoiceRequest $request, $id)
     }
 }
 
+protected function prepareUpdateMetaData(): array
+{
+    $updatedBy = $this->getUpdatedByIdOrFail(); // من التريت الخاص بك
+    return [
+        'updated_by' => $updatedBy,
+        'updated_by_type' => $this->getUpdatedByType(), // من التريت الخاص بك
+        'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'updated_at_hijri' => $this->getHijriDate(), // من HijriDateTrait
+    ];
+}
+
 protected function checkForChanges($busInvoice, $newData, $request): bool
 {
-    // التحقق من التغييرات في البيانات الأساسية
     foreach ($newData as $key => $value) {
         if ($busInvoice->$key != $value) {
             return true;
         }
     }
 
-    // التحقق من تغييرات في الحجاج
     if ($request->has('pilgrims')) {
         $currentPilgrims = $busInvoice->pilgrims()->pluck('pilgrims.id')->toArray();
         $newPilgrims = collect($request->pilgrims)->pluck('id')->toArray();
 
-        if (count(array_diff($currentPilgrims, $newPilgrims)) > 0) {
-            return true;
-        }
-
-        if (count(array_diff($newPilgrims, $currentPilgrims)) > 0) {
-            return true;
-        }
+        if (count(array_diff($currentPilgrims, $newPilgrims)) > 0) return true;
+        if (count(array_diff($newPilgrims, $currentPilgrims)) > 0) return true;
     }
 
     return false;
 }
 
-
-public function prepareUpdateMetaData(): array
+protected function preparePilgrimsData($pilgrims, $seatMapArray): array
 {
-    return [
-        'updated_by' => $this->getUpdatedByIdOrFail(),
-        'updated_by_type' => $this->getUpdatedByType(),
-        'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'updated_at_hijri' => $this->getHijriDate(),
-    ];
+    $pilgrimsData = [];
+
+    foreach ($pilgrims as $pilgrim) {
+        if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) {
+            throw new \Exception('بيانات الحاج غير مكتملة');
+        }
+
+        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']);
+
+        if (!$seatInfo) {
+            throw new \Exception("المقعد {$pilgrim['seatNumber']} غير موجود في seatMap.");
+        }
+
+        $pilgrimsData[$pilgrim['id']] = [
+            'seatNumber' => $pilgrim['seatNumber'],
+            'status' => $pilgrim['status'] ?? 'booked',
+            'type' => $seatInfo['type'] ?? null,
+            'position' => $seatInfo['position'] ?? null,
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
+        ];
+    }
+
+    return $pilgrimsData;
 }
 
-
-
-
-public function getPivotChanges(array $oldData, array $newData): array
+protected function getPivotChanges(array $oldPivotData, array $newPivotData): array
 {
     $changes = [];
 
-    foreach ($newData as $id => $newPivot) {
-        $oldPivot = $oldData[$id] ?? [];
+    foreach (array_diff_key($oldPivotData, $newPivotData) as $pilgrimId => $pivot) {
+        $changes[$pilgrimId] = [
+            'old' => $pivot,
+            'new' => null,
+            'action' => 'removed'
+        ];
+    }
 
-        foreach ($newPivot as $key => $value) {
-            if (!array_key_exists($key, $oldPivot) || $oldPivot[$key] !== $value) {
-                $changes[$id][$key] = [
-                    'old' => $oldPivot[$key] ?? null,
-                    'new' => $value,
+    foreach (array_diff_key($newPivotData, $oldPivotData) as $pilgrimId => $pivot) {
+        $changes[$pilgrimId] = [
+            'old' => null,
+            'new' => $pivot,
+            'action' => 'added'
+        ];
+    }
+
+    foreach ($newPivotData as $pilgrimId => $pivot) {
+        if (isset($oldPivotData[$pilgrimId])) {
+            $oldPivot = $oldPivotData[$pilgrimId];
+            if ($oldPivot['seatNumber'] != $pivot['seatNumber'] ||
+                $oldPivot['status'] != $pivot['status']) {
+                $changes[$pilgrimId] = [
+                    'old' => $oldPivot,
+                    'new' => $pivot,
+                    'action' => 'updated'
                 ];
             }
         }
@@ -458,7 +493,6 @@ public function getPivotChanges(array $oldData, array $newData): array
 
     return $changes;
 }
-
 
 
 
