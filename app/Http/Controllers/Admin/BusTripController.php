@@ -35,6 +35,14 @@ public function showAllWithPaginate(Request $request)
         $query->where('bus_id', $request->bus_id);
     }
 
+      if ($request->filled('trip_id')) {
+        $query->where('trip_id', $request->trip_id);
+    }
+
+       if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
     $BusTrips = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
@@ -48,7 +56,7 @@ public function showAllWithPaginate(Request $request)
             'next_page_url' => $BusTrips->nextPageUrl(),
             'prev_page_url' => $BusTrips->previousPageUrl(),
         ],
-        'message' => "Show All Bus Drivers."
+        'message' => "Show All Bus Tripss."
     ]);
 }
 
@@ -60,6 +68,15 @@ public function showAllWithoutPaginate(Request $request)
     if ($request->filled('bus_id')) {
         $query->where('bus_id', $request->bus_id);
     }
+
+    if ($request->filled('trip_id')) {
+        $query->where('trip_id', $request->trip_id);
+    }
+
+       if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
+        $query->where('status', $request->status);
+    }
+
 
     $BusTrips = $query->orderBy('created_at', 'desc')->get();
 
@@ -183,6 +200,21 @@ public function getSeatStats($id)
 //     return $this->respondWithResource($busTrip, 'تم تحديث حالة المقعد بنجاح.');
 // }
 
+    public function active(string $id)
+    {
+        $this->authorize('manage_system');
+        $BusTrip = BusTrip::findOrFail($id);
+
+        return $this->changeStatusSimple($BusTrip, 'active');
+    }
+
+    public function notActive(string $id)
+    {
+        $this->authorize('manage_system');
+        $BusTrip = BusTrip::findOrFail($id);
+
+        return $this->changeStatusSimple($BusTrip, 'notActive');
+    }
 
     protected function getResourceClass(): string
     {
