@@ -159,6 +159,8 @@ public function updater()
     'paidAmount' => 'decimal:2',
 ];
 
-
+protected $attributes = [
+    'invoiceStatus' => 'pending',
+];
 
 }
