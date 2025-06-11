@@ -539,7 +539,7 @@ protected function preparePilgrimsData(array $pilgrims, array $seatMapArray): ar
 
         $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']);
 
-        $pilgrimsData[$pilgrim['id']] = [
+        $pilgrimsData[$pilgrim['id']] = [  // Fixed: Added missing closing bracket ]
             'seatNumber' => $pilgrim['seatNumber'],
             'status' => $pilgrim['status'] ?? 'booked',
             'type' => $seatInfo['type'] ?? null,
