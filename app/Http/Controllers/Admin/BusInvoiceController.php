@@ -419,7 +419,6 @@ public function update(Request $request, BusInvoice $busInvoice)
             foreach ($request->pilgrims as $pilgrim) {
                 $syncData[$pilgrim['id']] = [
                     'seatNumber' => $pilgrim['seatNumber'],
-                    'price' => $pilgrim['price'],
                     'status' => $pilgrim['status'] ?? 'booked',
                     'reason' => $pilgrim['reason'] ?? null,
                 ];
