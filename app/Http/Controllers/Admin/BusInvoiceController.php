@@ -177,7 +177,7 @@ public function create(BusInvoiceRequest $request)
                     'status' => $pilgrim['status'] ?? 'booked',
                     'type' => $seatInfo['type'] ?? null,
                     'position' => $seatInfo['position'] ?? null,
-                    'creationDate' => now()->format('Y-m-d'),
+                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                     'creationDateHijri' => $this->getHijriDate(),
                 ];
 
