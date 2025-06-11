@@ -95,24 +95,20 @@ class BusInvoice extends Model
 
 public function PilgrimsCount(): void
 {
-    $this->loadCount('pilgrims');
-    $this->pilgrimsCount = $this->pilgrimsCount;
+    $this->pilgrimsCount = $this->pilgrims()->count();
     $this->save();
 }
 
-
 public function calculateTotal(): void
 {
-
-    if (is_null($this->pilgrimsCount)) {
+    if (!isset($this->pilgrimsCount)) {
         $this->PilgrimsCount();
     }
 
     $this->subtotal = $this->seatPrice * $this->pilgrimsCount;
-    $discount = $this->discount ?? 0;
-    $tax = $this->tax ?? 0;
-
-    $this->total = $this->subtotal - $discount + $tax;
+    $this->total = $this->subtotal
+                  - ($this->discount ?? 0)
+                  + ($this->tax ?? 0);
 
     $this->save();
 }

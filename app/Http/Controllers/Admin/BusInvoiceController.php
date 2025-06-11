@@ -237,6 +237,7 @@ public function create(BusInvoiceRequest $request)
     }
 
     $data = [
+        'seatPrice' => $this->ensureNumeric($request->input('seatPrice')), // إضافة سعر المقعد هنا
         'discount' => $this->ensureNumeric($request->input('discount')),
         'tax' => $this->ensureNumeric($request->input('tax')),
         'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
@@ -246,7 +247,7 @@ public function create(BusInvoiceRequest $request)
 
     $data = array_merge(
         $data,
-        $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
+        $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'seatPrice']), // إزالة seatPrice من الـ except
         $this->prepareCreationMetaData()
     );
 
@@ -259,7 +260,7 @@ public function create(BusInvoiceRequest $request)
             $pilgrimsData = [];
 
             foreach ($request->pilgrims as $pilgrim) {
-                if (!isset($pilgrim['id'], $pilgrim['seatNumber'], $pilgrim['seatPrice'])) {
+                if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) { // إزالة التحقق من seatPrice
                     throw new \Exception('بيانات الحاج غير مكتملة');
                 }
 
@@ -283,12 +284,11 @@ public function create(BusInvoiceRequest $request)
                 }
             }
 
-
             $busInvoice->pilgrims()->attach($pilgrimsData);
+
         }
 
 
-        $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
         DB::commit();
