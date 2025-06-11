@@ -46,8 +46,11 @@ class BusInvoiceResource extends JsonResource
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
             'paymentStatus' => $this->paymentStatus,
-            'creationDateHijri' => $this->creationDateHijri,
-            'creationDate' => $this->creationDate,
+            // 'creationDateHijri' => $this->creationDateHijri,
+            // 'creationDate' => $this->creationDate,
+            'creationDateHijri' => $this->getHijriDate($this->created_at),
+'creationDate' => $this->created_at,
+
             'changed_data' => $this->changed_data,
             'added_by' => $this->addedByAttribute(),
             'updated_by' => $this->updatedByAttribute(),
@@ -61,9 +64,13 @@ class BusInvoiceResource extends JsonResource
                         'status' => $pilgrim->pivot->status,
                         'type' => $pilgrim->pivot->type,
                         'position' => $pilgrim->pivot->position,
-                        'creationDateHijri' => $this->creationDateHijri,
-                        'creationDate' => $this->creationDate,
-                        'changed_data' => $this->changed_data,
+                        'changed_data' => $pilgrim->pivot->changed_data,
+                        // 'creationDateHijri' => $this->creationDateHijri,
+                        // 'creationDate' => $this->creationDate,
+                        // 'changed_data' => $this->changed_data,
+                        'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->created_at),
+'creationDate' => $pilgrim->pivot->created_at,
+
                     ];
                 });
             }),
