@@ -134,12 +134,11 @@ public function create(BusInvoiceRequest $request)
 
     // تعيين القيم الافتراضية
     $data = array_merge([
-    'discount' => is_numeric($request->discount) ? $request->discount : 0,
-    'tax' => is_numeric($request->tax) ? $request->tax : 0,
-    'paidAmount' => is_numeric($request->paidAmount) ? $request->paidAmount : 0,
-    'subtotal' => 0,
-    'total' => 0,
-
+        'discount' => $this->parseDecimalInput($request->discount),
+        'tax' => $this->parseDecimalInput($request->tax),
+        'paidAmount' => $this->parseDecimalInput($request->paidAmount),
+        'subtotal' => 0,
+        'total' => 0,
     ], $request->except('pilgrims'), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
@@ -175,6 +174,16 @@ public function create(BusInvoiceRequest $request)
         DB::rollBack();
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
+}
+
+// Add this helper method to your controller
+protected function parseDecimalInput($value)
+{
+    if ($value === null || $value === '') {
+        return 0;
+    }
+
+    return is_numeric($value) ? $value : 0;
 }
 
 protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
