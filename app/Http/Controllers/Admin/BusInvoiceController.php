@@ -118,7 +118,7 @@ public function create(BusInvoiceRequest $request)
             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber');
             $availableSeats = collect($busTrip->seatMap)
                 ->where('status', 'available')
-                ->pluck('number');
+                ->pluck('seatNumber');
 
             $unavailableSeats = $requestedSeats->diff($availableSeats);
 
@@ -165,6 +165,20 @@ public function create(BusInvoiceRequest $request)
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
+    }
+}
+
+protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
+{
+    $requestedSeats = collect($pilgrims)->pluck('seatNumber');
+    $availableSeats = collect($busTrip->seatMap)
+        ->where('status', 'available')
+        ->pluck('seatNumber');
+
+    $unavailableSeats = $requestedSeats->diff($availableSeats);
+
+    if ($unavailableSeats->isNotEmpty()) {
+        throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
     }
 }
 
@@ -306,26 +320,6 @@ protected function updateSeatStatusInTrip(BusTrip $busTrip, string $seatNumber, 
         ], 500);
     }
 }
-
-/**
- * التحقق من توفر المقاعد في رحلة الباص
- */
-protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
-{
-    $requestedSeats = collect($pilgrims)->pluck('seatNumber');
-    $availableSeats = collect($busTrip->seatMap)
-        ->where('status', 'available')
-        ->pluck('number');
-
-    $unavailableSeats = $requestedSeats->diff($availableSeats);
-
-    if ($unavailableSeats->isNotEmpty()) {
-        throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
-    }
-}
-
-
-
 
 
     public function updatePaymentStatus(Request $request, $invoiceId)
