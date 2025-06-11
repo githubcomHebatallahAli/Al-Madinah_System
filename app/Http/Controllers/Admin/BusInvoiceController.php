@@ -368,10 +368,8 @@ public function update(BusInvoiceRequest $request, $id)
 {
     $this->authorize('manage_system');
 
-    $busInvoice = BusInvoice::find($id);
-    if (!$busInvoice) {
-        return response()->json(['message' => 'فاتورة الباص غير موجودة'], 404);
-    }
+    $busInvoice = BusInvoice::findOrFail($id);
+    $oldData = $busInvoice->toArray(); // حفظ البيانات القديمة لتتبع التغييرات
 
     $busTrip = null;
     $unavailableSeats = collect();
@@ -393,9 +391,7 @@ public function update(BusInvoiceRequest $request, $id)
                 ->where('status', 'available')
                 ->pluck('seatNumber');
 
-            // Add original seats back to available seats for this check
             $availableSeats = $availableSeats->merge($originalSeats)->unique();
-
             $unavailableSeats = $requestedSeats->diff($availableSeats);
 
             if ($unavailableSeats->isNotEmpty()) {
@@ -419,58 +415,53 @@ public function update(BusInvoiceRequest $request, $id)
     $data = array_merge(
         $data,
         $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'seatPrice']),
-        $this->prepareUpdateMetaData() // You might want to create this method
+        $this->prepareUpdateMetaData()
     );
 
     DB::beginTransaction();
 
     try {
-        // First, release all previously booked seats
+        // التحقق من وجود تغييرات فعلية
+        $hasChanges = $this->checkForChanges($busInvoice, $data, $request);
+
+        if (!$hasChanges) {
+            $this->loadCommonRelations($busInvoice);
+            return $this->respondWithResource($busInvoice, "لا يوجد تغييرات فعلية");
+        }
+
+        // تحرير المقاعد القديمة
         if ($busTrip && count($originalSeats) > 0) {
             foreach ($originalSeats as $seat) {
                 $this->updateSeatStatusInTrip($busTrip, $seat, 'available');
             }
         }
 
-        // Update invoice data
+        // تحديث بيانات الفاتورة
         $busInvoice->update($data);
 
-        // Sync pilgrims data
+        // تحديث بيانات الحجاج والمقاعد
         if ($request->has('pilgrims')) {
-            $pilgrimsData = [];
+            $pilgrimsData = $this->preparePilgrimsData($request->pilgrims, $seatMapArray);
+            $busInvoice->pilgrims()->sync($pilgrimsData);
 
-            foreach ($request->pilgrims as $pilgrim) {
-                if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) {
-                    throw new \Exception('بيانات الحاج غير مكتملة');
-                }
-
-                $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']);
-
-                if (!$seatInfo) {
-                    throw new \Exception("المقعد {$pilgrim['seatNumber']} غير موجود في seatMap.");
-                }
-
-                $pilgrimsData[$pilgrim['id']] = [
-                    'seatNumber' => $pilgrim['seatNumber'],
-                    'status' => $pilgrim['status'] ?? 'booked',
-                    'type' => $seatInfo['type'] ?? null,
-                    'position' => $seatInfo['position'] ?? null,
-                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    'creationDateHijri' => $this->getHijriDate(),
-                ];
-
-                if ($busTrip) {
+            // حجز المقاعد الجديدة
+            if ($busTrip) {
+                foreach ($request->pilgrims as $pilgrim) {
                     $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
                 }
             }
-
-            $busInvoice->pilgrims()->sync($pilgrimsData);
         } else {
             $busInvoice->pilgrims()->detach();
         }
 
+        // تحديث الحسابات
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
+
+        // تسجيل التغييرات
+        $changedData = $busInvoice->getChangedData($oldData, $busInvoice->fresh()->toArray());
+        $busInvoice->changed_data = $changedData;
+        $busInvoice->save();
 
         DB::commit();
 
@@ -485,17 +476,69 @@ public function update(BusInvoiceRequest $request, $id)
     }
 }
 
-
 protected function prepareUpdateMetaData(): array
 {
-        $updatedBy = $this->getUpdatedByIdOrFail();
+    $updatedBy = $this->getUpdatedByIdOrFail();
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
         'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         'updated_at_hijri' => $this->getHijriDate(),
-
     ];
+}
+
+protected function checkForChanges($busInvoice, $newData, $request): bool
+{
+    // التحقق من التغييرات في البيانات الأساسية
+    foreach ($newData as $key => $value) {
+        if ($busInvoice->$key != $value) {
+            return true;
+        }
+    }
+
+    // التحقق من تغييرات في الحجاج
+    if ($request->has('pilgrims')) {
+        $currentPilgrims = $busInvoice->pilgrims()->pluck('pilgrims.id')->toArray();
+        $newPilgrims = collect($request->pilgrims)->pluck('id')->toArray();
+
+        if (count(array_diff($currentPilgrims, $newPilgrims)) > 0) {
+            return true;
+        }
+
+        if (count(array_diff($newPilgrims, $currentPilgrims)) > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+protected function preparePilgrimsData($pilgrims, $seatMapArray): array
+{
+    $pilgrimsData = [];
+
+    foreach ($pilgrims as $pilgrim) {
+        if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) {
+            throw new \Exception('بيانات الحاج غير مكتملة');
+        }
+
+        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']);
+
+        if (!$seatInfo) {
+            throw new \Exception("المقعد {$pilgrim['seatNumber']} غير موجود في seatMap.");
+        }
+
+        $pilgrimsData[$pilgrim['id']] = [
+            'seatNumber' => $pilgrim['seatNumber'],
+            'status' => $pilgrim['status'] ?? 'booked',
+            'type' => $seatInfo['type'] ?? null,
+            'position' => $seatInfo['position'] ?? null,
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
+        ];
+    }
+
+    return $pilgrimsData;
 }
 
 
