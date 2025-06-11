@@ -288,7 +288,6 @@ public function create(BusInvoiceRequest $request)
 
         }
 
-
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
@@ -389,7 +388,14 @@ public function update(Request $request, BusInvoice $busInvoice)
                 }
             }
         }
-
+$data = [
+    'seatPrice'   => $this->ensureNumeric($request->input('seatPrice')),
+    'discount'    => $this->ensureNumeric($request->input('discount')),
+    'tax'         => $this->ensureNumeric($request->input('tax')),
+    'paidAmount'  => $this->ensureNumeric($request->input('paidAmount')),
+    'subtotal'    => 0,
+    'total'       => 0,
+];
 
         $busInvoice->fill($request->all());
 
