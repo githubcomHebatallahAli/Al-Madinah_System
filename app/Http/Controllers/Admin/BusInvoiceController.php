@@ -434,6 +434,8 @@ public function update(Request $request, BusInvoice $busInvoice)
 
             $busInvoice->pilgrims()->sync($syncData);
         }
+        $busInvoice->PilgrimsCount();
+$busInvoice->calculateTotal();
 
         DB::commit();
 
