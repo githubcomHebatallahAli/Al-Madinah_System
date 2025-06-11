@@ -437,7 +437,8 @@ public function update(Request $request, BusInvoice $busInvoice)
 
         DB::commit();
 
-        return response()->json(['message' => 'تم تحديث الفاتورة بنجاح']);
+return response()->json($this->respondWithResource($busInvoice, 'تم تحديث الفاتورة بنجاح'));
+
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error("خطأ أثناء تحديث الفاتورة: " . $e->getMessage());
