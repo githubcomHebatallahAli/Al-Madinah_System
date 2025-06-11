@@ -544,8 +544,8 @@ protected function preparePilgrimsData(array $pilgrims, array $seatMapArray): ar
             'status' => $pilgrim['status'] ?? 'booked',
             'type' => $seatInfo['type'] ?? null,
             'position' => $seatInfo['position'] ?? null,
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
+            // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            // 'creationDateHijri' => $this->getHijriDate(),
         ];
     }
 
@@ -585,7 +585,7 @@ protected function checkForChanges($busInvoice, $newData, $request): bool
                 return true;
             }
 
-        
+
             if ($currentPilgrim->pivot->seatNumber != $newPilgrim['seatNumber'] ||
                 $currentPilgrim->pivot->status != ($newPilgrim['status'] ?? 'booked')) {
                 return true;
