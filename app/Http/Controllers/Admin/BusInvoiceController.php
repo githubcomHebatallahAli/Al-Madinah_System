@@ -420,7 +420,10 @@ public function update(Request $request, BusInvoice $busInvoice)
                 $syncData[$pilgrim['id']] = [
                     'seatNumber' => $pilgrim['seatNumber'],
                     'status' => $pilgrim['status'] ?? 'booked',
-                    'reason' => $pilgrim['reason'] ?? null,
+                    'type' => $seatInfo['type'] ?? null,
+                    'position' => $seatInfo['position'] ?? null,
+                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                    'creationDateHijri' => $this->getHijriDate(),
                 ];
 
                 $busTrip = $busInvoice->busTrip;
