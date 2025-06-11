@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('bus_invoice_id')->constrained('bus_invoices')->cascadeOnDelete();
             $table->foreignId('pilgrim_id')->constrained('pilgrims')->cascadeOnDelete();
             $table->string('seatNumber');
-            $table->decimal('seatPrice', 10, 2);
             $table->enum('status', ['booked', 'cancelled'])->default('booked');
             $table->string('type')->nullable();
             $table->string('position')->nullable();

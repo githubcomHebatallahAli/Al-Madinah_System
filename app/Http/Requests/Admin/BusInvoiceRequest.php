@@ -19,14 +19,12 @@ class BusInvoiceRequest extends FormRequest
     {
         return [
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
-
         'campaign_id'=>'required|exists:campaigns,id',
         'office_id'=>'required|exists:offices,id',
         'group_id'=>'required|exists:groups,id',
-
         'worker_id'=>'required|exists:workers,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
-
+        'seatPrice' => 'required|numeric|min:0',
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',
         'paidAmount'=>'nullable|numeric|min:0|max:99999.99',
@@ -41,7 +39,7 @@ class BusInvoiceRequest extends FormRequest
         'pilgrims.*.seatNumber' => 'required|string',
         'pilgrims.*.type' => 'nullable|string',
         'pilgrims.*.position' => 'nullable|string',
-        'pilgrims.*.seatPrice' => 'required|numeric|min:0',
+        // 'pilgrims.*.seatPrice' => 'required|numeric|min:0',
         ];
     }
 

@@ -13,6 +13,7 @@ class BusInvoiceResource extends JsonResource
     {
         return [
             "id" => $this->id,
+            'pilgrimsCount'=> $this ->pilgrimsCount,
             'main_pilgrim' => $this->whenLoaded('mainPilgrim', function () {
     return [
         'id' => $this->mainPilgrim->id,
@@ -22,7 +23,6 @@ class BusInvoiceResource extends JsonResource
 }),
 
             'invoiceNumber' => $this->invoiceNumber,
-
             'campaign_id' => $this->campaign?->id,
             'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
@@ -34,6 +34,7 @@ class BusInvoiceResource extends JsonResource
             'payment_method_type_id' => $this->paymentMethodType?->id,
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
+            'seatPrice' => $this-> seatPrice,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'tax' => $this->tax,
@@ -56,7 +57,7 @@ class BusInvoiceResource extends JsonResource
                         'id' => $pilgrim->id,
                         'name' => $pilgrim->name ?? '-',
                         'seatNumber' => $pilgrim->pivot->seatNumber,
-                        'seatPrice' => $pilgrim->pivot->seatPrice,
+
                         'status' => $pilgrim->pivot->status,
                         'type' => $pilgrim->pivot->type,
                         'position' => $pilgrim->pivot->position,

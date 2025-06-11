@@ -12,7 +12,7 @@ class BusInvoicePilgrim extends Model
     use HasFactory, TracksChangesTrait,HijriDateTrait;
         protected $fillable = [
         'seatNumber',
-        'seatPrice',
+
         'status',
         'type',
         'position',
@@ -21,7 +21,7 @@ class BusInvoicePilgrim extends Model
         'changed_data'
     ];
       protected $casts = [
-        'seatPrice' => 'decimal:2',
+        
         'changed_data' => 'array',
     ];
 

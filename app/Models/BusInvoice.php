@@ -15,20 +15,18 @@ class BusInvoice extends Model
         'invoiceNumber',
         'main_pilgrim_id',
         'bus_trip_id',
-
         'campaign_id',
         'office_id',
         'group_id',
-
         'worker_id',
         'payment_method_type_id',
-
+        'seatPrice',
         'subtotal',
         'discount',
         'tax',
         'total',
         'paidAmount',
-        // 'bookedSeats',
+        'pilgrimsCount',
         'invoiceStatus',
         'reason',
         'paymentStatus',
@@ -85,7 +83,6 @@ class BusInvoice extends Model
     return $this->belongsToMany(Pilgrim::class, 'bus_invoice_pilgrims')
         ->withPivot([
             'seatNumber',
-            'seatPrice',
             'status',
             'creationDate',
             'creationDateHijri',
@@ -96,13 +93,30 @@ class BusInvoice extends Model
         ->withTimestamps();
 }
 
-    public function calculateTotal(): void
+public function PilgrimsCount(): void
 {
-    $this->loadMissing('pilgrims');
-    $this->subtotal = $this->pilgrims->sum('pivot.seatPrice');
-    $this->total = $this->subtotal - $this->discount + $this->tax;
+    $this->loadCount('pilgrims');
+    $this->pilgrimsCount = $this->pilgrimsCount;
     $this->save();
 }
+
+
+public function calculateTotal(): void
+{
+
+    if (is_null($this->pilgrimsCount)) {
+        $this->PilgrimsCount();
+    }
+
+    $this->subtotal = $this->seatPrice * $this->pilgrimsCount;
+    $discount = $this->discount ?? 0;
+    $tax = $this->tax ?? 0;
+
+    $this->total = $this->subtotal - $discount + $tax;
+
+    $this->save();
+}
+
 
       protected static function booted()
     {
@@ -157,6 +171,7 @@ public function updater()
     'tax' => 'decimal:2',
     'total' => 'decimal:2',
     'paidAmount' => 'decimal:2',
+    'seatPrice' => 'decimal:2',
 ];
 
 protected $attributes = [

@@ -53,7 +53,6 @@ class Pilgrim extends Model
     return $this->belongsToMany(BusInvoice::class, 'bus_invoice_pilgrims')
         ->withPivot([
             'seatNumber',
-            'seatPrice',
             'status',
             'creationDate',
             'creationDateHijri',
