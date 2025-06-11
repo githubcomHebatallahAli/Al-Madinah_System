@@ -544,45 +544,45 @@ protected function preparePilgrimsData($pilgrims, $seatMapArray): array
 // ======================================================
 
 
-// protected function getPivotChanges(array $oldPivotData, array $newPivotData): array
-// {
-//     $changes = [];
+protected function getPivotChanges(array $oldPivotData, array $newPivotData): array
+{
+    $changes = [];
 
-//     // الحجاج المحذوفين
-//     foreach (array_diff_key($oldPivotData, $newPivotData) as $pilgrimId => $pivot) {
-//         $changes[$pilgrimId] = [
-//             'old' => $pivot,
-//             'new' => null,
-//             'action' => 'removed'
-//         ];
-//     }
+    // الحجاج المحذوفين
+    foreach (array_diff_key($oldPivotData, $newPivotData) as $pilgrimId => $pivot) {
+        $changes[$pilgrimId] = [
+            'old' => $pivot,
+            'new' => null,
+            'action' => 'removed'
+        ];
+    }
 
-//     // الحجاج المضافين
-//     foreach (array_diff_key($newPivotData, $oldPivotData) as $pilgrimId => $pivot) {
-//         $changes[$pilgrimId] = [
-//             'old' => null,
-//             'new' => $pivot,
-//             'action' => 'added'
-//         ];
-//     }
+    // الحجاج المضافين
+    foreach (array_diff_key($newPivotData, $oldPivotData) as $pilgrimId => $pivot) {
+        $changes[$pilgrimId] = [
+            'old' => null,
+            'new' => $pivot,
+            'action' => 'added'
+        ];
+    }
 
-//     // الحجاج المعدلين
-//     foreach ($newPivotData as $pilgrimId => $pivot) {
-//         if (isset($oldPivotData[$pilgrimId])) {
-//             $oldPivot = $oldPivotData[$pilgrimId];
-//             if ($oldPivot['seatNumber'] != $pivot['seatNumber'] ||
-//                 $oldPivot['status'] != $pivot['status']) {
-//                 $changes[$pilgrimId] = [
-//                     'old' => $oldPivot,
-//                     'new' => $pivot,
-//                     'action' => 'updated'
-//                 ];
-//             }
-//         }
-//     }
+    // الحجاج المعدلين
+    foreach ($newPivotData as $pilgrimId => $pivot) {
+        if (isset($oldPivotData[$pilgrimId])) {
+            $oldPivot = $oldPivotData[$pilgrimId];
+            if ($oldPivot['seatNumber'] != $pivot['seatNumber'] ||
+                $oldPivot['status'] != $pivot['status']) {
+                $changes[$pilgrimId] = [
+                    'old' => $oldPivot,
+                    'new' => $pivot,
+                    'action' => 'updated'
+                ];
+            }
+        }
+    }
 
-//     return $changes;
-// }
+    return $changes;
+}
 
 
 
