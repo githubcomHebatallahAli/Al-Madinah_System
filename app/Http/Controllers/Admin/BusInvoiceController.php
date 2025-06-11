@@ -307,7 +307,6 @@ public function create(BusInvoiceRequest $request)
 
 protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
 {
-    // Find the seat in the seatMap
     $seatMap = collect($busTrip->seatMap);
     $seatIndex = $seatMap->search(function ($item) use ($seatNumber) {
         return $item['seatNumber'] === $seatNumber;
@@ -366,115 +365,76 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     }
 
 
-    public function update(BusInvoiceRequest $request, string $id)
+public function update(Request $request, BusInvoice $busInvoice)
 {
-
-    $this->authorize('manage_system');
-
     DB::beginTransaction();
+
     try {
 
-        $busInvoice = BusInvoice::findOrFail($id);
-
-        $oldData = $busInvoice->toArray();
-
-        $updateData = $request->only([
-            'main_pilgrim_id',
-            'bus_trip_id',
-            'campaign_id',
-            'office_id',
-            'group_id',
-            'worker_id',
-            'payment_method_type_id',
-            'subtotal',
-            'discount',
-            'tax',
-            'total',
-            'paidAmount',
-            'invoiceStatus',
-            'reason',
-            'paymentStatus',
-        ]);
+        $oldBusTrip = $busInvoice->busTrip;
+        $oldPilgrims = $busInvoice->pilgrims()->withPivot('seatNumber')->get();
 
 
-        if ($request->has('bus_trip_id') && $request->bus_trip_id != $busInvoice->bus_trip_id) {
-            $newBusTrip = BusTrip::findOrFail($request->bus_trip_id);
-
-
-            if ($request->has('pilgrims')) {
-                $this->validateSeatsAvailability($newBusTrip, $request->pilgrims);
+        if (
+            $request->has('bus_trip_id')
+            && $request->bus_trip_id != $busInvoice->bus_trip_id
+            && $oldBusTrip
+        ) {
+            foreach ($oldPilgrims as $oldPilgrim) {
+                $oldSeat = $oldPilgrim->pivot->seatNumber;
+                try {
+                    $this->updateSeatStatusInTrip($oldBusTrip, $oldSeat, 'available');
+                } catch (\Exception $e) {
+                    Log::warning("فشل في تفريغ المقعد {$oldSeat}: " . $e->getMessage());
+                }
             }
         }
 
-        $updateData = array_merge(
-            $updateData,
-            $this->prepareUpdateMeta($request, $busInvoice->status)
-        );
 
+        $busInvoice->fill($request->all());
 
-        if ($request->has('pilgrims')) {
-            $pilgrimsData = [];
-            foreach ($request->pilgrims as $pilgrim) {
-                $pilgrimsData[$pilgrim['id']] = [
-                    'seatNumber' => $pilgrim['seatNumber'],
-                    'seatPrice' => $pilgrim['seatPrice'],
-                    'status' => $pilgrim['status'] ?? 'booked',
-                    'type' => $pilgrim['type'] ?? 'regular',
-                    'position' => $pilgrim['position'] ?? null,
-                    'changed_data' => [
-                        'updated_at' => now()->format('Y-m-d H:i:s'),
-                        'updated_by' => auth()->id(),
-                    ]
-                ];
-
-
-                if ($busInvoice->bus_trip_id) {
-                    $this->updateSeatStatusInTrip($busInvoice->busTrip, $pilgrim['seatNumber'], 'booked');
-                }
-            }
-
-            $currentPilgrims = $busInvoice->pilgrims()->withPivot('changed_data')->get()->keyBy('id');
-
-            foreach ($pilgrimsData as $pilgrimId => $newData) {
-                if ($currentPilgrims->has($pilgrimId)) {
-                    $oldPivotData = $currentPilgrims->get($pilgrimId)->pivot->changed_data ?? [];
-                    $pilgrimsData[$pilgrimId]['changed_data'] = array_merge(
-                        $oldPivotData,
-                        $newData['changed_data']
-                    );
-                }
-            }
-
-            $busInvoice->pilgrims()->sync($pilgrimsData);
+        if (empty($busInvoice->creationDate)) {
+            $busInvoice->creationDate = now();
         }
 
-        $busInvoice->update($updateData);
+        if (empty($busInvoice->creationDateHijri)) {
+            $busInvoice->creationDateHijri = $this->getHijriDate(now()); // تعتمد على HijriDateTrait
+        }
 
-        $busInvoice->calculateTotal();
-
-        $changedData = $busInvoice->getChangedData($oldData, $busInvoice->fresh()->toArray());
-        $busInvoice->changed_data = $changedData;
         $busInvoice->save();
 
+        if ($request->has('pilgrims')) {
+            $syncData = [];
+
+            foreach ($request->pilgrims as $pilgrim) {
+                $syncData[$pilgrim['id']] = [
+                    'seatNumber' => $pilgrim['seatNumber'],
+                    'price' => $pilgrim['price'],
+                    'status' => $pilgrim['status'] ?? 'confirmed',
+                    'reason' => $pilgrim['reason'] ?? null,
+                ];
+
+                
+                $busTrip = $busInvoice->busTrip; // تم تحديث bus_trip_id فوق
+                if ($busTrip) {
+                    $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
+                }
+            }
+
+            $busInvoice->pilgrims()->sync($syncData);
+        }
 
         DB::commit();
 
-        $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, "تم تحديث الفاتورة بنجاح");
-
+        return response()->json(['message' => 'تم تحديث الفاتورة بنجاح']);
     } catch (\Exception $e) {
-
         DB::rollBack();
+        Log::error("خطأ أثناء تحديث الفاتورة: " . $e->getMessage());
 
-        Log::error('Failed to update bus invoice: ' . $e->getMessage());
-
-
-        return response()->json([
-            'message' => 'فشل في تحديث الفاتورة',
-            'error' => $e->getMessage()
-        ], 500);
+        return response()->json(['message' => 'حدث خطأ أثناء التحديث', 'error' => $e->getMessage()], 500);
     }
 }
+
 
 
     public function updatePaymentStatus(Request $request, $invoiceId)
