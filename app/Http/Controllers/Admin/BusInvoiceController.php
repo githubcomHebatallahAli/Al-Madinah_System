@@ -214,7 +214,6 @@ protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
         throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
     }
 
-    // Update the seat status
     $updatedSeatMap = $seatMap->all();
     $updatedSeatMap[$seatIndex]['status'] = $status;
 
@@ -252,7 +251,9 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     {
         $this->authorize('manage_system');
 
-        $busInvoice = BusInvoice::find($id);
+        $busInvoice =BusInvoice::with([
+        'pilgrims',
+    ])->find($id);
 
         if (!$busInvoice) {
             return response()->json(['message' => "Bus Invoice not found."], 404);
@@ -260,6 +261,7 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
 
         return $this->respondWithResource($busInvoice, "Bus Invoice retrieved for editing.");
     }
+
 
     public function update(BusInvoiceRequest $request, string $id)
 {
