@@ -544,8 +544,8 @@ protected function preparePilgrimsData(array $pilgrims, array $seatMapArray): ar
             'status' => $pilgrim['status'] ?? 'booked',
             'type' => $seatInfo['type'] ?? null,
             'position' => $seatInfo['position'] ?? null,
-            // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            // 'creationDateHijri' => $this->getHijriDate(),
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
         ];
     }
 
@@ -558,8 +558,8 @@ protected function prepareUpdateMetaData(): array
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'updated_at_hijri' => $this->getHijriDate(),
+        // 'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        // 'updated_at_hijri' => $this->getHijriDate(),
     ];
 }
 
