@@ -111,6 +111,7 @@ public function create(BusInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
+    // التحقق من توفر المقاعد
     if ($request->has('bus_trip_id')) {
         $busTrip = BusTrip::findOrFail($request->bus_trip_id);
 
@@ -131,7 +132,14 @@ public function create(BusInvoiceRequest $request)
         }
     }
 
-    $data = array_merge($request->except('pilgrims'), $this->prepareCreationMetaData());
+    // تعيين القيم الافتراضية
+    $data = array_merge([
+        'discount' => $request->discount ?? 0,
+        'tax' => $request->tax ?? 0,
+        'subtotal' => 0,
+        'total' => 0,
+        'paidAmount' => $request->paidAmount ?? 0,
+    ], $request->except('pilgrims'), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
     try {
