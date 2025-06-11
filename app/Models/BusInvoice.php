@@ -89,8 +89,8 @@ class BusInvoice extends Model
             'changed_data',
              'type',
              'position',
-        ])
-        ->withTimestamps();
+        ]);
+
 }
 
 public function PilgrimsCount(): void

@@ -59,8 +59,8 @@ class Pilgrim extends Model
             'changed_data',
              'type',
              'position',
-        ])
-        ->withTimestamps();
+        ]);
+    
 }
 
 
