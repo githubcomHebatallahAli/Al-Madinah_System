@@ -364,91 +364,6 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     }
 
 
-public function update(Request $request, BusInvoice $busInvoice)
-{
-    DB::beginTransaction();
-
-    try {
-        $oldBusTrip = $busInvoice->busTrip;
-        $oldPilgrims = $busInvoice->pilgrims()->withPivot('seatNumber')->get();
-
-        // تفريغ المقاعد القديمة
-        if (
-            $request->has('bus_trip_id') &&
-            $request->bus_trip_id != $busInvoice->bus_trip_id &&
-            $oldBusTrip
-        ) {
-            foreach ($oldPilgrims as $oldPilgrim) {
-                $oldSeat = $oldPilgrim->pivot->seatNumber;
-                try {
-                    $this->updateSeatStatusInTrip($oldBusTrip, $oldSeat, 'available');
-                } catch (\Exception $e) {
-                    Log::warning("فشل في تفريغ المقعد {$oldSeat}: " . $e->getMessage());
-                }
-            }
-        }
-
-        // معالجة القيم الرقمية
-        $data = [
-            'seatPrice'   => $this->ensureNumeric($request->input('seatPrice')),
-            'discount'    => $this->ensureNumeric($request->input('discount')),
-            'tax'         => $this->ensureNumeric($request->input('tax')),
-            'paidAmount'  => $this->ensureNumeric($request->input('paidAmount')),
-            'subtotal'    => 0,
-            'total'       => 0,
-        ];
-
-        // تعبئة الفاتورة بالقيم المعالجة فقط
-        $busInvoice->fill(array_merge($request->except(['seatPrice', 'discount', 'tax', 'paidAmount', 'subtotal', 'total']), $data));
-
-        // التواريخ إذا غير موجودة
-        if (empty($busInvoice->creationDate)) {
-            $busInvoice->creationDate = now();
-        }
-
-        if (empty($busInvoice->creationDateHijri)) {
-            $busInvoice->creationDateHijri = $this->getHijriDate(now());
-        }
-
-        $busInvoice->save();
-
-        // تحديث المعتمرين والمقاعد
-        if ($request->has('pilgrims')) {
-            $syncData = [];
-
-            foreach ($request->pilgrims as $pilgrim) {
-                $syncData[$pilgrim['id']] = [
-                    'seatNumber' => $pilgrim['seatNumber'],
-                    'status' => $pilgrim['status'] ?? 'booked',
-                    'type' => $seatInfo['type'] ?? null,
-                    'position' => $seatInfo['position'] ?? null,
-                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    'creationDateHijri' => $this->getHijriDate(),
-                ];
-
-                $busTrip = $busInvoice->busTrip;
-                if ($busTrip) {
-                    $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
-                }
-            }
-
-            $busInvoice->pilgrims()->sync($syncData);
-        }
-        $busInvoice->PilgrimsCount();
-$busInvoice->calculateTotal();
-
-        DB::commit();
-
-return response()->json($this->respondWithResource($busInvoice, 'تم تحديث الفاتورة بنجاح'));
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("خطأ أثناء تحديث الفاتورة: " . $e->getMessage());
-
-        return response()->json(['message' => 'حدث خطأ أثناء التحديث', 'error' => $e->getMessage()], 500);
-    }
-}
-
 public function update(BusInvoiceRequest $request, $id)
 {
     $this->authorize('manage_system');
@@ -579,7 +494,7 @@ protected function prepareUpdateMetaData(): array
         'updated_by_type' => $this->getUpdatedByType(),
         'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         'updated_at_hijri' => $this->getHijriDate(),
-       
+
     ];
 }
 
