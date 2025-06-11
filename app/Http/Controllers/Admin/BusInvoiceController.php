@@ -289,6 +289,7 @@ public function create(BusInvoiceRequest $request)
         }
 
 
+        $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
         DB::commit();
