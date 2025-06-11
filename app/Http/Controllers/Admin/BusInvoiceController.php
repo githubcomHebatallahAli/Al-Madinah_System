@@ -187,7 +187,7 @@ protected function updateSeatStatusInTrip(BusTrip $busTrip, string $seatNumber, 
     $seatMap = $busTrip->seatMap;
 
     foreach ($seatMap as &$seat) {
-        if ($seat['number'] == $seatNumber) {
+        if ($seat['seatNumber'] == $seatNumber) {
             $seat['status'] = $status;
             break;
         }
