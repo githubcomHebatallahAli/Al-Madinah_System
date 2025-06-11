@@ -399,6 +399,33 @@ public function update(BusInvoiceRequest $request, $id)
     }
 }
 
+protected function checkForChanges($busInvoice, $newData, $request): bool
+{
+    // التحقق من التغييرات في البيانات الأساسية
+    foreach ($newData as $key => $value) {
+        if ($busInvoice->$key != $value) {
+            return true;
+        }
+    }
+
+    // التحقق من تغييرات في الحجاج
+    if ($request->has('pilgrims')) {
+        $currentPilgrims = $busInvoice->pilgrims()->pluck('pilgrims.id')->toArray();
+        $newPilgrims = collect($request->pilgrims)->pluck('id')->toArray();
+
+        if (count(array_diff($currentPilgrims, $newPilgrims)) > 0) {
+            return true;
+        }
+
+        if (count(array_diff($newPilgrims, $currentPilgrims)) > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 public function prepareUpdateMetaData(): array
 {
     return [
