@@ -531,21 +531,22 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 protected function preparePilgrimsData(array $pilgrims, array $seatMapArray): array
 {
     $pilgrimsData = [];
+    $now = now()->timezone('Asia/Riyadh');
 
     foreach ($pilgrims as $pilgrim) {
         if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) {
             throw new \Exception('بيانات الحاج غير مكتملة');
         }
 
-        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']);
+        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']) ?? [];
 
-        $pilgrimsData[$pilgrim['id']] = [  // Fixed: Added missing closing bracket ]
-            'seatNumber' => $pilgrim['seatNumber'],
-            'status' => $pilgrim['status'] ?? 'booked',
-            'type' => $seatInfo['type'] ?? null,
-            'position' => $seatInfo['position'] ?? null,
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
+        $pilgrimsData[$pilgrim['id']] = [
+            'seatNumber'  => $pilgrim['seatNumber'],
+            'status'      => $pilgrim['status'] ?? 'booked',
+            'type'        => $seatInfo['type'] ?? null,
+            'position'    => $seatInfo['position'] ?? null,
+            'creationDate' => $now->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate($now),
         ];
     }
 
@@ -558,8 +559,8 @@ protected function prepareUpdateMetaData(): array
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        // 'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        // 'updated_at_hijri' => $this->getHijriDate(),
+        'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'updated_at_hijri' => $this->getHijriDate(),
     ];
 }
 
