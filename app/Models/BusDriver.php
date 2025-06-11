@@ -30,9 +30,9 @@ class BusDriver extends Model
         return $this->belongsTo(Bus::class);
     }
 
-                public function busInvoices()
+               public function busTrips()
     {
-        return $this->hasMany(BusInvoice::class);
+        return $this->hasMany(BusTrip::class);
     }
 
     public function creator()

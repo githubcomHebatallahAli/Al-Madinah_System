@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Bus;
 use App\Models\Worker;
+use App\Models\BusTrip;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
@@ -11,12 +12,15 @@ use Illuminate\Http\JsonResponse;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\BusInvoiceRequest;
 use App\Http\Resources\Admin\BusInvoiceResource;
+use App\Http\Resources\Admin\ShowAllBusInvoiceResource;
+
 
 class BusInvoiceController extends Controller
 {
@@ -26,368 +30,339 @@ class BusInvoiceController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
-
-
-        public function showAll(Request $request)
+    public function showAllWithPaginate(Request $request)
     {
-        try {
-            $query = BusInvoice::with([
-                'bus', 'trip', 'campaign', 'office', 'group',
-                'busDriver', 'worker', 'paymentMethodType', 'pilgrims'
-            ]);
+        $this->authorize('manage_system');
 
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
+        $query = BusInvoice::query();
+
+        if ($request->filled('bus_trip_id')) {
+            $query->where('bus_trip_id', $request->bus_trip_id);
+        }
+
+        if ($request->filled('campaign_id')) {
+            $query->where('campaign_id', $request->campaign_id);
+        }
+
+        if ($request->filled('office_id')) {
+            $query->where('office_id', $request->office_id);
+        }
+
+        if ($request->filled('group_id')) {
+            $query->where('group_id', $request->group_id);
+        }
+
+        if ($request->filled('payment_status')) {
+            $query->where('paymentStatus', $request->payment_status);
+        }
+
+        if ($request->filled('invoice_status')) {
+            $query->where('invoiceStatus', $request->invoice_status);
+        }
+
+        $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->paginate(10);
+
+        return response()->json([
+            'data' => ShowAllBusInvoiceResource::collection($busInvoices),
+            'pagination' => [
+                'total' => $busInvoices->total(),
+                'count' => $busInvoices->count(),
+                'per_page' => $busInvoices->perPage(),
+                'current_page' => $busInvoices->currentPage(),
+                'total_pages' => $busInvoices->lastPage(),
+                'next_page_url' => $busInvoices->nextPageUrl(),
+                'prev_page_url' => $busInvoices->previousPageUrl(),
+            ],
+            'message' => "Show All Bus Invoices."
+        ]);
+    }
+
+    public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $query = BusInvoice::query();
+
+        if ($request->filled('bus_trip_id')) {
+            $query->where('bus_trip_id', $request->bus_trip_id);
+        }
+
+        if ($request->filled('campaign_id')) {
+            $query->where('campaign_id', $request->campaign_id);
+        }
+
+        if ($request->filled('office_id')) {
+            $query->where('office_id', $request->office_id);
+        }
+
+        if ($request->filled('group_id')) {
+            $query->where('group_id', $request->group_id);
+        }
+
+        $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'data' => ShowAllBusInvoiceResource::collection($busInvoices),
+            'message' => "Show All Bus Invoices."
+        ]);
+    }
+
+public function create(BusInvoiceRequest $request)
+{
+    $this->authorize('manage_system');
+
+    if ($request->has('bus_trip_id')) {
+        $busTrip = BusTrip::findOrFail($request->bus_trip_id);
+
+        if ($request->has('pilgrims')) {
+            $requestedSeats = collect($request->pilgrims)->pluck('seatNumber');
+            $availableSeats = collect($busTrip->seatMap)
+                ->where('status', 'available')
+                ->pluck('number');
+
+            $unavailableSeats = $requestedSeats->diff($availableSeats);
+
+            if ($unavailableSeats->isNotEmpty()) {
+                return response()->json([
+                    'message' => 'Some seats are not available',
+                    'unavailable_seats' => $unavailableSeats
+                ], 422);
             }
-
-            if ($request->has('paymentStatus')) {
-                $query->where('paymentStatus', $request->paymentStatus);
-            }
-
-            if ($request->has('bus_id')) {
-                $query->where('bus_id', $request->bus_id);
-            }
-
-            if ($request->has('trip_id')) {
-                $query->where('trip_id', $request->trip_id);
-            }
-
-            if ($request->has('date_from') && $request->has('date_to')) {
-                $query->whereBetween('travelDate', [$request->date_from, $request->date_to]);
-            }
-
-            $sortField = $request->get('sort_by', 'created_at');
-            $sortDirection = $request->get('sort_dir', 'desc');
-            $query->orderBy($sortField, $sortDirection);
-
-            $invoices = $query->paginate($request->get('per_page', 15));
-
-            return $this->respondWithCollection($invoices->getCollection(), 'Bus invoices retrieved successfully');
-
-        } catch (\Exception $e) {
-            return $this->handleError($e, 'Failed to retrieve bus invoices');
         }
     }
 
+    $data = array_merge($request->except('pilgrims'), $this->prepareCreationMetaData());
 
-
-public function create(BusInvoiceRequest $request): JsonResponse
-{
     DB::beginTransaction();
-
     try {
-        $validated = $request->validated();
+        $busInvoice = BusInvoice::create($data);
 
+        if ($request->has('pilgrims')) {
+            $pilgrimsData = [];
+            foreach ($request->pilgrims as $pilgrim) {
+                $pilgrimsData[$pilgrim['id']] = [
+                    'seatNumber' => $pilgrim['seatNumber'],
+                    'seatPrice' => $pilgrim['seatPrice'],
+                    'status' => $pilgrim['status'] ?? 'booked',
+                    'type' => $pilgrim['type'] ?? 'regular',
+                    'position' => $pilgrim['position'] ?? null,
+                    'creationDate' => now()->format('Y-m-d'),
+                    'creationDateHijri' => $this->getHijriDate(),
+                ];
+                if ($request->has('bus_trip_id')) {
+                    $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
+                }
+            }
 
-$workerBelongsToCampaign = DB::table('campaign_workers')
-    ->where('campaign_id', $request->campaign_id)
-    ->where('worker_id', $request->worker_id)
-    ->exists();
-
-if (!$workerBelongsToCampaign) {
-    return response()->json([
-
-        'message' => 'المندوب لا يتبع هذه الحملة.'
-    ]);
-}
-
-        $pilgrims = $validated['pilgrims'] ?? [];
-        if (empty($pilgrims)) {
-            return response()->json([
-    'success' => false,
-    'message' => 'يجب تحديد المعتمرين والمقاعد',
-], 400);
-
+            $busInvoice->pilgrims()->attach($pilgrimsData);
+            $busInvoice->calculateTotal();
         }
-
-$bus = Bus::findOrFail($validated['bus_id']);
-        $invoiceData = array_merge([
-            'main_pilgrim_id'         => $validated['main_pilgrim_id'] ?? null,
-            'trip_id'                 => $validated['trip_id'],
-            'campaign_id'             => $validated['campaign_id'],
-            'office_id'               => $validated['office_id'],
-            'group_id'                => $validated['group_id'],
-            'bus_id'                  => $validated['bus_id'],
-            'bus_driver_id'           => $validated['bus_driver_id'],
-            'worker_id'               => $validated['worker_id'],
-            'payment_method_type_id'  => $validated['payment_method_type_id'],
-            'travelDate'              => $validated['travelDate'] ,
-            'travelDateHijri'         => $validated['travelDateHijri'],
-            'discount'                => $validated['discount'] ?? 0,
-            'tax'                     => $validated['tax'] ?? 0,
-            'paidAmount'              => $validated['paidAmount'],
-            'invoiceStatus'=> $validated['invoiceStatus'] ?? 'pending',
-            'paymentStatus'           => $validated['paymentStatus'] ?? 'pending',
-            'reason'                  => $validated['reason'] ?? null,
-                'seatMap'                 => $bus->seatMap,
-        ], $this->prepareCreationMetaData());
-
-
-        $invoice = BusInvoice::create($invoiceData);
-
-        $this->validateAndAttachPilgrims($invoice, $pilgrims);
-
-        $invoice->calculateTotal();
-        // $invoice->updateSeatsCount();
-         $invoice->updateSeatMapAfterBooking();
-
-        $invoice->load([
-            'mainPilgrim', 'trip', 'campaign', 'office', 'group',
-            'bus', 'busDriver', 'worker', 'paymentMethodType',
-            'pilgrims'
-        ]);
 
         DB::commit();
 
-        return $this->respondWithResource($invoice, 'تم إنشاء فاتورة الباص بنجاح.');
-    } catch (\Throwable $e) {
+        return $this->respondWithResource($busInvoice, "تم إنشاء فاتورة الباص بنجاح");
+
+    } catch (\Exception $e) {
         DB::rollBack();
-        return $this->handleError($e, 'حدث خطأ أثناء إنشاء فاتورة الباص.');
+        return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
 
-protected function validateAndAttachPilgrims(BusInvoice $invoice, array $pilgrimsData): void
+protected function updateSeatStatusInTrip(BusTrip $busTrip, string $seatNumber, string $status)
 {
-    $seatMap = collect($invoice->seatMap);
-    $pilgrimsToAttach = [];
-    $seatNumbersUsed = [];
+    $seatMap = $busTrip->seatMap;
 
-    // تجهيز أرقام المقاعد المطلوبة من الطلب الحالي
-    $requestedSeats = collect($pilgrimsData)
-        ->pluck('seatNumber')
-        ->map(fn($s) => strtoupper(trim($s)))
-        ->toArray();
-
-    // جلب المقاعد المحجوزة مسبقًا على نفس الرحلة والباص والتاريخ (من فواتير أخرى)
-    $alreadyBookedSeats = DB::table('bus_invoice_pilgrims')
-        ->join('bus_invoices', 'bus_invoice_pilgrims.bus_invoice_id', '=', 'bus_invoices.id')
-        ->where('bus_invoices.bus_id', $invoice->bus_id)
-        ->where('bus_invoices.trip_id', $invoice->trip_id)
-        ->whereDate('bus_invoices.travelDate', $invoice->travelDate) // التحقق من تاريخ الرحلة
-        ->where('bus_invoice_id', '!=', $invoice->id)
-        ->whereIn('bus_invoice_pilgrims.seatNumber', $requestedSeats)
-        ->pluck('bus_invoice_pilgrims.seatNumber')
-        ->map(fn($s) => strtoupper(trim($s)))
-        ->toArray();
-
-    // التحقق من توفر المقاعد في الحافلة نفسها
-    $bus = Bus::find($invoice->bus_id);
-    $busSeatMap = collect($bus->seatMap ?? []);
-
-    foreach ($pilgrimsData as $pilgrim) {
-        throw_unless(
-            isset($pilgrim['id'], $pilgrim['seatNumber']),
-            new \Exception("بيانات المعتمر غير صالحة")
-        );
-
-        $seatNumber = strtoupper(trim($pilgrim['seatNumber']));
-
-        // التحقق من وجود المقعد في الحافلة أصلاً
-        $seatInBus = $busSeatMap->firstWhere('seatNumber', $seatNumber);
-        throw_unless(
-            $seatInBus,
-            new \Exception("المقعد رقم {$seatNumber} غير موجود في الحافلة.")
-        );
-
-        // تحقق من أن المقعد موجود ومتاح في الـ seatMap الخاص بالرحلة
-        $seatExists = $seatMap->firstWhere('seatNumber', $seatNumber);
-        throw_unless(
-            $seatExists && ($seatExists['status'] ?? '') === 'available',
-            new \Exception("المقعد رقم {$seatNumber} غير متاح أو غير موجود.")
-        );
-
-        // تحقق من عدم تكرار المقعد في نفس الطلب
-        throw_if(
-            in_array($seatNumber, $seatNumbersUsed),
-            new \Exception("المقعد رقم {$seatNumber} تم استخدامه أكثر من مرة.")
-        );
-
-        // تحقق من عدم حجز المقعد مسبقًا في نفس الرحلة والتاريخ
-        throw_if(
-            in_array($seatNumber, $alreadyBookedSeats),
-            new \Exception("المقعد رقم {$seatNumber} محجوز مسبقاً في هذه الرحلة.")
-        );
-
-        $seatNumbersUsed[] = $seatNumber;
-
-        $pilgrimsToAttach[$pilgrim['id']] = [
-            'seatNumber' => $seatNumber,
-            'seatPrice' => $pilgrim['seatPrice'] ?? 0,
-            'status' => $pilgrim['status'] ?? 'booked',
-            'creationDate' => now(),
-            'creationDateHijri' => $this->getHijriDate(),
-            'type' => $seatExists['type'] ?? null,
-            'position' => $seatExists['position'] ?? null,
-        ];
+    foreach ($seatMap as &$seat) {
+        if ($seat['number'] == $seatNumber) {
+            $seat['status'] = $status;
+            break;
+        }
     }
 
-    // تحديث حالة المقاعد في الـ seatMap الخاص بالفاتورة فقط
-    $updatedSeatMap = $seatMap->map(function ($seat) use ($seatNumbersUsed) {
-        if (in_array(strtoupper(trim($seat['seatNumber'])), $seatNumbersUsed)) {
-            $seat['status'] = 'booked';
-        }
-        return $seat;
-    });
-
-    // ربط المعتمرين
-    $invoice->pilgrims()->attach($pilgrimsToAttach);
-
-    // تحديث الـ seatMap داخل الفاتورة فقط (بدون تحديث الحافلة)
-    $invoice->update([
-        'seatMap' => $updatedSeatMap->values()->all(),
-    ]);
+    $busTrip->seatMap = $seatMap;
+    $busTrip->save();
 }
 
 
-
-
-
-
-
-    public function edit(BusInvoice $busInvoice)
+    public function edit(string $id)
     {
-        try {
-            $this->loadCreatorRelations($busInvoice);
-            $this->loadUpdaterRelations($busInvoice);
+        $this->authorize('manage_system');
 
-            $busInvoice->load([
-                'bus', 'trip', 'campaign', 'office', 'group',
-                'busDriver', 'worker', 'paymentMethodType', 'pilgrims'
-            ]);
+        $busInvoice = BusInvoice::find($id);
 
-            return $this->respondWithResource($busInvoice, 'Bus invoice retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->handleError($e, 'Failed to retrieve bus invoice');
+        if (!$busInvoice) {
+            return response()->json(['message' => "Bus Invoice not found."], 404);
         }
+
+        return $this->respondWithResource($busInvoice, "Bus Invoice retrieved for editing.");
     }
 
+    public function update(BusInvoiceRequest $request, string $id)
+{
 
-    public function update(BusInvoiceRequest $request, BusInvoice $busInvoice)
-    {
-        DB::beginTransaction();
+    $this->authorize('manage_system');
 
-        try {
-            $validated = $request->validated();
-            $updateData = $this->prepareUpdateMeta($request);
-            $validated = array_merge($validated, $updateData);
+    DB::beginTransaction();
+    try {
 
-            $oldData = $busInvoice->toArray();
+        $busInvoice = BusInvoice::findOrFail($id);
 
-            $busInvoice->update($validated);
+        $oldData = $busInvoice->toArray();
 
-            if ($request->has('pilgrims')) {
-                $pilgrimsData = [];
-                foreach ($request->pilgrims as $pilgrim) {
-                    $pilgrimsData[$pilgrim['id']] = [
-                        'seatNumber' => $pilgrim['seatNumber'],
-                        'seatPrice' => $pilgrim['seatPrice'],
-                        'status' => $pilgrim['status'] ?? 'booked',
-                        'updated_at' => now()
-                    ];
-                }
-
-                $busInvoice->pilgrims()->sync($pilgrimsData);
-            }
-
-            $busInvoice->calculateTotal();
-            $busInvoice->updateSeatsCount();
-
-            $this->applyChangesAndSave($busInvoice, $validated, $oldData);
-
-            DB::commit();
-
-            return $this->respondWithResource($busInvoice, 'Bus invoice updated successfully');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->handleError($e, 'Failed to update bus invoice');
-        }
-    }
-
-
-    public function addPilgrim(Request $request, BusInvoice $busInvoice)
-    {
-        $request->validate([
-            'pilgrim_id' => 'required|exists:pilgrims,id',
-            'seatNumber' => 'required|string',
-            'seatPrice' => 'required|numeric|min:0',
+        $updateData = $request->only([
+            'main_pilgrim_id',
+            'bus_trip_id',
+            'campaign_id',
+            'office_id',
+            'group_id',
+            'worker_id',
+            'payment_method_type_id',
+            'subtotal',
+            'discount',
+            'tax',
+            'total',
+            'paidAmount',
+            'invoiceStatus',
+            'reason',
+            'paymentStatus',
         ]);
 
-        $availableSeats = $busInvoice->available_seats;
-        if (!in_array($request->seatNumber, array_column($availableSeats, 'seatNumber'))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Seat is not available or does not exist'
-            ], 400);
+
+        if ($request->has('bus_trip_id') && $request->bus_trip_id != $busInvoice->bus_trip_id) {
+            $newBusTrip = BusTrip::findOrFail($request->bus_trip_id);
+
+
+            if ($request->has('pilgrims')) {
+                $this->validateSeatsAvailability($newBusTrip, $request->pilgrims);
+            }
         }
 
-        DB::beginTransaction();
+        $updateData = array_merge(
+            $updateData,
+            $this->prepareUpdateMeta($request, $busInvoice->status)
+        );
 
-        try {
-            $busInvoice->pilgrims()->attach($request->pilgrim_id, [
-                'seatNumber' => $request->seatNumber,
-                'seatPrice' => $request->seatPrice,
-                'status' => 'booked',
-                'creationDate' => now(),
-                'creationDateHijri' => $this->getHijriDate()
-            ]);
 
-            $busInvoice->calculateTotal();
-            $busInvoice->updateSeatsCount();
+        if ($request->has('pilgrims')) {
+            $pilgrimsData = [];
+            foreach ($request->pilgrims as $pilgrim) {
+                $pilgrimsData[$pilgrim['id']] = [
+                    'seatNumber' => $pilgrim['seatNumber'],
+                    'seatPrice' => $pilgrim['seatPrice'],
+                    'status' => $pilgrim['status'] ?? 'booked',
+                    'type' => $pilgrim['type'] ?? 'regular',
+                    'position' => $pilgrim['position'] ?? null,
+                    'changed_data' => [
+                        'updated_at' => now()->format('Y-m-d H:i:s'),
+                        'updated_by' => auth()->id(),
+                    ]
+                ];
 
-            DB::commit();
 
-            return $this->respondWithResource($busInvoice, 'Pilgrim added to bus invoice successfully');
+                if ($busInvoice->bus_trip_id) {
+                    $this->updateSeatStatusInTrip($busInvoice->busTrip, $pilgrim['seatNumber'], 'booked');
+                }
+            }
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->handleError($e, 'Failed to add pilgrim to bus invoice');
+            $currentPilgrims = $busInvoice->pilgrims()->withPivot('changed_data')->get()->keyBy('id');
+
+            foreach ($pilgrimsData as $pilgrimId => $newData) {
+                if ($currentPilgrims->has($pilgrimId)) {
+                    $oldPivotData = $currentPilgrims->get($pilgrimId)->pivot->changed_data ?? [];
+                    $pilgrimsData[$pilgrimId]['changed_data'] = array_merge(
+                        $oldPivotData,
+                        $newData['changed_data']
+                    );
+                }
+            }
+
+            $busInvoice->pilgrims()->sync($pilgrimsData);
         }
+
+        $busInvoice->update($updateData);
+
+        $busInvoice->calculateTotal();
+
+        $changedData = $busInvoice->getChangedData($oldData, $busInvoice->fresh()->toArray());
+        $busInvoice->changed_data = $changedData;
+        $busInvoice->save();
+
+
+        DB::commit();
+
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, "تم تحديث الفاتورة بنجاح");
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        Log::error('Failed to update bus invoice: ' . $e->getMessage());
+
+
+        return response()->json([
+            'message' => 'فشل في تحديث الفاتورة',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * التحقق من توفر المقاعد في رحلة الباص
+ */
+protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
+{
+    $requestedSeats = collect($pilgrims)->pluck('seatNumber');
+    $availableSeats = collect($busTrip->seatMap)
+        ->where('status', 'available')
+        ->pluck('number');
+
+    $unavailableSeats = $requestedSeats->diff($availableSeats);
+
+    if ($unavailableSeats->isNotEmpty()) {
+        throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
+    }
+}
+
+
+
+
+
+    public function updatePaymentStatus(Request $request, $invoiceId)
+    {
+        $this->authorize('manage_system');
+
+        $request->validate([
+            'paymentStatus' => 'required|in:paid,unpaid,partial',
+            'paidAmount' => 'required|numeric|min:0',
+        ]);
+
+        $busInvoice = BusInvoice::findOrFail($invoiceId);
+        $busInvoice->update([
+            'paymentStatus' => $request->paymentStatus,
+            'paidAmount' => $request->paidAmount,
+        ]);
+
+        return $this->respondWithResource($busInvoice, "Payment status updated successfully.");
     }
 
-
-    public function removePilgrim(Request $request, BusInvoice $busInvoice, Pilgrim $pilgrim)
+    public function getInvoiceStats($invoiceId)
     {
-        DB::beginTransaction();
+        $this->authorize('manage_system');
 
-        try {
-            $busInvoice->pilgrims()->detach($pilgrim->id);
+        $busInvoice = BusInvoice::findOrFail($invoiceId);
 
-            $busInvoice->calculateTotal();
-            $busInvoice->updateSeatsCount();
-
-            DB::commit();
-
-            return $this->respondWithResource($busInvoice, 'Pilgrim removed from bus invoice successfully');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->handleError($e, 'Failed to remove pilgrim from bus invoice');
-        }
-    }
-
-
-    public function updatePaymentStatus(Request $request, BusInvoice $busInvoice)
-    {
-        try {
-            $request->validate([
-                'paymentStatus' => 'required|in:pending,paid,refunded',
-                'paidAmount' => 'required|numeric|min:0'
-            ]);
-
-            $oldData = $busInvoice->toArray();
-
-            $busInvoice->update([
-                'paymentStatus' => $request->paymentStatus,
-                'paidAmount' => $request->paidAmount
-            ]);
-
-            $this->applyChangesAndSave($busInvoice, $request->all(), $oldData);
-
-            return $this->respondWithResource($busInvoice, 'Payment status updated successfully');
-        } catch (\Exception $e) {
-            return $this->handleError($e, 'Failed to update payment status');
-        }
+        return response()->json([
+            'total_seats' => $busInvoice->pilgrims()->count(),
+            'booked_seats' => $busInvoice->pilgrims()->wherePivot('status', 'booked')->count(),
+            'cancelled_seats' => $busInvoice->pilgrims()->wherePivot('status', 'cancelled')->count(),
+            'subtotal' => $busInvoice->subtotal,
+            'discount' => $busInvoice->discount,
+            'tax' => $busInvoice->tax,
+            'total' => $busInvoice->total,
+            'paidAmount' => $busInvoice->paidAmount,
+            'remainingAmount' => $busInvoice->total - $busInvoice->paidAmount,
+        ]);
     }
 
         protected function getResourceClass(): string

@@ -19,16 +19,14 @@ class BusInvoiceRequest extends FormRequest
     {
         return [
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
-        'bus_id' =>'required|exists:buses,id',
-        'trip_id'=>'required|exists:trips,id',
+        
         'campaign_id'=>'required|exists:campaigns,id',
         'office_id'=>'required|exists:offices,id',
         'group_id'=>'required|exists:groups,id',
-        'bus_driver_id'=>'required|exists:bus_drivers,id',
+
         'worker_id'=>'required|exists:workers,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
-        'travelDate'=>'nullable|date_format:Y-m-d H:i:s',
-        'travelDateHijri'=>'nullable|string',
+
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',
         'paidAmount'=>'required|numeric|min:0|max:99999.99',

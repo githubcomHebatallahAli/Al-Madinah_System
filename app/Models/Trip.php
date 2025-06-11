@@ -32,9 +32,9 @@ class Trip extends Model
         return $this->belongsTo(Branch::class);
     }
 
-            public function busInvoices()
+            public function busTrips()
     {
-        return $this->hasMany(BusInvoice::class);
+        return $this->hasMany(BusTrip::class);
     }
 
 

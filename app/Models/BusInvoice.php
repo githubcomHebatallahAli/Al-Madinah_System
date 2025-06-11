@@ -14,16 +14,15 @@ class BusInvoice extends Model
         protected $fillable = [
         'invoiceNumber',
         'main_pilgrim_id',
-        'trip_id',
+        'bus_trip_id',
+
         'campaign_id',
         'office_id',
         'group_id',
-        'bus_id',
-        'bus_driver_id',
+
         'worker_id',
         'payment_method_type_id',
-        'travelDate',
-        'travelDateHijri',
+
         'subtotal',
         'discount',
         'tax',
@@ -33,14 +32,14 @@ class BusInvoice extends Model
         'invoiceStatus',
         'reason',
         'paymentStatus',
-          'creationDate',
+        'creationDate',
         'creationDateHijri',
         'changed_data',
-          'added_by',
+        'added_by',
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        'seatMap',
+
     ];
 
     public function mainPilgrim()
@@ -49,14 +48,11 @@ class BusInvoice extends Model
 }
 
 
-     public function bus()
-    {
-        return $this->belongsTo(Bus::class);
-    }
 
-        public function trip()
+
+    public function busTrip()
     {
-        return $this->belongsTo(Trip::class);
+        return $this->belongsTo(BusTrip::class);
     }
 
     public function campaign()
@@ -73,13 +69,6 @@ class BusInvoice extends Model
         return $this->belongsTo(Group::class);
     }
 
-
-
-    public function busDriver()
-    {
-        return $this->belongsTo(BusDriver::class);
-    }
-
     public function worker()
     {
         return $this->belongsTo(Worker::class);
@@ -89,7 +78,6 @@ class BusInvoice extends Model
     {
         return $this->belongsTo(PaymentMethodType::class);
     }
-
 
 
     public function pilgrims()
@@ -115,8 +103,6 @@ class BusInvoice extends Model
     $this->total = $this->subtotal - $this->discount + $this->tax;
     $this->save();
 }
-
-
 
       protected static function booted()
     {
@@ -154,80 +140,6 @@ class BusInvoice extends Model
 }
 
 
-
-
-
-
-
-    public function checkSeatAvailability($requestedSeats)
-    {
-        return $this->available_seats >= $requestedSeats;
-    }
-
-    public function updateSeatMapAfterBooking(): void
-{
-   $bookedSeats = $this->pilgrims()
-    ->wherePivot('status', 'booked')
-    ->pluck('seatNumber') // ✅ استبدل هذا السطر
-    ->toArray();
-
-
-    // احصل على نسخة seatMap الحالية
-    $seatMap = $this->seatMap ?? [];
-
-    // تحديث حالة المقاعد
-    $updatedSeatMap = array_map(function ($seat) use ($bookedSeats) {
-        $seatNumber = strtoupper(trim($seat['seatNumber'] ?? ''));
-
-        if (in_array($seatNumber, $bookedSeats)) {
-            $seat['status'] = 'booked';
-        }
-
-        return $seat;
-    }, $seatMap);
-
-    // حفظ التحديث
-    $this->seatMap = $updatedSeatMap;
-    $this->save();
-}
- public function getBookedSeatsAttribute(): int
-{
-    if (empty($this->seatMap)) {
-        return 0;
-    }
-
-    return collect($this->seatMap)
-        ->where('status', 'booked')
-        ->count();
-}
-
-public function getBookedSeats()
-{
-    return $this->pilgrims()
-    ->wherePivot('status', 'booked')
-    ->pluck('seatNumber') // ✅ استبدل هذا السطر
-    ->toArray();
-
-}
-
-
-
-// app/Models/BusInvoice.php
-
-public function getAvailableSeatsAttribute(): int
-{
-    if (empty($this->seatMap)) {
-        return 0;
-    }
-
-    return collect($this->seatMap)
-        ->where('status', 'available')
-        ->count();
-}
-
-
-
-
         public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');
@@ -238,14 +150,6 @@ public function updater()
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
-protected $appends = [
-    'bookedSeats',
-    'availableSeats',
-];
-
-
-
-
     protected $casts = [
     'changed_data' => 'array',
     'subtotal' => 'decimal:2',
@@ -253,7 +157,6 @@ protected $appends = [
     'tax' => 'decimal:2',
     'total' => 'decimal:2',
     'paidAmount' => 'decimal:2',
-    'seatMap' => 'array',
 ];
 
 

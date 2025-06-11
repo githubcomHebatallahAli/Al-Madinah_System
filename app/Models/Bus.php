@@ -39,9 +39,9 @@ class Bus extends Model
         return $this->belongsTo(Service::class);
     }
 
-            public function busInvoices()
+            public function busTrips()
     {
-        return $this->hasMany(BusInvoice::class);
+        return $this->hasMany(BusTrip::class);
     }
 
 
@@ -203,61 +203,9 @@ protected function determineSeatPosition($col, $seatsPerRow)
 
 
 
-    public function getTotalBookedSeatsAttribute()
-    {
-        return $this->busInvoices()->sum('bookedSeats');
-    }
-
-  public function getBookedSeatsForDate($travelDate): int
-{
-    return $this->busInvoices()
-        ->whereDate('travelDate', $travelDate)
-        ->get()
-        ->sum(function ($invoice) {
-            return $invoice->bookedSeats; // Use the accessor
-        });
-}
 
 
-public function markSeatsAsBooked(array $seatNumbers)
-{
-    $seatMap = collect($this->seatMap);
 
-    $seatMap = $seatMap->map(function ($seat) use ($seatNumbers) {
-        if (in_array($seat['seatNumber'], $seatNumbers)) {
-            $seat['status'] = 'booked';
-        }
-        return $seat;
-    });
-
-    $this->seatMap = $seatMap->toArray();
-    $this->save();
-}
-
-
-public function markSeatsAsAvailable(array $seatNumbers)
-{
-    $seatMap = collect($this->seatMap);
-
-    $seatMap = $seatMap->map(function ($seat) use ($seatNumbers) {
-        if (in_array($seat['seatNumber'], $seatNumbers)) {
-            $seat['status'] = 'available';
-        }
-        return $seat;
-    });
-
-    $this->seatMap = $seatMap->toArray();
-    $this->save();
-}
-
-// public function getTotalBookedSeatsAttribute()
-// {
-//     return DB::table('bus_invoice_pilgrims')
-//         ->join('bus_invoices', 'bus_invoice_pilgrims.bus_invoice_id', '=', 'bus_invoices.id')
-//         ->where('bus_invoices.bus_id', $this->id)
-
-//         ->count();
-// }
 
 
 }
