@@ -25,6 +25,7 @@ class BusTripResource extends JsonResource
             'availableSeats' => $this->availableSeats,
             'cancelledSeats' => $this->cancelledSeats,
             'seatMap' => $this->seatMap,
+            'status' => $this->status,
             'creationDateHijri' => $this->creationDateHijri,
             'creationDate' => $this->creationDate,
             'changed_data' => $this->changed_data,

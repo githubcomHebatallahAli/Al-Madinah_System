@@ -17,6 +17,7 @@ class BusTrip extends Model
         'travelDate',
         'travelDateHijri',
         'seatMap',
+        'status',
         'changed_data',
         'added_by',
         'added_by_type',
@@ -41,7 +42,7 @@ class BusTrip extends Model
     {
         return $this->belongsTo(BusDriver::class);
     }
-    
+
        public function busInvoices()
     {
         return $this->hasMany(BusInvoice::class);

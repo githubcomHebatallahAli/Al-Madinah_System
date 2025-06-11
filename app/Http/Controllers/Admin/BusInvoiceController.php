@@ -181,7 +181,7 @@ public function create(BusInvoiceRequest $request)
                     'creationDateHijri' => $this->getHijriDate(),
                 ];
 
-                // Update seat status
+
                 if ($busTrip) {
                     $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
                 }

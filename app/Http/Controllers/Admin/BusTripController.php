@@ -39,6 +39,10 @@ public function showAllWithPaginate(Request $request)
         $query->where('trip_id', $request->trip_id);
     }
 
+      if ($request->filled('travelDateHijri')) {
+        $query->where('travelDateHijri', $request->travelDateHijri);
+    }
+
        if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
         $query->where('status', $request->status);
     }
@@ -71,6 +75,10 @@ public function showAllWithoutPaginate(Request $request)
 
     if ($request->filled('trip_id')) {
         $query->where('trip_id', $request->trip_id);
+    }
+
+    if ($request->filled('travelDateHijri')) {
+        $query->where('travelDateHijri', $request->travelDateHijri);
     }
 
        if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
@@ -110,7 +118,7 @@ public function update(BusTripRequest $request, string $id)
     $BusTrip = BusTrip::findOrFail($id);
     $oldData = $BusTrip->toArray();
 
-    $updateData = $request->only(['bus_id','trip_id','bus_driver_id','travelDate','travelDateHijri']);
+    $updateData = $request->only(['bus_id','trip_id','bus_driver_id','travelDate','travelDateHijri','status']);
 
     $updateData = array_merge(
         $updateData,

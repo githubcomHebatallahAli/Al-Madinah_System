@@ -7,13 +7,20 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ShowAllBusTripResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id'=> $this->id,
+            'bus_id' => $this->bus?->id,
+            'bus_number' => $this->bus?->busNum,
+            'trip_id' => $this->trip?->id,
+            'trip_name' => $this->trip?->name,
+            'bus_driver_id' => $this->busDriver?->id,
+            'bus_driver_name' => $this->busDriver?->name,
+            'travelDateHijri' => $this->travelDateHijri,
+            'status' => $this->status,
+            'creationDate' => $this->creationDate,
+        ];
     }
 }

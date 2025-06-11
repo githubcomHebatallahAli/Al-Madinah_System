@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
 class BusTripRequest extends FormRequest
 {
@@ -27,8 +29,18 @@ class BusTripRequest extends FormRequest
         'bus_driver_id'=>'required|exists:bus_drivers,id',
         'travelDate'=>'nullable|date_format:Y-m-d H:i:s',
         'travelDateHijri'=>'nullable|string',
+        'status' => 'nullable|in:active,notActive',
         'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri'=>'nullable|string',
         ];
+    }
+
+            public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success'   => false,
+            'message'   => 'Validation errors',
+            'data'      => $validator->errors()
+        ]));
     }
 }

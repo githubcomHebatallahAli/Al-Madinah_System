@@ -19,6 +19,7 @@ return new class extends Migration
             $table->dateTime('travelDate')->nullable();
             $table->string('travelDateHijri');
             $table->json('seatMap')->nullable();
+             $table->enum('status', ['active', 'notActive'])->default('active');
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -30,7 +31,7 @@ return new class extends Migration
         });
     }
 
-    
+
     public function down(): void
     {
         Schema::dropIfExists('bus_trips');
