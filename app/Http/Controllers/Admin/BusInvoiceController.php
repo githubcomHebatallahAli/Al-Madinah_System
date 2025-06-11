@@ -168,8 +168,8 @@ public function create(BusInvoiceRequest $request)
                     'seatNumber' => $pilgrim['seatNumber'],
                     'seatPrice' => $pilgrim['seatPrice'],
                     'status' => $pilgrim['status'] ?? 'booked',
-                    'type' => $pilgrim['type'] ?? 'regular',
-                    'position' => $pilgrim['position'] ?? null,
+                    'type' => $pilgrim['type'] ,
+                    'position' => $pilgrim['position'] ,
                     'creationDate' => now()->format('Y-m-d'),
                     'creationDateHijri' => $this->getHijriDate(),
                 ];
