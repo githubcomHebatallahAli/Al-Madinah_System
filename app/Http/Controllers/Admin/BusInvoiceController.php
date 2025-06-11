@@ -565,31 +565,27 @@ protected function prepareUpdateMetaData(): array
 
 protected function checkForChanges($busInvoice, $newData, $request): bool
 {
-    // التحقق من التغييرات في البيانات الأساسية للفاتورة
     foreach ($newData as $key => $value) {
         if ($busInvoice->$key != $value) {
             return true;
         }
     }
 
-    // التحقق من تغييرات في الحجاج وبيانات الـ pivot
     if ($request->has('pilgrims')) {
         $currentPilgrims = $busInvoice->pilgrims()->withPivot(['seatNumber', 'status'])->get();
 
-        // التحقق من تغيير عدد الحجاج
         if (count($currentPilgrims) != count($request->pilgrims)) {
             return true;
         }
 
-        // التحقق من تغييرات في بيانات كل حاج
         foreach ($request->pilgrims as $newPilgrim) {
             $currentPilgrim = $currentPilgrims->firstWhere('id', $newPilgrim['id']);
 
             if (!$currentPilgrim) {
-                return true; // حاج جديد تمت إضافته
+                return true;
             }
 
-            // التحقق من تغييرات في بيانات الـ pivot
+        
             if ($currentPilgrim->pivot->seatNumber != $newPilgrim['seatNumber'] ||
                 $currentPilgrim->pivot->status != ($newPilgrim['status'] ?? 'booked')) {
                 return true;
