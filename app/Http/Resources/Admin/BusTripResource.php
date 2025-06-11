@@ -12,6 +12,7 @@ class BusTripResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id'=> $this->id,
             'bus_id' => $this->bus?->id,
             'bus_number' => $this->bus?->busNum,
             'trip_id' => $this->trip?->id,
