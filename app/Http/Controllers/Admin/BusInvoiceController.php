@@ -293,6 +293,9 @@ public function create(BusInvoiceRequest $request)
         $busInvoice->calculateTotal();
 
         DB::commit();
+         $busInvoice->load(['pilgrims' => function($query) {
+        $query->withPivot(['seatNumber', 'status', 'type', 'position', 'creationDate', 'creationDateHijri']);
+    }]);
 
         return $this->respondWithResource($busInvoice, "تم إنشاء فاتورة الباص بنجاح");
     } catch (\Exception $e) {
