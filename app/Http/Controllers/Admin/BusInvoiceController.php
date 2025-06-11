@@ -132,14 +132,17 @@ public function create(BusInvoiceRequest $request)
         }
     }
 
-    // تعيين القيم الافتراضية
-    $data = array_merge([
-        'discount' => $this->parseDecimalInput($request->discount),
-        'tax' => $this->parseDecimalInput($request->tax),
-        'paidAmount' => $this->parseDecimalInput($request->paidAmount),
+    // Prepare data with proper default values
+    $data = [
+        'discount' => $this->ensureNumeric($request->input('discount')),
+        'tax' => $this->ensureNumeric($request->input('tax')),
+        'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
         'subtotal' => 0,
         'total' => 0,
-    ], $request->except('pilgrims'), $this->prepareCreationMetaData());
+    ];
+
+    // Merge with other request data
+    $data = array_merge($data, $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
     try {
@@ -177,7 +180,7 @@ public function create(BusInvoiceRequest $request)
 }
 
 // Add this helper method to your controller
-protected function parseDecimalInput($value)
+protected function ensureNumeric($value)
 {
     if ($value === null || $value === '') {
         return 0;
