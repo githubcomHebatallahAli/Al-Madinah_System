@@ -364,26 +364,17 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     }
 
 
-public function update(BusInvoiceRequest $request, $id)
+    public function update(BusInvoiceRequest $request, $id)
 {
     $this->authorize('manage_system');
 
-    $busInvoice = BusInvoice::with(['pilgrims' => function($query) {
-        $query->withPivot(['seatNumber', 'status']);
-    }])->findOrFail($id);
-
-    $oldData = $busInvoice->toArray();
-    $oldPivotData = $busInvoice->pilgrims->mapWithKeys(function($pilgrim) {
-        return [$pilgrim->id => [
-            'seatNumber' => $pilgrim->pivot->seatNumber,
-            'status' => $pilgrim->pivot->status
-        ]];
-    })->toArray();
+    $busInvoice = BusInvoice::findOrFail($id);
+    $oldData = $busInvoice->toArray(); // حفظ البيانات القديمة لتتبع التغييرات
 
     $busTrip = null;
     $unavailableSeats = collect();
     $seatMapArray = [];
-    $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
+    $originalSeats = $busInvoice->pilgrims()->pluck('seatNumber')->toArray();
 
     if ($request->filled('bus_trip_id')) {
         $busTrip = BusTrip::find($request->bus_trip_id);
@@ -430,8 +421,16 @@ public function update(BusInvoiceRequest $request, $id)
     DB::beginTransaction();
 
     try {
+        // التحقق من وجود تغييرات فعلية
+        $hasChanges = $this->checkForChanges($busInvoice, $data, $request);
+
+        if (!$hasChanges) {
+            $this->loadCommonRelations($busInvoice);
+            return $this->respondWithResource($busInvoice, "لا يوجد تغييرات فعلية");
+        }
+
         // تحرير المقاعد القديمة
-        if ($busTrip && !empty($originalSeats)) {
+        if ($busTrip && count($originalSeats) > 0) {
             foreach ($originalSeats as $seat) {
                 $this->updateSeatStatusInTrip($busTrip, $seat, 'available');
             }
@@ -440,12 +439,10 @@ public function update(BusInvoiceRequest $request, $id)
         // تحديث بيانات الفاتورة
         $busInvoice->update($data);
 
-        // معالجة بيانات الحجاج
-        $newPivotData = [];
+        // تحديث بيانات الحجاج والمقاعد
         if ($request->has('pilgrims')) {
             $pilgrimsData = $this->preparePilgrimsData($request->pilgrims, $seatMapArray);
             $busInvoice->pilgrims()->sync($pilgrimsData);
-            $newPivotData = $pilgrimsData;
 
             // حجز المقاعد الجديدة
             if ($busTrip) {
@@ -462,16 +459,9 @@ public function update(BusInvoiceRequest $request, $id)
         $busInvoice->calculateTotal();
 
         // تسجيل التغييرات
-        $changedData = $this->getChangedData($oldData, $busInvoice->fresh()->toArray());
-        $pivotChanges = $this->getPivotChanges($oldPivotData, $newPivotData);
-
-        if (!empty($changedData) || !empty($pivotChanges)) {
-            $busInvoice->changed_data = [
-                'invoice' => $changedData,
-                'pivot' => $pivotChanges
-            ];
-            $busInvoice->save();
-        }
+        $changedData = $busInvoice->getChangedData($oldData, $busInvoice->fresh()->toArray());
+        $busInvoice->changed_data = $changedData;
+        $busInvoice->save();
 
         DB::commit();
 
@@ -480,123 +470,121 @@ public function update(BusInvoiceRequest $request, $id)
         }]);
 
         return $this->respondWithResource($busInvoice, "تم تحديث فاتورة الباص بنجاح");
-
     } catch (\Exception $e) {
         DB::rollBack();
-        Log::error('Failed to update bus invoice: ' . $e->getMessage());
         return response()->json(['message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()], 500);
     }
-}
-
-protected function getPivotChanges(array $oldPivotData, array $newPivotData): array
-{
-    $changes = [];
-
-    // الحجاج المحذوفين
-    foreach (array_diff_key($oldPivotData, $newPivotData) as $pilgrimId => $pivot) {
-        $changes[$pilgrimId] = [
-            'old' => $pivot,
-            'new' => null,
-            'action' => 'removed'
-        ];
-    }
-
-    // الحجاج المضافين
-    foreach (array_diff_key($newPivotData, $oldPivotData) as $pilgrimId => $pivot) {
-        $changes[$pilgrimId] = [
-            'old' => null,
-            'new' => $pivot,
-            'action' => 'added'
-        ];
-    }
-
-    // الحجاج المعدلين
-    foreach ($newPivotData as $pilgrimId => $pivot) {
-        if (isset($oldPivotData[$pilgrimId])) {
-            $oldPivot = $oldPivotData[$pilgrimId];
-            if ($oldPivot['seatNumber'] != $pivot['seatNumber'] ||
-                $oldPivot['status'] != $pivot['status']) {
-                $changes[$pilgrimId] = [
-                    'old' => $oldPivot,
-                    'new' => $pivot,
-                    'action' => 'updated'
-                ];
-            }
-        }
-    }
-
-    return $changes;
-}
-
-protected function preparePilgrimsData(array $pilgrims, array $seatMapArray): array
-{
-    $pilgrimsData = [];
-    $now = now()->timezone('Asia/Riyadh');
-
-    foreach ($pilgrims as $pilgrim) {
-        if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) {
-            throw new \Exception('بيانات الحاج غير مكتملة');
-        }
-
-        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']) ?? [];
-
-        $pilgrimsData[$pilgrim['id']] = [
-            'seatNumber'  => $pilgrim['seatNumber'],
-            'status'      => $pilgrim['status'] ?? 'booked',
-            'type'        => $seatInfo['type'] ?? null,
-            'position'    => $seatInfo['position'] ?? null,
-            'creationDate' => $now->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate($now),
-        ];
-    }
-
-    return $pilgrimsData;
 }
 
 protected function prepareUpdateMetaData(): array
 {
     $updatedBy = $this->getUpdatedByIdOrFail();
-      $now = now()->timezone('Asia/Riyadh');
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        'updated_at' => $now->format('Y-m-d H:i:s'),
-        'updated_at_hijri' => $this->getHijriDate($now),
+        'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'updated_at_hijri' => $this->getHijriDate(),
     ];
 }
 
 protected function checkForChanges($busInvoice, $newData, $request): bool
 {
+    // التحقق من التغييرات في البيانات الأساسية
     foreach ($newData as $key => $value) {
         if ($busInvoice->$key != $value) {
             return true;
         }
     }
 
+    // التحقق من تغييرات في الحجاج
     if ($request->has('pilgrims')) {
-        $currentPilgrims = $busInvoice->pilgrims()->withPivot(['seatNumber', 'status'])->get();
+        $currentPilgrims = $busInvoice->pilgrims()->pluck('pilgrims.id')->toArray();
+        $newPilgrims = collect($request->pilgrims)->pluck('id')->toArray();
 
-        if (count($currentPilgrims) != count($request->pilgrims)) {
+        if (count(array_diff($currentPilgrims, $newPilgrims)) > 0) {
             return true;
         }
 
-        foreach ($request->pilgrims as $newPilgrim) {
-            $currentPilgrim = $currentPilgrims->firstWhere('id', $newPilgrim['id']);
-
-            if (!$currentPilgrim) {
-                return true;
-            }
-
-
-            if ($currentPilgrim->pivot->seatNumber != $newPilgrim['seatNumber'] ||
-                $currentPilgrim->pivot->status != ($newPilgrim['status'] ?? 'booked')) {
-                return true;
-            }
+        if (count(array_diff($newPilgrims, $currentPilgrims)) > 0) {
+            return true;
         }
     }
 
     return false;
 }
+
+protected function preparePilgrimsData($pilgrims, $seatMapArray): array
+{
+    $pilgrimsData = [];
+
+    foreach ($pilgrims as $pilgrim) {
+        if (!isset($pilgrim['id'], $pilgrim['seatNumber'])) {
+            throw new \Exception('بيانات الحاج غير مكتملة');
+        }
+
+        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $pilgrim['seatNumber']);
+
+        if (!$seatInfo) {
+            throw new \Exception("المقعد {$pilgrim['seatNumber']} غير موجود في seatMap.");
+        }
+
+        $pilgrimsData[$pilgrim['id']] = [
+            'seatNumber' => $pilgrim['seatNumber'],
+            'status' => $pilgrim['status'] ?? 'booked',
+            'type' => $seatInfo['type'] ?? null,
+            'position' => $seatInfo['position'] ?? null,
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
+        ];
+    }
+
+    return $pilgrimsData;
+}
+
+// ======================================================
+
+
+// protected function getPivotChanges(array $oldPivotData, array $newPivotData): array
+// {
+//     $changes = [];
+
+//     // الحجاج المحذوفين
+//     foreach (array_diff_key($oldPivotData, $newPivotData) as $pilgrimId => $pivot) {
+//         $changes[$pilgrimId] = [
+//             'old' => $pivot,
+//             'new' => null,
+//             'action' => 'removed'
+//         ];
+//     }
+
+//     // الحجاج المضافين
+//     foreach (array_diff_key($newPivotData, $oldPivotData) as $pilgrimId => $pivot) {
+//         $changes[$pilgrimId] = [
+//             'old' => null,
+//             'new' => $pivot,
+//             'action' => 'added'
+//         ];
+//     }
+
+//     // الحجاج المعدلين
+//     foreach ($newPivotData as $pilgrimId => $pivot) {
+//         if (isset($oldPivotData[$pilgrimId])) {
+//             $oldPivot = $oldPivotData[$pilgrimId];
+//             if ($oldPivot['seatNumber'] != $pivot['seatNumber'] ||
+//                 $oldPivot['status'] != $pivot['status']) {
+//                 $changes[$pilgrimId] = [
+//                     'old' => $oldPivot,
+//                     'new' => $pivot,
+//                     'action' => 'updated'
+//                 ];
+//             }
+//         }
+//     }
+
+//     return $changes;
+// }
+
+
 
 
 
