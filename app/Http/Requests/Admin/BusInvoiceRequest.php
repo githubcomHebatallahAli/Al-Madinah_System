@@ -19,7 +19,7 @@ class BusInvoiceRequest extends FormRequest
     {
         return [
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
-        
+
         'campaign_id'=>'required|exists:campaigns,id',
         'office_id'=>'required|exists:offices,id',
         'group_id'=>'required|exists:groups,id',
@@ -29,8 +29,7 @@ class BusInvoiceRequest extends FormRequest
 
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',
-        'paidAmount'=>'required|numeric|min:0|max:99999.99',
-        // 'bookedSeats'=>'nullable|integer',
+        'paidAmount'=>'nullable|numeric|min:0|max:99999.99',
         'reason' =>'nullable|string',
         'invoiceStatus' =>'nullable|in:pending,approved,rejected,completed,absence',
         'paymentStatus'=>'nullable|in:pending,paid,refunded',
