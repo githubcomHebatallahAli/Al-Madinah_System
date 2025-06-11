@@ -11,7 +11,7 @@ Route::controller(BusTripController::class)->prefix('/delegate')->middleware('ad
     function () {
 
    Route::get('/showAll/busTrip','showAllWithoutPaginate');
-   Route::get('/showAll/busTrip/withPaginate','showAllWihtPaginate');
+   Route::get('/showAll/busTrip/withPaginate','showAllWithPaginate');
    Route::post('/create/busTrip', 'create');
    Route::get('/edit/busTrip/{id}','edit');
    Route::post('/update/busTrip/{id}', 'update');
