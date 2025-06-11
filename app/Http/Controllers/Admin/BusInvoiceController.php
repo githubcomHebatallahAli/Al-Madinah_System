@@ -556,11 +556,12 @@ protected function preparePilgrimsData(array $pilgrims, array $seatMapArray): ar
 protected function prepareUpdateMetaData(): array
 {
     $updatedBy = $this->getUpdatedByIdOrFail();
+      $now = now()->timezone('Asia/Riyadh');
     return [
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
-        'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'updated_at_hijri' => $this->getHijriDate(),
+        'updated_at' => $now->format('Y-m-d H:i:s'),
+        'updated_at_hijri' => $this->getHijriDate($now),
     ];
 }
 
