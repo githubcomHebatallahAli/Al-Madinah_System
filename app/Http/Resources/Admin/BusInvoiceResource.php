@@ -68,8 +68,8 @@ class BusInvoiceResource extends JsonResource
                         // 'creationDateHijri' => $this->creationDateHijri,
                         // 'creationDate' => $this->creationDate,
                         // 'changed_data' => $this->changed_data,
-                        'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->created_at),
-'creationDate' => $pilgrim->pivot->created_at,
+                        'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->creationDateHijri),
+                        'creationDate' => $pilgrim->pivot->creationDate,
 
                     ];
                 });
