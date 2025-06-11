@@ -134,11 +134,12 @@ public function create(BusInvoiceRequest $request)
 
     // تعيين القيم الافتراضية
     $data = array_merge([
-        'discount' => $request->discount ?? 0,
-        'tax' => $request->tax ?? 0,
-        'subtotal' => 0,
-        'total' => 0,
-        'paidAmount' => $request->paidAmount ?? 0,
+           'discount' => $request->input('discount', 0),
+    'tax' => $request->input('tax', 0),
+    'subtotal' => 0,
+    'total' => 0,
+    'paidAmount' => $request->input('paidAmount', 0),
+        
     ], $request->except('pilgrims'), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
