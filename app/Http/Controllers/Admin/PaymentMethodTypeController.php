@@ -67,10 +67,6 @@ public function showAllWithoutPaginate(Request $request)
 
     $query = PaymentMethodType::query();
 
-    // if ($request->has('payment_method_id')) {
-    //     $query->where('payment_method_id', $request->payment_method_id);
-    // }
-
             if ($request->filled('payment_method_id')) {
         $query->where('payment_method_id', $request->payment_method_id);
     }

@@ -27,6 +27,8 @@ class HotelResource extends JsonResource
             'sellingPrice' => $this-> sellingPrice,
             'purchesPrice' => $this-> purchesPrice,
             'profit' => $this-> profit,
+            'bedPrice' => $this->bedPrice ,
+            'roomPrice' => $this->roomPrice ,
             'status' => $this-> status,
             'creationDateHijri'=> $this->creationDateHijri,
             'creationDate'=> $this-> creationDate,

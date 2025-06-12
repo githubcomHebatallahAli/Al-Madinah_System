@@ -34,6 +34,8 @@ class HotelRequest extends FormRequest
             'address'=>'nullable|string',
             'communication'=>'nullable|string',
             'quantity'=>'required|string',
+            'bedPrice' => 'required|numeric|min:0',
+            'roomPrice' => 'required|numeric|min:0',
             'description'=>'nullable|string',
             'sellingPrice'=> 'required|numeric|min:0|max:99999.99',
             'purchesPrice'=> 'required|numeric|min:0|max:99999.99',
