@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('hotel_invoices', function (Blueprint $table) {
             $table->id();
-                    $table->foreignId('bus_trip_id')->constrained('bus_trips')->cascadeOnDelete();
+            $table->foreignId('bus_trip_id')->constrained('bus_trips')->cascadeOnDelete();
 
             $table->string('invoiceNumber')->unique();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();

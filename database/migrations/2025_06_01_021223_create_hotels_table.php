@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('communication')->nullable();
             $table->text('description')->nullable();
             $table->integer('quantity')->default(0);
+            $table->decimal('bedPrice', 10, 2)->default(0);
+            $table->decimal('roomPrice', 10, 2)->default(0);
             $table->decimal('sellingPrice');
             $table->decimal('purchesPrice');
             $table->decimal('profit')->nullable();
