@@ -23,6 +23,8 @@ class BusInvoiceResource extends JsonResource
 }),
 
             'invoiceNumber' => $this->invoiceNumber,
+            'pilgrimsCount'=> $this ->pilgrimsCount,
+            'bus_trip_id'=> $this ->busTrip?->id,
             'campaign_id' => $this->campaign?->id,
             'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
