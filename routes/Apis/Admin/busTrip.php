@@ -17,5 +17,6 @@ Route::controller(BusTripController::class)->prefix('/delegate')->middleware('ad
    Route::post('/update/busTrip/{id}', 'update');
     Route::patch('notActive/busTrip/{id}', 'notActive');
     Route::patch('active/busTrip/{id}', 'active');
+    Route::put('update/SeatStatus/busTrip/{id}', 'updateSeatStatus');
 
    });

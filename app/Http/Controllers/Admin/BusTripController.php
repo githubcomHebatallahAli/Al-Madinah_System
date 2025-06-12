@@ -176,37 +176,37 @@ public function getSeatStats($id)
     ]);
 }
 
-// public function updateSeatStatus(Request $request, $busTripId)
-// {
-//     $this->authorize('manage_system');
+public function updateSeatStatus(Request $request, $busTripId)
+{
+    $this->authorize('manage_system');
 
-//     $request->validate([
-//         'seatNumber' => 'required',
-//         'status' => 'required|in:available,booked,cancelled',
-//     ]);
+    $request->validate([
+        'seatNumber' => 'required',
+        'status' => 'required|in:available,booked,cancelled',
+    ]);
 
-//     $busTrip = BusTrip::findOrFail($busTripId);
-//     $seatMap = $busTrip->seatMap ?? [];
+    $busTrip = BusTrip::findOrFail($busTripId);
+    $seatMap = $busTrip->seatMap ?? [];
 
-//     $updated = false;
+    $updated = false;
 
-//     foreach ($seatMap as &$seat) {
-//         if (isset($seat['number']) && $seat['number'] == $request->seatNumber) {
-//             $seat['status'] = $request->status;
-//             $updated = true;
-//             break;
-//         }
-//     }
+    foreach ($seatMap as &$seat) {
+        if (isset($seat['number']) && $seat['number'] == $request->seatNumber) {
+            $seat['status'] = $request->status;
+            $updated = true;
+            break;
+        }
+    }
 
-//     if (!$updated) {
-//         return response()->json(['message' => 'Seat not found.'], 404);
-//     }
+    if (!$updated) {
+        return response()->json(['message' => 'Seat not found.'], 404);
+    }
 
-//     $busTrip->seatMap = $seatMap;
-//     $busTrip->save();
+    $busTrip->seatMap = $seatMap;
+    $busTrip->save();
 
-//     return $this->respondWithResource($busTrip, 'تم تحديث حالة المقعد بنجاح.');
-// }
+    return $this->respondWithResource($busTrip, 'تم تحديث حالة المقعد بنجاح.');
+}
 
     public function active(string $id)
     {
