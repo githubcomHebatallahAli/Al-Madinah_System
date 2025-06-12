@@ -45,16 +45,13 @@ class BusInvoiceController extends Controller
             $query->where('office_id', $request->office_id);
         }
 
-        if ($request->filled('group_id')) {
-            $query->where('group_id', $request->group_id);
+
+        if ($request->filled('paymentStatus')) {
+            $query->where('paymentStatus', $request->paymentStatus);
         }
 
-        if ($request->filled('payment_status')) {
-            $query->where('paymentStatus', $request->payment_status);
-        }
-
-        if ($request->filled('invoice_status')) {
-            $query->where('invoiceStatus', $request->invoice_status);
+        if ($request->filled('invoiceStatus')) {
+            $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
         $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->paginate(10);
@@ -92,9 +89,15 @@ class BusInvoiceController extends Controller
             $query->where('office_id', $request->office_id);
         }
 
-        if ($request->filled('group_id')) {
-            $query->where('group_id', $request->group_id);
+          if ($request->filled('paymentStatus')) {
+            $query->where('paymentStatus', $request->paymentStatus);
         }
+
+        if ($request->filled('invoiceStatus')) {
+            $query->where('invoiceStatus', $request->invoiceStatus);
+        }
+
+
 
         $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->get();
 
