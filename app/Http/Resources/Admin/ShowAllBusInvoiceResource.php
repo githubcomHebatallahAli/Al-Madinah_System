@@ -13,6 +13,8 @@ class ShowAllBusInvoiceResource extends JsonResource
         return [
             'id'=>$this->id,
             'invoiceNumber' => $this->invoiceNumber,
+            'pilgrimsCount'=> $this ->pilgrimsCount,
+            'bus_trip_id'=> $this ->busTrip?->id,
             'office_id' => $this->office?->id,
             'office_name' => $this->office?->name,
             'campaign_id' => $this->campaign?->id,
