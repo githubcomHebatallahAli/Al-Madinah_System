@@ -30,13 +30,18 @@ public function showAllWithPaginate(Request $request)
 
     $query = PaymentMethodType::query();
 
-    if ($request->has('payment_method_id')) {
+    // if ($request->has('payment_method_id')) {
+    //     $query->where('payment_method_id', $request->payment_method_id);
+    // }
+
+        if ($request->filled('payment_method_id')) {
         $query->where('payment_method_id', $request->payment_method_id);
     }
 
         if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
         $query->where('status', $request->status);
     }
+
 
     $PaymentMethodType = $query->orderBy('created_at', 'desc')->paginate(10);
 
@@ -62,7 +67,11 @@ public function showAllWithoutPaginate(Request $request)
 
     $query = PaymentMethodType::query();
 
-    if ($request->has('payment_method_id')) {
+    // if ($request->has('payment_method_id')) {
+    //     $query->where('payment_method_id', $request->payment_method_id);
+    // }
+
+            if ($request->filled('payment_method_id')) {
         $query->where('payment_method_id', $request->payment_method_id);
     }
 

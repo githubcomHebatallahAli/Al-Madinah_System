@@ -22,6 +22,8 @@ class Hotel extends Model
         'address',
         'communication',
         'description',
+        'bedPrice',
+        'roomPrice',
         'quantity',
         'sellingPrice',
         'purchesPrice',
@@ -36,7 +38,7 @@ class Hotel extends Model
     {
         return $this->belongsTo(Service::class);
     }
-    
+
            public function company()
     {
         return $this->belongsTo(Company::class);
