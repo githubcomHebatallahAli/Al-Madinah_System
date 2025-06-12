@@ -2,17 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Bus;
-use App\Models\BusInvoice;
 use App\Models\BusTrip;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
-use Illuminate\Http\JsonResponse;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
@@ -30,7 +26,7 @@ class BusInvoiceController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
-    
+
     public function showAllWithPaginate(Request $request)
     {
         $this->authorize('manage_system');
