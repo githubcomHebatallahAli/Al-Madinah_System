@@ -3,10 +3,11 @@
 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\WorkerController;
+use App\Http\Controllers\Admin\WorkerLoginController;
 
 
-Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
+
+Route::controller(WorkerLoginController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
    Route::patch('notActive/workerLogin/{id}', 'notActive');
