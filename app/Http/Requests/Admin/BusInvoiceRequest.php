@@ -19,10 +19,10 @@ class BusInvoiceRequest extends FormRequest
     {
         return [
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
-        'campaign_id'=>'required|exists:campaigns,id',
+        'campaign_id'=>'nullable|exists:campaigns,id',
         'office_id'=>'required|exists:offices,id',
         'group_id'=>'required|exists:groups,id',
-        'worker_id'=>'required|exists:workers,id',
+        'worker_id'=>'nullable|exists:workers,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
         // 'seatPrice' => 'required|numeric|min:0',
         'discount'=>'nullable|numeric|min:0|max:99999.99',
