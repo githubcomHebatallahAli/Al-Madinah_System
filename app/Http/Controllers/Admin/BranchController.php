@@ -41,7 +41,7 @@ public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    // $searchTerm = $request->input('search', '');
+
 
     $query = Branch::query();
 
@@ -49,9 +49,6 @@ public function showAllWithPaginate(Request $request)
         $query->where('status', $request->status);
     }
 
-    // if (!empty($searchTerm)) {
-    //     $query->where('name', 'like', '%' . $searchTerm . '%');
-    // }
     if ($request->filled('search')) {
     $query->where('name', 'like', '%' . $request->search . '%');
 }
@@ -77,17 +74,12 @@ public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    // $searchTerm = $request->input('search', '');
-
     $query = Branch::query();
 
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
         $query->where('status', $request->status);
     }
 
-    // if (!empty($searchTerm)) {
-    //     $query->where('name', 'like', '%' . $searchTerm . '%');
-    // }
 
         if ($request->filled('search')) {
     $query->where('name', 'like', '%' . $request->search . '%');

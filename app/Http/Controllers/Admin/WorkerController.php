@@ -423,21 +423,21 @@ public function update(WorkerRequest $request, string $id)
         return $this->changeStatusSimple($Worker, 'notActive');
     }
 
-    public function activeWorkerLogin(string $id)
-    {
-        $this->authorize('manage_system');
-        $Worker = WorkerLogin::findOrFail($id);
+    // public function activeWorkerLogin(string $id)
+    // {
+    //     $this->authorize('manage_system');
+    //     $Worker = WorkerLogin::findOrFail($id);
 
-        return $this->changeStatusSimple($Worker, 'active');
-    }
+    //     return $this->changeStatusSimple($Worker, 'active');
+    // }
 
-    public function notActiveWorkerLogin(string $id)
-    {
-        $this->authorize('manage_system');
-        $Worker = WorkerLogin::findOrFail($id);
+    // public function notActiveWorkerLogin(string $id)
+    // {
+    //     $this->authorize('manage_system');
+    //     $Worker = WorkerLogin::findOrFail($id);
 
-        return $this->changeStatusSimple($Worker, 'notActive');
-    }
+    //     return $this->changeStatusSimple($Worker, 'notActive');
+    // }
 
     protected function getResourceClass(): string
     {
