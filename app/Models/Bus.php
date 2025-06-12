@@ -23,6 +23,7 @@ class Bus extends Model
         'busModel',
         'plateNum',
         'seatNum',
+        'seatPrice',
         'seatMap',
         'quantity',
         'sellingPrice',

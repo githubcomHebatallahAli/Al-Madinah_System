@@ -24,6 +24,7 @@ class BusRequest extends FormRequest
         'creationDate' => 'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri' => 'nullable|string',
         'busNum' => 'required|string',
+        'seatPrice' => 'required|numeric|min:0',
         'busModel' => 'required|string',
         'plateNum' => 'required|string',
         'seatNum' => 'required|integer|min:1|max:100',

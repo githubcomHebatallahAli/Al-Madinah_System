@@ -23,6 +23,7 @@ return new class extends Migration
             $table->integer('quantity')->default(0);
             $table->decimal('sellingPrice');
             $table->decimal('purchesPrice');
+            $table->decimal('seatPrice', 10, 2)->default(0);
             $table->decimal('profit')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();

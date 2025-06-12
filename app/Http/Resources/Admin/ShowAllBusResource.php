@@ -17,6 +17,7 @@ class ShowAllBusResource extends JsonResource
             'company_id' => $this->company?->id,
             'company_name' => $this->company?->name,
             'seatNum' => $this-> seatNum,
+            'seatPrice' => $this-> seatPrice,
             'busNum' => $this -> busNum,
             'busModel' => $this-> busModel,
             'plateNum' => $this-> plateNum ,

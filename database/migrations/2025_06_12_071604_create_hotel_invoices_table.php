@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bus_invoices', function (Blueprint $table) {
+        Schema::create('hotel_invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bus_trip_id')->constrained('bus_trips')->cascadeOnDelete();
+                    $table->foreignId('bus_trip_id')->constrained('bus_trips')->cascadeOnDelete();
 
             $table->string('invoiceNumber')->unique();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
@@ -33,7 +33,8 @@ return new class extends Migration
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
-            // $table->decimal('seatPrice', 10, 2);
+            $table->decimal('bedPrice', 10, 2)->nullable();
+            $table->decimal('roomPrice', 10, 2)->nullable();
 
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
@@ -46,6 +47,7 @@ return new class extends Migration
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
+
             $table->timestamps();
         });
     }
@@ -55,6 +57,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bus_invoices');
+        Schema::dropIfExists('hotel_invoices');
     }
 };

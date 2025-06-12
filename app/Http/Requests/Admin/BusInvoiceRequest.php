@@ -24,7 +24,7 @@ class BusInvoiceRequest extends FormRequest
         'group_id'=>'required|exists:groups,id',
         'worker_id'=>'required|exists:workers,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
-        'seatPrice' => 'required|numeric|min:0',
+        // 'seatPrice' => 'required|numeric|min:0',
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',
         'paidAmount'=>'nullable|numeric|min:0|max:99999.99',

@@ -20,7 +20,7 @@ class BusInvoice extends Model
         'group_id',
         'worker_id',
         'payment_method_type_id',
-        'seatPrice',
+        // 'seatPrice',
         'subtotal',
         'discount',
         'tax',
@@ -105,13 +105,30 @@ public function calculateTotal(): void
         $this->PilgrimsCount();
     }
 
-    $this->subtotal = $this->seatPrice * $this->pilgrimsCount;
+    $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
+
+    $this->subtotal = $seatPrice * $this->pilgrimsCount;
     $this->total = $this->subtotal
                   - ($this->discount ?? 0)
                   + ($this->tax ?? 0);
 
     $this->save();
 }
+
+
+// public function calculateTotal(): void
+// {
+//     if (!isset($this->pilgrimsCount)) {
+//         $this->PilgrimsCount();
+//     }
+
+//     $this->subtotal = $this->seatPrice * $this->pilgrimsCount;
+//     $this->total = $this->subtotal
+//                   - ($this->discount ?? 0)
+//                   + ($this->tax ?? 0);
+
+//     $this->save();
+// }
 
 
       protected static function booted()

@@ -36,7 +36,7 @@ class BusInvoiceResource extends JsonResource
             'payment_method_type_id' => $this->paymentMethodType?->id,
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
-            'seatPrice' => $this-> seatPrice,
+            // 'seatPrice' => $this-> seatPrice,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'tax' => $this->tax,

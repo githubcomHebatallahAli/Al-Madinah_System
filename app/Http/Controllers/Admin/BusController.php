@@ -107,7 +107,7 @@ public function showAllWithoutPaginate(Request $request)
 
         $data = array_merge($request->only([
             'service_id','company_id', 'busNum', 'busModel', 'plateNum',
-            'seatNum', 'quantity', 'sellingPrice', 'purchesPrice',
+            'seatNum','seatPrice', 'quantity', 'sellingPrice', 'purchesPrice',
             'seatMap'
         ]), $this->prepareCreationMetaData());
 
@@ -183,7 +183,7 @@ public function showAllWithoutPaginate(Request $request)
 
         $updateData = $request->only([
             'status', 'service_id','company_id', 'busNum', 'busModel', 'plateNum',
-            'seatNum', 'quantity', 'sellingPrice', 'purchesPrice',
+            'seatNum','seatPrice', 'quantity', 'sellingPrice', 'purchesPrice',
             'seatMap'
         ]);
 
