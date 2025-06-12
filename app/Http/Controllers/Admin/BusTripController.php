@@ -191,7 +191,7 @@ public function updateSeatStatus(Request $request, $busTripId)
     $updated = false;
 
     foreach ($seatMap as &$seat) {
-        if (isset($seat['number']) && $seat['number'] == $request->seatNumber) {
+        if (isset($seat['seatNumber']) && $seat['seatNumber'] == $request->seatNumber) {
             $seat['status'] = $request->status;
             $updated = true;
             break;
