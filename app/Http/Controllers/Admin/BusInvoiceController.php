@@ -55,9 +55,13 @@ class BusInvoiceController extends Controller
         }
 
         $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->paginate(10);
+        $totalPaidAmount = BusInvoice::sum('paidAmount');
 
         return response()->json([
             'data' => ShowAllBusInvoiceResource::collection($busInvoices),
+             'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+        ],
             'pagination' => [
                 'total' => $busInvoices->total(),
                 'count' => $busInvoices->count(),
@@ -106,7 +110,7 @@ class BusInvoiceController extends Controller
             'data' => ShowAllBusInvoiceResource::collection($busInvoices),
              'statistics' => [
             'paid_amount' => $totalPaidAmount,
-           
+
         ],
             'message' => "Show All Bus Invoices."
         ]);
