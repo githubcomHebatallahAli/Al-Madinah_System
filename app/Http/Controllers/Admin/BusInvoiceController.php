@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Bus;
-use App\Models\Worker;
+use App\Models\BusInvoice;
 use App\Models\BusTrip;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
@@ -461,7 +461,6 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 {
     $changes = [];
 
-    // الحجاج اللي اتمسحوا
     foreach (array_diff_key($oldPivotData, $newPivotData) as $pilgrimId => $pivot) {
         $changes[$pilgrimId] = [
             'old' => $pivot,
@@ -469,7 +468,6 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
         ];
     }
 
-    // الحجاج اللي اتضافوا
     foreach (array_diff_key($newPivotData, $oldPivotData) as $pilgrimId => $pivot) {
         $changes[$pilgrimId] = [
             'old' => null,
@@ -477,7 +475,6 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
         ];
     }
 
-    // الحجاج اللي اتعدلوا
     foreach ($newPivotData as $pilgrimId => $newPivot) {
         if (!isset($oldPivotData[$pilgrimId])) continue;
 
@@ -506,45 +503,336 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 }
 
 
+    // public function updatePaymentStatus(Request $request, $invoiceId)
+    // {
+    //     $this->authorize('manage_system');
+
+    //     $request->validate([
+    //         'paymentStatus' => 'required|in:paid,unpaid,partial',
+    //         'paidAmount' => 'required|numeric|min:0',
+    //     ]);
+
+    //     $busInvoice = BusInvoice::findOrFail($invoiceId);
+    //     $busInvoice->update([
+    //         'paymentStatus' => $request->paymentStatus,
+    //         'paidAmount' => $request->paidAmount,
+    //     ]);
+
+    //     return $this->respondWithResource($busInvoice, "Payment status updated successfully.");
+    // }
+
+    // public function getInvoiceStats($invoiceId)
+    // {
+    //     $this->authorize('manage_system');
+
+    //     $busInvoice = BusInvoice::findOrFail($invoiceId);
+
+    //     return response()->json([
+    //         'total_seats' => $busInvoice->pilgrims()->count(),
+    //         'booked_seats' => $busInvoice->pilgrims()->wherePivot('status', 'booked')->count(),
+    //         'cancelled_seats' => $busInvoice->pilgrims()->wherePivot('status', 'cancelled')->count(),
+    //         'subtotal' => $busInvoice->subtotal,
+    //         'discount' => $busInvoice->discount,
+    //         'tax' => $busInvoice->tax,
+    //         'total' => $busInvoice->total,
+    //         'paidAmount' => $busInvoice->paidAmount,
+    //         'remainingAmount' => $busInvoice->total - $busInvoice->paidAmount,
+    //     ]);
+    // }
 
 
+    // Invoice Status
+    public function pending(string $id)
+{
+    $this->authorize('manage_system');
 
-    public function updatePaymentStatus(Request $request, $invoiceId)
-    {
-        $this->authorize('manage_system');
-
-        $request->validate([
-            'paymentStatus' => 'required|in:paid,unpaid,partial',
-            'paidAmount' => 'required|numeric|min:0',
-        ]);
-
-        $busInvoice = BusInvoice::findOrFail($invoiceId);
-        $busInvoice->update([
-            'paymentStatus' => $request->paymentStatus,
-            'paidAmount' => $request->paidAmount,
-        ]);
-
-        return $this->respondWithResource($busInvoice, "Payment status updated successfully.");
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
     }
 
-    public function getInvoiceStats($invoiceId)
-    {
-        $this->authorize('manage_system');
+    $oldData = $busInvoice->toArray();
 
-        $busInvoice = BusInvoice::findOrFail($invoiceId);
-
-        return response()->json([
-            'total_seats' => $busInvoice->pilgrims()->count(),
-            'booked_seats' => $busInvoice->pilgrims()->wherePivot('status', 'booked')->count(),
-            'cancelled_seats' => $busInvoice->pilgrims()->wherePivot('status', 'cancelled')->count(),
-            'subtotal' => $busInvoice->subtotal,
-            'discount' => $busInvoice->discount,
-            'tax' => $busInvoice->tax,
-            'total' => $busInvoice->total,
-            'paidAmount' => $busInvoice->paidAmount,
-            'remainingAmount' => $busInvoice->total - $busInvoice->paidAmount,
-        ]);
+    if ($busInvoice->invoiceStatus === 'pending') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to pending');
     }
+
+    $busInvoice->invoiceStatus = 'pending';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to pending');
+}
+
+    public function approved(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->invoiceStatus === 'approved') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to approved');
+    }
+
+    $busInvoice->invoiceStatus = 'approved';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to approved');
+}
+
+    public function rejected(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->invoiceStatus === 'rejected') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to rejected');
+    }
+
+    $busInvoice->invoiceStatus = 'rejected';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to rejected');
+}
+
+    public function completed(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->invoiceStatus === 'completed') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to completed');
+    }
+
+    $busInvoice->invoiceStatus = 'completed';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to completed');
+}
+
+    public function absence(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->invoiceStatus === 'absence') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to absence');
+    }
+
+    $busInvoice->invoiceStatus = 'absence';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to absence');
+}
+
+// Payment Status
+    public function pendingPayment(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->paymentStatus === 'pending') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to pending');
+    }
+
+    $busInvoice->paymentStatus = 'pending';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice Payment set to pendind');
+}
+
+    public function refuneded(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->paymentStatus === 'refuneded') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice Payment is already set to refuneded');
+    }
+
+    $busInvoice->paymentStatus = 'refuneded';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice Payment set to refuneded');
+}
+
+    public function paid(string $id)
+{
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
+
+    $oldData = $busInvoice->toArray();
+
+    if ($busInvoice->paymentStatus === 'paid') {
+        $this->loadCommonRelations($busInvoice);
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to paid');
+    }
+
+    $busInvoice->paymentStatus = 'paid';
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
+
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->changed_data = $changedData;
+    $busInvoice->save();
+
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to paid');
+}
+
+
+
 
         protected function getResourceClass(): string
     {

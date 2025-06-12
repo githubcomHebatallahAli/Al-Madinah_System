@@ -66,8 +66,6 @@ public function showAllWorkerLoginWeb(Request $request)
 
     $workers = $query->paginate(10);
 
-    // $this->loadRelationsForCollection($workers->getCollection());
-
     return response()->json([
         'data' => ShowAllWorkerLoginWebResource::collection($workers),
         'pagination' => [

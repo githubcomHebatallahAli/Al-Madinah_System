@@ -20,11 +20,11 @@ return new class extends Migration
             // العلاقات
 
             $table->foreignId('office_id')->constrained('offices')->cascadeOnDelete();
-            $table->foreignId('campaign_id')->constrained('campaigns')->cascadeOnDelete();
+            $table->foreignId('campaign_id')->nullable()->constrained('campaigns')->cascadeOnDelete();
             $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
-            $table->foreignId('worker_id')->constrained('workers');
+            $table->foreignId('worker_id')->nullable()->constrained('workers');
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
-             $table->unsignedBigInteger('pilgrimsCount')->default(0);
+            $table->unsignedBigInteger('pilgrimsCount')->default(0);
 
 
             // الحسابات
