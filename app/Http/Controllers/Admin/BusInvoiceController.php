@@ -30,6 +30,7 @@ class BusInvoiceController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
+    
     public function showAllWithPaginate(Request $request)
     {
         $this->authorize('manage_system');
@@ -251,9 +252,6 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     }
 }
 
-
-
-
     public function edit(string $id)
     {
         $this->authorize('manage_system');
@@ -274,7 +272,7 @@ public function update(BusInvoiceRequest $request, $id)
     $this->authorize('manage_system');
 
     $busInvoice = BusInvoice::findOrFail($id);
-    $oldData = $busInvoice->toArray(); // البيانات القديمة
+    $oldData = $busInvoice->toArray();
     $oldPivot = $busInvoice->pilgrims()
         ->withPivot(['seatNumber', 'status', 'type', 'position'])
         ->get()
@@ -329,7 +327,7 @@ public function update(BusInvoiceRequest $request, $id)
     DB::beginTransaction();
 
     try {
-        // التحقق من التغييرات
+
         $hasChanges = $this->checkForChanges($busInvoice, $data, $request);
 
         if (!$hasChanges) {
@@ -337,22 +335,18 @@ public function update(BusInvoiceRequest $request, $id)
             return $this->respondWithResource($busInvoice, "لا يوجد تغييرات فعلية");
         }
 
-        // تحرير المقاعد القديمة
         if ($busTrip && count($originalSeats) > 0) {
             foreach ($originalSeats as $seat) {
                 $this->updateSeatStatusInTrip($busTrip, $seat, 'available');
             }
         }
 
-        // تحديث الفاتورة
         $busInvoice->update($data);
 
-        // تحديث الحجاج والمقاعد
         if ($request->has('pilgrims')) {
             $pilgrimsData = $this->preparePilgrimsData($request->pilgrims, $seatMapArray);
             $busInvoice->pilgrims()->sync($pilgrimsData);
 
-            // حجز المقاعد الجديدة
             if ($busTrip) {
                 foreach ($request->pilgrims as $pilgrim) {
                     $this->updateSeatStatusInTrip($busTrip, $pilgrim['seatNumber'], 'booked');
@@ -362,11 +356,9 @@ public function update(BusInvoiceRequest $request, $id)
             $busInvoice->pilgrims()->detach();
         }
 
-        // تحديث الحسابات
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
-        // تتبع التغييرات في pivot
         $newPivot = $busInvoice->pilgrims()
             ->withPivot(['seatNumber', 'status', 'type', 'position'])
             ->get()
@@ -376,7 +368,6 @@ public function update(BusInvoiceRequest $request, $id)
 
         $pivotChanges = $this->getPivotChanges($oldPivot, $newPivot);
 
-        // تتبع باقي التغييرات
         $changedData = $busInvoice->getChangedData($oldData, $busInvoice->fresh()->toArray());
 
         if (!empty($pivotChanges)) {
@@ -401,12 +392,12 @@ public function update(BusInvoiceRequest $request, $id)
 
 protected function prepareUpdateMetaData(): array
 {
-    $updatedBy = $this->getUpdatedByIdOrFail(); // من التريت الخاص بك
+    $updatedBy = $this->getUpdatedByIdOrFail();
     return [
         'updated_by' => $updatedBy,
-        'updated_by_type' => $this->getUpdatedByType(), // من التريت الخاص بك
+        'updated_by_type' => $this->getUpdatedByType(),
         'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'updated_at_hijri' => $this->getHijriDate(), // من HijriDateTrait
+        'updated_at_hijri' => $this->getHijriDate(),
     ];
 }
 

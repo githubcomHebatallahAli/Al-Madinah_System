@@ -10,7 +10,8 @@ use App\Http\Controllers\Admin\BusInvoiceController;
 Route::controller(BusInvoiceController::class)->prefix('/delegate')->middleware('adminOrWorker')->group(
     function () {
 
-   Route::get('/showAll/busInvoice','showAll');
+   Route::get('/showAll/busInvoice','showAllWithoutPaginate');
+   Route::get('/showAll/busInvoice/withPaginate','showAllWithPaginate');
    Route::post('/create/busInvoice', 'create');
     Route::put('/updatePaid/busInvoice/{id}','updatePaidAmount');
    Route::get('/edit/busInvoice/{id}','edit');
