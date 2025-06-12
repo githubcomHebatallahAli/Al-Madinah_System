@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('type')->nullable();
             $table->string('position')->nullable();
 
-            $table->unique(['bus_invoice_id', 'pilgrim_id']);
+            // $table->unique(['bus_invoice_id', 'pilgrim_id']);
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
