@@ -13,29 +13,26 @@ return new class extends Migration
     {
         Schema::create('hotel_invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bus_trip_id')->constrained('bus_trips')->cascadeOnDelete();
-
-            $table->string('invoiceNumber')->unique();
+            $table->foreignId('bus_id')->constrained('buses')->cascadeOnDelete();
+            $table->foreignId('bus_driver_id')->constrained('bus_drivers')->cascadeOnDelete();
+            $table->foreignId('hotel_id')->constrained('hotels')->cascadeOnDelete();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
-            // العلاقات
-
-            $table->foreignId('office_id')->constrained('offices')->cascadeOnDelete();
-            $table->foreignId('campaign_id')->nullable()->constrained('campaigns')->cascadeOnDelete();
-            $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
-            $table->foreignId('worker_id')->nullable()->constrained('workers');
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
-
-
+            $table->enum('need', ['family', 'single']);
+            $table->enum('sleep', ['bed', 'room']);
+            $table->enum('bookingSource', ['MeccaCash', 'MeccaDelegate','office','otherOffice']);
+            $table->dateTime('residenceDate')->nullable();
+            $table->string('residenceDateHijri')->nullable();
+            $table->integer('numDay');
+            $table->integer('roomNum')->nullable();
+            $table->text('description')->nullable();
             // الحسابات
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
-            $table->decimal('bedPrice', 10, 2)->nullable();
-            $table->decimal('roomPrice', 10, 2)->nullable();
-
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();

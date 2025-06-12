@@ -11,6 +11,8 @@ class BusInvoicePilgrim extends Model
 {
     use HasFactory, TracksChangesTrait,HijriDateTrait;
         protected $fillable = [
+        'bus_invoice_id',
+        'pilgrim_id',
         'seatNumber',
         'status',
         'type',
@@ -19,8 +21,8 @@ class BusInvoicePilgrim extends Model
         'creationDateHijri',
         'changed_data'
     ];
-      protected $casts = [
 
+      protected $casts = [
         'changed_data' => 'array',
     ];
 

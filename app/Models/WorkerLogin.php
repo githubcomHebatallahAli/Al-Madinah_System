@@ -24,6 +24,7 @@ class WorkerLogin extends Authenticatable  implements JWTSubject
         'added_by_type',
         'updated_by',
         'updated_by_type',
+        'status'
      ];
 
 public function creator()

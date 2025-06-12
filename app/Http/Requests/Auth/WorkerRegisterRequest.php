@@ -29,6 +29,7 @@ class WorkerRegisterRequest extends FormRequest
             'added_by' => 'nullable','exists:workers,id',
             'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
             'creationDateHijri'=>'nullable|string',
+             'status' => 'nullable|in:active,notActive',
         ];
     }
 }

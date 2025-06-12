@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('bus_id')->constrained('buses')->cascadeOnDelete();
             $table->foreignId('bus_driver_id')->constrained('bus_drivers')->cascadeOnDelete();
             $table->dateTime('travelDate')->nullable();
-            $table->string('travelDateHijri');
+            $table->string('travelDateHijri')->nullable();
             $table->json('seatMap')->nullable();
              $table->enum('status', ['active', 'notActive'])->default('active');
             $table->unsignedBigInteger('added_by')->nullable();

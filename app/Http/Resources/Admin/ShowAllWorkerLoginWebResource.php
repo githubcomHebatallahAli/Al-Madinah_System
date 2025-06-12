@@ -20,6 +20,7 @@ class ShowAllWorkerLoginWebResource extends JsonResource
             'status' => $this->worker?->status,
             'dashboardAccess' => $this->worker?->dashboardAccess,
             'email'=>$this->email,
+            'status'=>$this->status,
             'role_id' => $this->role?->id,
             'role_name' => $this->role?->name,
             'creationDate' => $this -> creationDate,

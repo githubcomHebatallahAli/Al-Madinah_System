@@ -20,7 +20,6 @@ class BusInvoice extends Model
         'group_id',
         'worker_id',
         'payment_method_type_id',
-        // 'seatPrice',
         'subtotal',
         'discount',
         'tax',

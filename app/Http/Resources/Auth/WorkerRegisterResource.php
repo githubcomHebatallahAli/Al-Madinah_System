@@ -17,6 +17,7 @@ class WorkerRegisterResource extends JsonResource
             'id'=>$this->id,
             'worker'=> new WorkerResource($this->worker),
             'email'=>$this->email,
+            'status'=>$this->status,
             'role' => new RoleResource($this->role),
             'creationDate' => $this -> creationDate,
             'creationDateHijri'=> $this -> creationDateHijri,

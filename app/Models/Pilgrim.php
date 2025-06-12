@@ -41,12 +41,6 @@ class Pilgrim extends Model
     'changed_data' => 'array',
 ];
 
-    // public function busInvoices()
-    // {
-    //     return $this->belongsToMany(busInvoice::class)
-    //         ->withPivot(['seatNumber', 'seatPrice', 'status', 'status_reason'])
-    //         ->withTimestamps();
-    // }
 
         public function busInvoices()
 {
@@ -57,10 +51,17 @@ class Pilgrim extends Model
             'creationDate',
             'creationDateHijri',
             'changed_data',
-             'type',
-             'position',
+            'type',
+            'position',
         ]);
-    
+
+}
+
+    public function hotelInvoice()
+{
+    return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims');
+
+
 }
 
 
