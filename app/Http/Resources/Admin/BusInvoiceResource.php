@@ -25,6 +25,7 @@ class BusInvoiceResource extends JsonResource
             'invoiceNumber' => $this->invoiceNumber,
             'pilgrimsCount'=> $this ->pilgrimsCount,
             'bus_trip_id'=> $this ->busTrip?->id,
+            'seatPrice' => $this->busTrip?->bus?->seatPrice ?? 0,
             'campaign_id' => $this->campaign?->id,
             'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
@@ -36,7 +37,7 @@ class BusInvoiceResource extends JsonResource
             'payment_method_type_id' => $this->paymentMethodType?->id,
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
-            // 'seatPrice' => $this-> seatPrice,
+
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'tax' => $this->tax,
