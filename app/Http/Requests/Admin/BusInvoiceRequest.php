@@ -40,12 +40,12 @@ class BusInvoiceRequest extends FormRequest
         // 'pilgrims.*.type' => 'nullable|string',
         // 'pilgrims.*.position' => 'nullable|string',
 
-        'pilgrims' => 'nullable|array',
-        'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum', // 🔹 جعل "idNum" قابلة للتحقق
-        'pilgrims.*.name' => 'required_if:pilgrims.*.idNum,null|string|max:255', // 🔹 مطلوب فقط إذا لم يكن المعتمر مسجلًا مسبقًا
+           'pilgrims' => 'nullable|array',
+        'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum',
+        'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
         'pilgrims.*.phoNum' => 'nullable|string|max:20',
-        'pilgrims.*.nationality' => 'required_if:pilgrims.*.idNum,null|string|max:50',
-        'pilgrims.*.gender' => 'required_if:pilgrims.*.idNum,null|in:male,female,child',
+        'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
+        'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
         'pilgrims.*.seatNumber' => 'required|array|min:1',
         'pilgrims.*.seatNumber.*' => 'required|string',
         'pilgrims.*.type' => 'nullable|string',
