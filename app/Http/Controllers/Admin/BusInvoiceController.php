@@ -1373,7 +1373,6 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 }
 
 
-
 public function create(BusInvoiceRequest $request) {
     $this->authorize('manage_system');
 
@@ -1422,12 +1421,31 @@ public function create(BusInvoiceRequest $request) {
             $pilgrimsData = [];
 
             foreach ($request->pilgrims as $pilgrim) {
-                $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
+                $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])
+                                          ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
+                                          ->first();
 
-                $pilgrimRecord = $existingPilgrim ?? Pilgrim::create([
-                    'idNum' => $pilgrim['idNum'],
+                if ($existingPilgrim) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'المعتمر مسجل مسبقًا',
+                        'data' => [
+                            'idNum' => $existingPilgrim->idNum,
+                            'existing_pilgrim' => [
+                                'name' => $existingPilgrim->name,
+                                'nationality' => $existingPilgrim->nationality,
+                                'phoNum' => $existingPilgrim->phoNum,
+                                'gender' => $existingPilgrim->gender
+                            ]
+                        ]
+                    ], 409);
+                }
+
+                // إنشاء معتمر جديد إذا لم يكن مسجلًا مسبقًا
+                $pilgrimRecord = Pilgrim::create([
+                    'idNum' => $pilgrim['idNum'] ?? null,
                     'name' => $pilgrim['name'],
-                    'phoNum' => $pilgrim['phoNum'],
+                    'phoNum' => $pilgrim['phoNum'] ?? null,
                     'nationality' => $pilgrim['nationality'],
                     'gender' => $pilgrim['gender']
                 ]);
@@ -1471,6 +1489,7 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
+
 
 
 
