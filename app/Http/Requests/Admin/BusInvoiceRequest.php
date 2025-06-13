@@ -40,16 +40,13 @@ class BusInvoiceRequest extends FormRequest
         // 'pilgrims.*.type' => 'nullable|string',
         // 'pilgrims.*.position' => 'nullable|string',
 
-  'pilgrims' => 'nullable|array',
-        'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum', // إذا كان موجودًا، سيتم جلبه تلقائيًا
-        'pilgrims.*.name' => 'required|string|max:255', // يجب أن يكون الاسم دائمًا موجودًا
-        'pilgrims.*.phoNum' => 'nullable|string|max:20',
-        'pilgrims.*.nationality' => 'required|string|max:50',
-        'pilgrims.*.gender' => 'required|in:male,female,child',
+      'pilgrims' => 'nullable|array',
+        'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum',
 
-        // 🔹 تعديل للتحقق من الهوية أو الهاتف بناءً على نوع المعتمر
-        'pilgrims.*.idNum' => 'nullable|required_if:pilgrims.*.gender,male,female|string|max:20',
-        'pilgrims.*.phoNum' => 'nullable|required_if:pilgrims.*.gender,male,female|string|max:20',
+        // ✅ السماح بإدخال البيانات فقط إذا لم يكن المعتمر مسجلًا مسبقًا
+        'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
+        'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
+        'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
 
         'pilgrims.*.seatNumber' => 'required|array|min:1',
         'pilgrims.*.seatNumber.*' => 'required|string',
