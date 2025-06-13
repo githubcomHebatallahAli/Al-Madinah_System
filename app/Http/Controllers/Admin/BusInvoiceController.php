@@ -1425,23 +1425,19 @@ public function create(BusInvoiceRequest $request) {
                                           ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
                                           ->first();
 
-                if ($existingPilgrim) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'المعتمر مسجل مسبقًا',
-                        'data' => [
-                            'idNum' => $existingPilgrim->idNum,
-                            'existing_pilgrim' => [
-                                'name' => $existingPilgrim->name,
-                                'nationality' => $existingPilgrim->nationality,
-                                'phoNum' => $existingPilgrim->phoNum,
-                                'gender' => $existingPilgrim->gender
-                            ]
-                        ]
-                    ], 409);
-                }
+$existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
+if ($existingPilgrim) {
+    return response()->json([
+        'success' => true,
+        'message' => 'المعتمر مسجل مسبقًا، تم إضافته للفاتورة',
+        'data' => [
+            'pilgrim_id' => $existingPilgrim->id,
+            'name' => $existingPilgrim->name
+        ]
+    ], 200);
+}
 
-                // إنشاء معتمر جديد إذا لم يكن مسجلًا مسبقًا
+
                 $pilgrimRecord = Pilgrim::create([
                     'idNum' => $pilgrim['idNum'] ?? null,
                     'name' => $pilgrim['name'],
