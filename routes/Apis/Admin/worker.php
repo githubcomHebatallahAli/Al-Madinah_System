@@ -9,8 +9,7 @@ use App\Http\Controllers\Admin\WorkerController;
 Route::controller(WorkerController::class)->prefix('/adminOrBranchManger')->middleware('adminOrWorker')->group(
     function () {
 
-//    Route::get('/showAll/workerLogin','showAllWorkerLoginWeb');
-//    Route::get('/showAll/workerLogin/withoutPaginate','showAllWorkerLoginWithoutPaginate');
+
    Route::get('/showAll/worker','showAllWeb');
    Route::get('/showAll/worker/withPaginate','showAllWithPaginate');
 
