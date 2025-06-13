@@ -33,25 +33,22 @@ class BusInvoiceRequest extends FormRequest
         'paymentStatus'=>'nullable|in:pending,paid,refunded',
         'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri'=>'nullable|string',
-        'pilgrims' => 'nullable|array',
-        'pilgrims.*.id' => 'required|exists:pilgrims,id',
-        'pilgrims.*.seatNumber' => 'required|array|min:1', // ✅ السماح بأكثر من مقعد
-        'pilgrims.*.seatNumber.*' => 'required|string',
-        'pilgrims.*.type' => 'nullable|string',
-        'pilgrims.*.position' => 'nullable|string',
+        // 'pilgrims' => 'nullable|array',
+        // 'pilgrims.*.id' => 'required|exists:pilgrims,id',
+        // 'pilgrims.*.seatNumber' => 'required|array|min:1', // ✅ السماح بأكثر من مقعد
+        // 'pilgrims.*.seatNumber.*' => 'required|string',
+        // 'pilgrims.*.type' => 'nullable|string',
+        // 'pilgrims.*.position' => 'nullable|string',
 
-    //   'pilgrims' => 'nullable|array',
-    //     'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum',
-
-    //     // ✅ السماح بإدخال البيانات فقط إذا لم يكن المعتمر مسجلًا مسبقًا
-    //     'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
-    //     'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
-    //     'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
-
-    //     'pilgrims.*.seatNumber' => 'required|array|min:1',
-    //     'pilgrims.*.seatNumber.*' => 'required|string',
-    //     'pilgrims.*.type' => 'nullable|string',
-    //     'pilgrims.*.position' => 'nullable|string',
+'pilgrims' => 'nullable|array',
+'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum',
+'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
+'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
+'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
+'pilgrims.*.seatNumber' => 'required|array|min:1',
+'pilgrims.*.seatNumber.*' => 'required|string',
+'pilgrims.*.type' => 'nullable|string',
+'pilgrims.*.position' => 'nullable|string',
 
         ];
     }
