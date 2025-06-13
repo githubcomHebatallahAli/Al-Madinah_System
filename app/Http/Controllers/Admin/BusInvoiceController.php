@@ -1380,7 +1380,9 @@ public function create(BusInvoiceRequest $request) {
     try {
         // إنشاء الفاتورة
         $busInvoice = BusInvoice::create($request->only([
-            'bus_trip_id', 'office_id', 'discount', 'tax', 'paidAmount'
+            'bus_trip_id', 'office_id', 'discount', 'tax', 'paidAmount','group_id',
+            'worker_id','campaign_id',
+            'payment_method_type_id'
         ]));
 
         // تجهيز بيانات المعتمرين
