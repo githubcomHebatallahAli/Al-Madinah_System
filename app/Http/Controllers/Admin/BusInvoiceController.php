@@ -1019,11 +1019,15 @@ public function create(BusInvoiceRequest $request)
 
 public function updateIncompletePilgrims(Request $request, BusInvoice $busInvoice)
 {
+
     if (!$busInvoice->relationLoaded('busTrip')) {
     $busInvoice->load('busTrip');
 }
 
+
   $busTrip = $busInvoice->busTrip;
+  dd($busInvoice->bus_trip_id, $busTrip);
+
 
     if (!$busTrip) {
         return response()->json(['message' => 'لا توجد رحلة مرتبطة بهذه الفاتورة'], 422);
