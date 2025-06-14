@@ -829,49 +829,14 @@ public function create(BusInvoiceRequest $request) {
                                           ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
                                           ->first();
 
-                if ($existingPilgrim) {
-                    $seatPrice = $this->getSeatPrice($pilgrim['seatNumber']);
-                    $subtotal += $seatPrice;
-
-                    foreach ($pilgrim['seatNumber'] as $seatNumber) {
-                        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
-
-                        if (!$seatInfo) {
-                            throw new \Exception("المقعد {$seatNumber} غير موجود في seatMap.");
-                        }
-
-                        $pilgrimsData[] = [
-                            'pilgrim_id' => $existingPilgrim->id,
-                            'seatNumber' => $seatNumber,
-                            'status' => 'booked',
-                            'type' => $seatInfo['type'] ?? null,
-                            'position' => $seatInfo['position'] ?? null,
-                            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                            'creationDateHijri' => $this->getHijriDate(),
-                        ];
-
-                        if ($busTrip) {
-                            $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
-                        }
-                    }
-                    continue;
-                }
-
-                // ✅ إذا لم يكن المعتمر مسجلًا، يجب إدخال جميع بياناته الأساسية
-                if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+                // ✅ إذا لم يكن المعتمر مسجلًا، إرسال رسالة توضح أنه يجب إدخال بياناته كاملة
+                if (!$existingPilgrim) {
                     return response()->json([
-                        'message' => "المعتمر غير مسجل، يجب إدخال الاسم والجنسية والجنس.",
+                        'success' => false,
+                        'message' => "المعتمر غير مسجل مسبقًا، يرجى إدخال الاسم والجنسية والجنس لإتمام التسجيل.",
                         'required_fields' => ['name', 'nationality', 'gender']
                     ], 422);
                 }
-
-                $pilgrimRecord = Pilgrim::create([
-                    'idNum' => $pilgrim['idNum'] ?? null,
-                    'name' => $pilgrim['name'],
-                    'phoNum' => $pilgrim['phoNum'] ?? null,
-                    'nationality' => $pilgrim['nationality'],
-                    'gender' => $pilgrim['gender']
-                ]);
 
                 $seatPrice = $this->getSeatPrice($pilgrim['seatNumber']);
                 $subtotal += $seatPrice;
@@ -884,7 +849,7 @@ public function create(BusInvoiceRequest $request) {
                     }
 
                     $pilgrimsData[] = [
-                        'pilgrim_id' => $pilgrimRecord->id,
+                        'pilgrim_id' => $existingPilgrim->id,
                         'seatNumber' => $seatNumber,
                         'status' => 'booked',
                         'type' => $seatInfo['type'] ?? null,
@@ -918,9 +883,6 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
-
-
-
 
 
         protected function getResourceClass(): string
