@@ -1018,7 +1018,7 @@ public function create(BusInvoiceRequest $request)
     }
 }
 
-public function updatePilgrimData(UpdatePilgrimDataRequest $request, BusInvoice $busInvoice)
+public function updateIncompletePilgrims(UpdatePilgrimDataRequest $request, BusInvoice $busInvoice)
 {
     // تحديث الكائن للحصول على أحدث البيانات مع تحميل علاقة الرحلة
     $busInvoice = $busInvoice->fresh('busTrip');
