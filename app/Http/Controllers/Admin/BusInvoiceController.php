@@ -840,7 +840,7 @@ public function create(BusInvoiceRequest $request) {
                         ], 422);
                     }
 
-                    // ✅ إنشاء سجل جديد للمعتمر غير المسجل مسبقًا
+                    // ✅ إنشاء سجل جديد لكل معتمر جديد وتخصيص `id` منفصل له
                     $newPilgrim = Pilgrim::create([
                         'idNum' => $pilgrim['idNum'] ?? null,
                         'name' => $pilgrim['name'],
@@ -849,8 +849,7 @@ public function create(BusInvoiceRequest $request) {
                         'gender' => $pilgrim['gender']
                     ]);
 
-                    // ✅ تأكيد أن المعتمر الجديد لديه `id` مختلف
-                    $existingPilgrim = $newPilgrim;
+                    $existingPilgrim = $newPilgrim; // ✅ تأكيد أن كل حاج لديه `id` فريد
                 }
 
                 foreach ($pilgrim['seatNumber'] as $seatNumber) {
@@ -860,6 +859,7 @@ public function create(BusInvoiceRequest $request) {
                         throw new \Exception("المقعد {$seatNumber} غير موجود في seatMap.");
                     }
 
+                    // ✅ كل معتمر يحصل على `id` الخاص به لضمان حجز المقاعد بشكل صحيح
                     $pilgrimsData[] = [
                         'pilgrim_id' => $existingPilgrim->id,
                         'seatNumber' => $seatNumber,
@@ -893,6 +893,7 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
+
 
 
         protected function getResourceClass(): string
