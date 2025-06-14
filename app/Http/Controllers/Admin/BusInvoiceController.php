@@ -1019,6 +1019,10 @@ public function create(BusInvoiceRequest $request)
 
 public function updateIncompletePilgrims(Request $request, BusInvoice $busInvoice)
 {
+    if (!$busInvoice->relationLoaded('busTrip')) {
+    $busInvoice->load('busTrip');
+}
+
   $busTrip = $busInvoice->busTrip;
 
     if (!$busTrip) {
