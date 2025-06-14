@@ -819,7 +819,6 @@ public function create(BusInvoiceRequest $request) {
 
     try {
         $busInvoice = BusInvoice::create($data);
-        $subtotal = 0;
         $pilgrimsData = [];
 
         if ($request->has('pilgrims')) {
@@ -828,7 +827,6 @@ public function create(BusInvoiceRequest $request) {
                                           ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
                                           ->first();
 
-                // ✅ إذا لم يكن `idNum` مسجلًا مسبقًا، تحقق مما إذا كانت جميع البيانات متوفرة لإنشائه الآن
                 if (!$existingPilgrim) {
                     if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
                         return response()->json([
@@ -838,7 +836,6 @@ public function create(BusInvoiceRequest $request) {
                         ], 422);
                     }
 
-                    // ✅ إنشاء المعتمر لأنه أرسل البيانات المطلوبة بعد استكمالها
                     $existingPilgrim = Pilgrim::create([
                         'idNum' => $pilgrim['idNum'] ?? null,
                         'name' => $pilgrim['name'],
@@ -847,9 +844,6 @@ public function create(BusInvoiceRequest $request) {
                         'gender' => $pilgrim['gender']
                     ]);
                 }
-
-                $seatPrice = $this->getSeatPrice($pilgrim['seatNumber']);
-                $subtotal += $seatPrice;
 
                 foreach ($pilgrim['seatNumber'] as $seatNumber) {
                     $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
@@ -877,6 +871,7 @@ public function create(BusInvoiceRequest $request) {
             $busInvoice->pilgrims()->attach($pilgrimsData);
         }
 
+        // ✅ تحديث العدد الكلي للحجاج داخل الفاتورة ثم حساب الإجمالي
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
@@ -893,8 +888,6 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
-
-
 
 
 
