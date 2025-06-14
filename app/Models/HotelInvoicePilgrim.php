@@ -13,6 +13,7 @@ class HotelInvoicePilgrim extends Model
         protected $fillable = [
         'bus_invoice_id',
         'pilgrim_id',
+        'status',
         'creationDate',
         'creationDateHijri',
         'changed_data'

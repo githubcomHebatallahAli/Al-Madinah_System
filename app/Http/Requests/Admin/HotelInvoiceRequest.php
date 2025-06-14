@@ -3,27 +3,38 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Contracts\Validation\Validator;
 
-class BusInvoiceRequest extends FormRequest
+class HotelInvoiceRequest extends FormRequest
 {
-
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
         'campaign_id'=>'nullable|exists:campaigns,id',
-        'office_id'=>'required|exists:offices,id',
-        'group_id'=>'required|exists:groups,id',
-        'worker_id'=>'nullable|exists:workers,id',
+        'trip_id'=>'required|exists:trips,id',
+        'hotel_id'=>'required|exists:hotels,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
+        'residenceDate'=>'nullable|string',
+        'residenceDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
+        'bookingSource'=>'nullable|in:MeccaCash, MeccaDelegate,office,otherOffice',
+        'roomNum'=>'nullable|integer',
+        'need'=>'nullable|in:family,single',
+        'sleep'=>'nullable|in:bed,room',
+        'numDay'=>'nullable|integer',
+        'description'=>'nullable|string',
 
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',
@@ -37,24 +48,10 @@ class BusInvoiceRequest extends FormRequest
 
 'pilgrims' => 'nullable|array',
 'pilgrims.*.idNum' => 'nullable|string',
-
 'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
 'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
 'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
-'pilgrims.*.seatNumber' => 'required|array|min:1',
-'pilgrims.*.seatNumber.*' => 'required|string',
-'pilgrims.*.type' => 'nullable|string',
-'pilgrims.*.position' => 'nullable|string',
 
         ];
-    }
-
-        public function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(response()->json([
-            'success'   => false,
-            'message'   => 'Validation errors',
-            'data'      => $validator->errors()
-        ]));
     }
 }

@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('hotel_invoice_pilgrims', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hotel_invoice_id')->constrained('bus_invoices')->cascadeOnDelete();
+            $table->foreignId('hotel_invoice_id')->constrained('hotel_invoices')->cascadeOnDelete();
             $table->foreignId('pilgrim_id')->constrained('pilgrims')->cascadeOnDelete();
+            $table->enum('status', ['booked', 'cancelled'])->default('booked');
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();

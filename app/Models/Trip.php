@@ -37,6 +37,11 @@ class Trip extends Model
         return $this->hasMany(BusTrip::class);
     }
 
+           public function hotelInvoices()
+    {
+        return $this->hasMany(HotelInvoice::class);
+    }
+
 
 public function creator()
 {

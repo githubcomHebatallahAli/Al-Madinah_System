@@ -14,6 +14,7 @@ class ShowAllPilgrimsResource extends JsonResource
             "id" => $this -> id,
             'name' => $this -> name,
             'phoNum' => $this -> phoNum,
+            'idNum' => $this -> idNum,
             'nationality' => $this -> nationality,
             'gender'=>$this->gender,
             'status' => $this-> status,

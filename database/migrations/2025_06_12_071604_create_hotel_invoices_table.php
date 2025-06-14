@@ -14,18 +14,22 @@ return new class extends Migration
         Schema::create('hotel_invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bus_trip_id')->nullable()->constrained('bus_trips')->cascadeOnDelete();
+            $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
             $table->foreignId('hotel_id')->constrained('hotels')->cascadeOnDelete();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
-            $table->enum('need', ['family', 'single']);
+            $table->enum('need', ['family','single']);
             $table->enum('sleep', ['bed', 'room']);
-            $table->enum('bookingSource', ['MeccaCash', 'MeccaDelegate','office','otherOffice']);
-            $table->dateTime('residenceDate')->nullable();
-            $table->string('residenceDateHijri')->nullable();
-            $table->integer('numDay');
+            $table->enum('bookingSource', ['MeccaCash','MeccaDelegate','office','otherOffice']);
+            $table->dateTime('checkInDate')->nullable();
+            $table->string('checkInDateHijri')->nullable();
+            $table->dateTime('checkOutDate')->nullable();
+            $table->string('checkOutDateHijri')->nullable();
+            $table->integer('numDay')->nullable();
             $table->integer('roomNum')->nullable();
             $table->text('description')->nullable();
+            $table->json('incomplete_pilgrims')->nullable();
 
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);

@@ -49,6 +49,11 @@ class Hotel extends Model
     return $this->morphMany(ShipmentItem::class, 'item');
 }
 
+       public function hotelInvoices()
+    {
+        return $this->hasMany(HotelInvoice::class);
+    }
+
 
     public function creator()
 {

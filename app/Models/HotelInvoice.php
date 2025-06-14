@@ -11,14 +11,14 @@ class HotelInvoice extends Model
 {
       use HasFactory, TracksChangesTrait,HijriDateTrait;
         protected $fillable = [
-        'bus_id',
-        'bus_driver_id',
+        'trip_id',
+        'bus_trip_id',
         'main_pilgrim_id',
         'hotel_id',
         'payment_method_type_id',
         'pilgrimsCount',
         'residenceDate',
-        'residenceDate',
+        'residenceDateHijri',
         'bookingSource',
         'roomNum',
         'need',
@@ -37,6 +37,7 @@ class HotelInvoice extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
+        'incomplete_pilgrims',
         ];
 
             public function mainPilgrim()
@@ -44,15 +45,20 @@ class HotelInvoice extends Model
     return $this->belongsTo(Pilgrim::class, 'main_pilgrim_id');
 }
 
-        public function bus()
+        public function trip()
     {
-        return $this->belongsTo(Bus::class);
+        return $this->belongsTo(Trip::class);
+    }
+
+        public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
     }
 
 
-       public function busDriver()
+       public function busTrip()
     {
-        return $this->belongsTo(BusDriver::class);
+        return $this->belongsTo(BusTrip::class);
     }
 
         public function paymentMethodType()
@@ -60,12 +66,6 @@ class HotelInvoice extends Model
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-
-    public function pilgrims()
-{
-    return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims');
-
-}
 
 
     public function creator()
@@ -78,8 +78,55 @@ public function updater()
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
 
+    public function pilgrims()
+{
+    return $this->belongsToMany(Pilgrim::class, 'bus_invoice_pilgrims')
+        ->withPivot([
+            'status',
+            'creationDate',
+            'creationDateHijri',
+            'changed_data',
+        ]);
+}
+
+public function PilgrimsCount(): void
+{
+    $this->pilgrimsCount = $this->pilgrims()->count();
+    $this->save();
+}
+
+public function calculateTotal(): void
+{
+    if (!isset($this->pilgrimsCount)) {
+        $this->PilgrimsCount();
+    }
+
+    $bedPrice = $this->hotel->bedPrice ?? 0;
+
+    $this->subtotal = $bedPrice * $this->pilgrimsCount;
+    $this->total = $this->subtotal
+                  - ($this->discount ?? 0)
+                  + ($this->tax ?? 0);
+
+    $this->save();
+}
+
+
 
     protected $casts = [
     'changed_data' => 'array',
+    'incomplete_pilgrims'=>'array',
+    'subtotal' => 'decimal:2',
+    'discount' => 'decimal:2',
+    'tax' => 'decimal:2',
+    'total' => 'decimal:2',
+    'paidAmount' => 'decimal:2',
+    'bedPrice' => 'decimal:2',
+    'roomPrice' => 'decimal:2',
+];
+
+protected $attributes = [
+    'invoiceStatus' => 'pending',
+    'paymentStatus' => 'pending'
 ];
 }
