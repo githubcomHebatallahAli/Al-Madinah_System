@@ -48,10 +48,15 @@ class BusInvoice extends Model
 
 
 
+    // public function busTrip()
+    // {
+    //     return $this->belongsTo(BusTrip::class);
+    // }
+
     public function busTrip()
-    {
-        return $this->belongsTo(BusTrip::class);
-    }
+{
+    return $this->belongsTo(BusTrip::class, 'bus_trip_id');
+}
 
     public function campaign()
     {
