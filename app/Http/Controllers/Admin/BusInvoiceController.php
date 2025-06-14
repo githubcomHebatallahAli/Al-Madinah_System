@@ -16,6 +16,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\BusInvoiceRequest;
 use App\Http\Resources\Admin\BusInvoiceResource;
+use App\Http\Requests\Admin\UpdatePilgrimDataRequest;
 use App\Http\Resources\Admin\ShowAllBusInvoiceResource;
 
 
@@ -1017,82 +1018,101 @@ public function create(BusInvoiceRequest $request)
     }
 }
 
-public function updateIncompletePilgrims(Request $request, BusInvoice $busInvoice)
+public function updatePilgrimData(UpdatePilgrimDataRequest $request, BusInvoice $busInvoice)
 {
-
-    if (!$busInvoice->relationLoaded('busTrip')) {
-    $busInvoice->load('busTrip');
-}
-
-$busInvoice = $busInvoice->fresh('busTrip');
-  $busTrip = $busInvoice->busTrip;
-  dd($busInvoice->bus_trip_id, $busTrip);
-
+    // تحديث الكائن للحصول على أحدث البيانات مع تحميل علاقة الرحلة
+    $busInvoice = $busInvoice->fresh('busTrip');
+    $busTrip = $busInvoice->busTrip;
 
     if (!$busTrip) {
         return response()->json(['message' => 'لا توجد رحلة مرتبطة بهذه الفاتورة'], 422);
     }
 
+    // تحويل seatMap إلى مصفوفة للتعامل معها بسهولة
     $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
     $pilgrimsData = [];
 
-    $incompletePilgrims = $request->filled('pilgrims')
-        ? $request->pilgrims
-        : $busInvoice->incomplete_pilgrims;
+    // البيانات التي تم التحقق منها بواسطة الـ Form Request المخصص
+    $validatedData = $request->validated();
 
-    foreach ($incompletePilgrims as $pilgrim) {
-        $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->orWhere('phoNum', $pilgrim['phoNum'] ?? '')->first();
+    foreach ($validatedData['pilgrims'] as $pilgrim) {
+        // البحث عن المعتمر بناءً على idNum وإذا كانت phoNum موجودة يتم إضافتها لشرط البحث
+        $existingPilgrimQuery = Pilgrim::query();
 
-        if (!$existingPilgrim) {
+        if (!empty($pilgrim['idNum'])) {
+            $existingPilgrimQuery->where('idNum', $pilgrim['idNum']);
+        }
+
+        if (!empty($pilgrim['phoNum'])) {
+            $existingPilgrimQuery->orWhere('phoNum', $pilgrim['phoNum']);
+        }
+
+        $existingPilgrim = $existingPilgrimQuery->first();
+
+        if ($existingPilgrim) {
+            // تحديث بيانات المعتمر الحالي إذا كان موجوداً
+            $existingPilgrim->update([
+                'name'         => $pilgrim['name'],
+                'nationality'  => $pilgrim['nationality'],
+                'gender'       => $pilgrim['gender'],
+                'phoNum'       => $pilgrim['phoNum'] ?? $existingPilgrim->phoNum,
+            ]);
+        } else {
+            // إنشاء سجل جديد في حال عدم وجود المعتمر
             $existingPilgrim = Pilgrim::create([
-                'idNum' => $pilgrim['idNum'],
-                'name' => $pilgrim['name'],
-                'phoNum' => $pilgrim['phoNum'] ?? null,
-                'nationality' => $pilgrim['nationality'],
-                'gender' => $pilgrim['gender'],
+                'idNum'        => $pilgrim['idNum'] ?? null,
+                'name'         => $pilgrim['name'],
+                'nationality'  => $pilgrim['nationality'],
+                'gender'       => $pilgrim['gender'],
+                'phoNum'       => $pilgrim['phoNum'] ?? null,
             ]);
         }
 
+        // ربط المقاعد الخاصة بالمعتمر
         foreach ($pilgrim['seatNumber'] as $seatNumber) {
+            // التأكد من أن المقعد موجود في خريطة المقاعد
             $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
-
             if (!$seatInfo) {
                 return response()->json(["message" => "المقعد $seatNumber غير موجود في seatMap"], 422);
             }
 
+            // التحقق من أن المقعد غير محجوز مسبقاً بنفس الفاتورة
             $alreadyBooked = DB::table('bus_invoice_pilgrims')
                 ->where('bus_invoice_id', $busInvoice->id)
                 ->where('seatNumber', $seatNumber)
                 ->exists();
-
             if ($alreadyBooked) {
                 return response()->json(["message" => "المقعد $seatNumber محجوز بالفعل"], 422);
             }
 
+            // إعداد بيانات الربط مع الفاتورة (Pivot data)
             $pilgrimsData[] = [
-                'pilgrim_id' => $existingPilgrim->id,
-                'seatNumber' => $seatNumber,
-                'status' => 'booked',
-                'type' => $seatInfo['type'] ?? null,
-                'position' => $seatInfo['position'] ?? null,
-                'creationDateHijri' => $this->getHijriDate(),
-                'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                'pilgrim_id'         => $existingPilgrim->id,
+                'seatNumber'         => $seatNumber,
+                'status'             => 'booked',
+                'type'               => $seatInfo['type'] ?? null,
+                'position'           => $seatInfo['position'] ?? null,
+                'creationDateHijri'  => $this->getHijriDate(),
+                'creationDate'       => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             ];
 
+            // تحديث حالة المقعد في رحلة الباص
             $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
         }
     }
 
+    // ربط بيانات المعتمرين المُحدّثة بالفاتورة عبر الـ pivot table
     $busInvoice->pilgrims()->attach($pilgrimsData);
-    $busInvoice->update(['incomplete_pilgrims' => null]);
+    // تحديث عدد المعتمرين وإجمالي الفاتورة
     $busInvoice->PilgrimsCount();
     $busInvoice->calculateTotal();
 
     return response()->json([
-        'message' => 'تم تحديث الفاتورة واستكمال بيانات المعتمرين',
+        'message' => 'تم تحديث بيانات المعتمرين بنجاح',
         'invoice' => new BusInvoiceResource($busInvoice->load(['pilgrims']))
     ]);
 }
+
 
 
 
