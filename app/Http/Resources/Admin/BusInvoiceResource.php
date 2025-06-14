@@ -49,6 +49,7 @@ class BusInvoiceResource extends JsonResource
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
             'paymentStatus' => $this->paymentStatus,
+            'incomplete_pilgrims' => $this->incomplete_pilgrims,
             'creationDateHijri' => $this->creationDateHijri,
             'creationDate' => $this->creationDate,
             'changed_data' => $this->changed_data,
@@ -72,7 +73,7 @@ class BusInvoiceResource extends JsonResource
         ];
     }
 
-   
+
 
     }
 

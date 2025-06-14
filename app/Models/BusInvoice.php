@@ -36,6 +36,7 @@ class BusInvoice extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
+        'incomplete_pilgrims'
 
     ];
 
@@ -115,20 +116,6 @@ public function calculateTotal(): void
 }
 
 
-// public function calculateTotal(): void
-// {
-//     if (!isset($this->pilgrimsCount)) {
-//         $this->PilgrimsCount();
-//     }
-
-//     $this->subtotal = $this->seatPrice * $this->pilgrimsCount;
-//     $this->total = $this->subtotal
-//                   - ($this->discount ?? 0)
-//                   + ($this->tax ?? 0);
-
-//     $this->save();
-// }
-
 
       protected static function booted()
     {
@@ -178,6 +165,7 @@ public function updater()
 
     protected $casts = [
     'changed_data' => 'array',
+    'incomplete_pilgrims'=>'array',
     'subtotal' => 'decimal:2',
     'discount' => 'decimal:2',
     'tax' => 'decimal:2',

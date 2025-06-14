@@ -25,6 +25,7 @@ return new class extends Migration
             $table->foreignId('worker_id')->nullable()->constrained('workers');
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
+              $table->json('incomplete_pilgrims')->nullable();
 
 
             // الحسابات
