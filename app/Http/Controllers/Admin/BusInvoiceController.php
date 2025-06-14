@@ -243,7 +243,7 @@ public function update(BusInvoiceRequest $request, $id)
             return $this->respondWithResource($busInvoice, "لا يوجد تغييرات فعلية");
         }
 
-        // تحرير المقاعد القديمة
+     
         if ($busTrip && count($originalSeats) > 0) {
             foreach ($originalSeats as $seat) {
                 $this->updateSeatStatusInTrip($busTrip, $seat, 'available');
@@ -258,7 +258,6 @@ public function update(BusInvoiceRequest $request, $id)
             foreach ($request->pilgrims as $pilgrim) {
                 $existingPilgrim = null;
 
-                // البحث عن الحاج إذا كان لديه رقم هوية أو هاتف
                 if (!empty($pilgrim['idNum'])) {
                     $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
                 } elseif (!empty($pilgrim['phoNum'])) {
@@ -288,13 +287,11 @@ public function update(BusInvoiceRequest $request, $id)
                         }
                     }
                 } else {
-                    // إذا كان الحاج غير موجود ولم تكن بياناته كاملة
                     if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
                         $incompletePilgrims[] = $pilgrim;
                         continue;
                     }
 
-                    // إنشاء حاج جديد إذا كانت البيانات كاملة
                     $newPilgrim = Pilgrim::create([
                         'idNum' => $pilgrim['idNum'] ?? null,
                         'name' => $pilgrim['name'],
@@ -327,13 +324,12 @@ public function update(BusInvoiceRequest $request, $id)
                 }
             }
 
-            // مزامنة بيانات الحجاج
-            $busInvoice->pilgrims()->sync([]); // مسح جميع العلاقات القديمة أولاً
+
+            $busInvoice->pilgrims()->sync([]);
             if (!empty($pilgrimsData)) {
                 $busInvoice->pilgrims()->attach($pilgrimsData);
             }
 
-            // تحديث بيانات الحجاج غير المكتملة
             $busInvoice->update(['incomplete_pilgrims' => !empty($incompletePilgrims) ? $incompletePilgrims : null]);
         } else {
             $busInvoice->pilgrims()->detach();
