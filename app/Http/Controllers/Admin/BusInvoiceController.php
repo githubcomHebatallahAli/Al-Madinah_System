@@ -1024,7 +1024,7 @@ public function updateIncompletePilgrims(Request $request, BusInvoice $busInvoic
     $busInvoice->load('busTrip');
 }
 
-
+$busInvoice = $busInvoice->fresh('busTrip');
   $busTrip = $busInvoice->busTrip;
   dd($busInvoice->bus_trip_id, $busTrip);
 
