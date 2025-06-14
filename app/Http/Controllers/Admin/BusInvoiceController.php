@@ -893,6 +893,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 //     }
 // }
 
+
 public function create(BusInvoiceRequest $request)
 {
     $this->authorize('manage_system');
@@ -900,7 +901,6 @@ public function create(BusInvoiceRequest $request)
     $busTrip = null;
     $seatMapArray = [];
     $unavailableSeats = collect();
-    $incompletePilgrims = [];
 
     if ($request->filled('bus_trip_id')) {
         $busTrip = BusTrip::find($request->bus_trip_id);
@@ -914,38 +914,11 @@ public function create(BusInvoiceRequest $request)
             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
             $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
             $unavailableSeats = $requestedSeats->diff($availableSeats);
-
             if ($unavailableSeats->isNotEmpty()) {
                 return response()->json([
                     'message' => 'بعض المقاعد غير متوفرة',
                     'unavailable_seats' => $unavailableSeats
                 ], 422);
-            }
-
-            // تحقق من المعتمرين الناقصين قبل الإنشاء
-            foreach ($request->pilgrims as $pilgrim) {
-                $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'] ?? null)
-                    ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
-                    ->first();
-
-                if (!$existingPilgrim && (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender']))) {
-                    $incompletePilgrims[] = [
-                        'idNum' => $pilgrim['idNum'] ?? null,
-                        'phoNum' => $pilgrim['phoNum'] ?? null,
-                        'missingFields' => ['name', 'nationality', 'gender'],
-                        'seatNumber' => $pilgrim['seatNumber'] ?? [],
-                    ];
-                    continue;
-                }
-
-                foreach ($pilgrim['seatNumber'] as $seatNumber) {
-                    $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
-                    if (!$seatInfo) {
-                        return response()->json([
-                            'message' => "المقعد {$seatNumber} غير موجود في seatMap."
-                        ], 422);
-                    }
-                }
             }
         }
     }
@@ -959,35 +932,45 @@ public function create(BusInvoiceRequest $request)
     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
+
     try {
         $busInvoice = BusInvoice::create($data);
-
         $pilgrimsData = [];
+        $incompletePilgrims = [];
 
         if ($request->has('pilgrims')) {
             foreach ($request->pilgrims as $pilgrim) {
-                $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'] ?? null)
-                    ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
-                    ->first();
+                $existingPilgrim = null;
 
-                // لو البيانات ناقصة ولم يتم تسجيله مسبقًا، نتجاهله ونكمل
-                if (!$existingPilgrim && (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender']))) {
-                    continue;
+                if (!empty($pilgrim['idNum'])) {
+                    $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
+                } elseif (!empty($pilgrim['phoNum'])) {
+                    $existingPilgrim = Pilgrim::where('phoNum', $pilgrim['phoNum'])->first();
                 }
 
-                // إنشاء المعتمر الجديد لو غير موجود
                 if (!$existingPilgrim) {
-                    $existingPilgrim = Pilgrim::create([
+                    if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+                        $incompletePilgrims[] = $pilgrim;
+                        continue; // متكملش مع المعتمر ده
+                    }
+
+                    $newPilgrim = Pilgrim::create([
                         'idNum' => $pilgrim['idNum'] ?? null,
                         'name' => $pilgrim['name'],
                         'phoNum' => $pilgrim['phoNum'] ?? null,
                         'nationality' => $pilgrim['nationality'],
                         'gender' => $pilgrim['gender']
                     ]);
+
+                    $existingPilgrim = $newPilgrim;
                 }
 
                 foreach ($pilgrim['seatNumber'] as $seatNumber) {
                     $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
+
+                    if (!$seatInfo) {
+                        throw new \Exception("المقعد {$seatNumber} غير موجود في seatMap.");
+                    }
 
                     $pilgrimsData[] = [
                         'pilgrim_id' => $existingPilgrim->id,
@@ -1005,27 +988,26 @@ public function create(BusInvoiceRequest $request)
                 }
             }
 
-            $busInvoice->pilgrims()->attach($pilgrimsData);
+            if (!empty($pilgrimsData)) {
+                $busInvoice->pilgrims()->attach($pilgrimsData);
+            }
         }
 
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
-
         DB::commit();
 
         return response()->json([
-            'message' => 'تم إنشاء الفاتورة بنجاح' . (count($incompletePilgrims) ? '، مع وجود معتمرين بحاجة إلى استكمال البيانات.' : ''),
-            'invoice' => new BusInvoiceResource(
-                $busInvoice->load(['pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'])
-            ),
-            'incomplete_pilgrims' => $incompletePilgrims
+            'message' => 'تم إنشاء الفاتورة بنجاح',
+            'invoice' => new BusInvoiceResource($busInvoice->load([
+                'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
+            ])),
+            'incomplete_pilgrims' => $incompletePilgrims,
         ], 201);
 
     } catch (\Exception $e) {
         DB::rollBack();
-        return response()->json([
-            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
-        ], 500);
+        return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
 
