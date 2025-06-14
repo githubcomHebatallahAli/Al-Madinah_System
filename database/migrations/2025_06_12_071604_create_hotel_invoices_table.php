@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('hotel_invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bus_id')->constrained('buses')->cascadeOnDelete();
-            $table->foreignId('bus_driver_id')->constrained('bus_drivers')->cascadeOnDelete();
+            $table->foreignId('bus_trip_id')->nullable()->constrained('bus_trips')->cascadeOnDelete();
             $table->foreignId('hotel_id')->constrained('hotels')->cascadeOnDelete();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
@@ -27,7 +26,7 @@ return new class extends Migration
             $table->integer('numDay');
             $table->integer('roomNum')->nullable();
             $table->text('description')->nullable();
-            // الحسابات
+
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('tax', 10, 2)->default(0);
