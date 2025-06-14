@@ -776,7 +776,6 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to paid');
 }
 
-
 public function create(BusInvoiceRequest $request) {
     $this->authorize('manage_system');
 
@@ -824,13 +823,13 @@ public function create(BusInvoiceRequest $request) {
         $pilgrimsData = [];
 
         if ($request->has('pilgrims')) {
-            foreach ($request->pilgrims as $pilgrim) {
+            foreach ($request->pilgrims as $index => $pilgrim) {
                 $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'] ?? null)
                                           ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
                                           ->first();
 
-                // ✅ إذا لم يكن المعتمر مسجلًا، إرسال رسالة توضح أنه يجب إدخال بياناته كاملة
-                if (!$existingPilgrim) {
+                // ✅ إذا لم يكن `idNum` صحيحًا، أرسل رسالة واضحة للمندوب
+                if ($pilgrim['idNum'] && !$existingPilgrim) {
                     return response()->json([
                         'success' => false,
                         'message' => "المعتمر غير مسجل مسبقًا، يرجى إدخال الاسم والجنسية والجنس لإتمام التسجيل.",
@@ -838,6 +837,7 @@ public function create(BusInvoiceRequest $request) {
                     ], 422);
                 }
 
+                // ✅ إذا كان المعتمر مسجلًا، تابع إدراجه مباشرة
                 $seatPrice = $this->getSeatPrice($pilgrim['seatNumber']);
                 $subtotal += $seatPrice;
 
@@ -883,6 +883,7 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
+
 
 
         protected function getResourceClass(): string
