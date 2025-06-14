@@ -1019,7 +1019,12 @@ public function create(BusInvoiceRequest $request)
 
 public function updateIncompletePilgrims(Request $request, BusInvoice $busInvoice)
 {
-    $busTrip = $busInvoice->busTrip;
+  $busTrip = $busInvoice->busTrip;
+
+    if (!$busTrip) {
+        return response()->json(['message' => 'لا توجد رحلة مرتبطة بهذه الفاتورة'], 422);
+    }
+
     $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
     $pilgrimsData = [];
 
