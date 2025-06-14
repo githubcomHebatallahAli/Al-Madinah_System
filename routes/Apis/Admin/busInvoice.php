@@ -17,7 +17,7 @@ Route::controller(BusInvoiceController::class)->prefix('/delegate')->middleware(
    Route::get('/edit/busInvoice/{id}','edit');
    Route::post('/update/busInvoice/{id}', 'update');
 
-   Route::post('/update/incomplete/pilgrims/busInvoice/{id}', 'updateIncompletePilgrims');
+   Route::post('/update/incomplete/pilgrims/busInvoice/{busInvoice}', 'updateIncompletePilgrims');
    Route::patch( 'pending/busInvoice/{id}', 'pending');
     Route::patch('approved/busInvoice/{id}', 'approved');
     Route::patch('rejected/busInvoice/{id}', 'rejected');
