@@ -776,6 +776,8 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to paid');
 }
 
+
+
 public function create(BusInvoiceRequest $request) {
     $this->authorize('manage_system');
 
@@ -858,8 +860,8 @@ public function create(BusInvoiceRequest $request) {
                         'status' => 'booked',
                         'type' => $seatInfo['type'] ?? null,
                         'position' => $seatInfo['position'] ?? null,
-                        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                         'creationDateHijri' => $this->getHijriDate(),
+                        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                     ];
 
                     if ($busTrip) {
@@ -879,15 +881,14 @@ public function create(BusInvoiceRequest $request) {
 
         return response()->json([
             'message' => 'تم إنشاء الفاتورة بنجاح',
-            'invoice' => $busInvoice->load(['pilgrims' => function ($query) {
-                $query->withPivot(['seatNumber', 'status', 'type', 'position', 'creationDate', 'creationDateHijri']);
-            }])
+            'invoice' => new BusInvoiceResource($busInvoice->load(['pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType']))
         ], 201);
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
+
 
 
 

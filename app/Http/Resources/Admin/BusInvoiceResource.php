@@ -72,11 +72,7 @@ class BusInvoiceResource extends JsonResource
         ];
     }
 
-    // protected function getPilgrimName($pilgrim): string
-    // {
-    //     // يمكنك تعديل هذا بناءً على هيكل بيانات المعتمر لديك
-    //     return $pilgrim->first_name . ' ' . $pilgrim->last_name;
-    // }
+   
 
     }
 
