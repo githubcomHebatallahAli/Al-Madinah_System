@@ -824,12 +824,13 @@ public function create(BusInvoiceRequest $request) {
         $pilgrimsData = [];
 
         if ($request->has('pilgrims')) {
-            foreach ($request->pilgrims as $index => $pilgrim) {
+            foreach ($request->pilgrims as $pilgrim) {
+                // ✅ البحث عن الحاج إذا كان مسجلًا مسبقًا
                 $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'] ?? null)
                                           ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
                                           ->first();
 
-                // ✅ إذا لم يكن `idNum` موجودًا، يجب طلب إدخال بياناته أولًا
+                // ✅ إذا لم يكن `idNum` موجودًا، يجب طلب إدخال بياناته وإنشاء سجل جديد
                 if (!$existingPilgrim) {
                     if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
                         return response()->json([
@@ -839,14 +840,17 @@ public function create(BusInvoiceRequest $request) {
                         ], 422);
                     }
 
-                    // ✅ إنشاء المعتمر بعد إدخال البيانات الكاملة
-                    $existingPilgrim = Pilgrim::create([
+                    // ✅ إنشاء سجل جديد للمعتمر غير المسجل مسبقًا
+                    $newPilgrim = Pilgrim::create([
                         'idNum' => $pilgrim['idNum'] ?? null,
                         'name' => $pilgrim['name'],
                         'phoNum' => $pilgrim['phoNum'] ?? null,
                         'nationality' => $pilgrim['nationality'],
                         'gender' => $pilgrim['gender']
                     ]);
+
+                    // ✅ تأكيد أن المعتمر الجديد لديه `id` مختلف
+                    $existingPilgrim = $newPilgrim;
                 }
 
                 foreach ($pilgrim['seatNumber'] as $seatNumber) {
@@ -889,9 +893,6 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
-
-
-
 
 
         protected function getResourceClass(): string
