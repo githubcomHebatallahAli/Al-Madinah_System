@@ -41,7 +41,9 @@ class BusInvoiceRequest extends FormRequest
         // 'pilgrims.*.position' => 'nullable|string',
 
 'pilgrims' => 'nullable|array',
-'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum',
+// 'pilgrims.*.idNum' => 'nullable|string|exists:pilgrims,idNum',
+'pilgrims.*.idNum' => 'nullable|string',
+
 'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
 'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
 'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
