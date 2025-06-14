@@ -829,6 +829,7 @@ public function create(BusInvoiceRequest $request) {
                                           ->orWhere('phoNum', $pilgrim['phoNum'] ?? null)
                                           ->first();
 
+                // ✅ إذا لم يكن `idNum` موجودًا، يجب طلب إدخال بياناته أولًا
                 if (!$existingPilgrim) {
                     if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
                         return response()->json([
@@ -838,6 +839,7 @@ public function create(BusInvoiceRequest $request) {
                         ], 422);
                     }
 
+                    // ✅ إنشاء المعتمر بعد إدخال البيانات الكاملة
                     $existingPilgrim = Pilgrim::create([
                         'idNum' => $pilgrim['idNum'] ?? null,
                         'name' => $pilgrim['name'],
@@ -873,7 +875,6 @@ public function create(BusInvoiceRequest $request) {
             $busInvoice->pilgrims()->attach($pilgrimsData);
         }
 
-        // ✅ تحديث العدد الكلي للحجاج داخل الفاتورة ثم حساب الإجمالي
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
@@ -888,6 +889,7 @@ public function create(BusInvoiceRequest $request) {
         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
     }
 }
+
 
 
 
