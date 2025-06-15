@@ -12,13 +12,15 @@ class HotelInvoice extends Model
       use HasFactory, TracksChangesTrait,HijriDateTrait;
         protected $fillable = [
         'trip_id',
-        'bus_trip_id',
+        'bus_invoice_id',
         'main_pilgrim_id',
         'hotel_id',
         'payment_method_type_id',
         'pilgrimsCount',
-        'residenceDate',
-        'residenceDateHijri',
+        'checkInDate',
+        'checkInDateHijri',
+        'checkOutDate',
+        'checkOutDateHijri',
         'bookingSource',
         'roomNum',
         'need',
@@ -56,9 +58,9 @@ class HotelInvoice extends Model
     }
 
 
-       public function busTrip()
+       public function busInvoice()
     {
-        return $this->belongsTo(BusTrip::class);
+        return $this->belongsTo(BusInvoice::class);
     }
 
         public function paymentMethodType()
@@ -82,7 +84,7 @@ public function updater()
 {
     return $this->belongsToMany(Pilgrim::class, 'bus_invoice_pilgrims')
         ->withPivot([
-            'status',
+            'type',
             'creationDate',
             'creationDateHijri',
             'changed_data',

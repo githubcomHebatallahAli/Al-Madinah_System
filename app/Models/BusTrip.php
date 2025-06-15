@@ -48,10 +48,7 @@ class BusTrip extends Model
         return $this->hasMany(BusInvoice::class);
     }
 
-       public function hotelInvoices()
-    {
-        return $this->hasMany(HotelInvoice::class);
-    }
+
 
 
 

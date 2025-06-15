@@ -47,12 +47,6 @@ class BusInvoice extends Model
 
 
 
-
-    // public function busTrip()
-    // {
-    //     return $this->belongsTo(BusTrip::class);
-    // }
-
     public function busTrip()
 {
     return $this->belongsTo(BusTrip::class, 'bus_trip_id');
@@ -80,6 +74,12 @@ class BusInvoice extends Model
     public function paymentMethodType()
     {
         return $this->belongsTo(PaymentMethodType::class);
+    }
+    
+
+           public function hotelInvoices()
+    {
+        return $this->hasMany(HotelInvoice::class);
     }
 
 
