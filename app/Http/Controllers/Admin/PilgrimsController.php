@@ -31,8 +31,11 @@ public function showAllWithPaginate(Request $request)
 
     $query = Pilgrim::query();
 
-    if ($request->filled('search')) {
-        $query->where('name', 'like', '%' . $request->search . '%');
+   if ($request->filled('search')) {
+        $query->where(function($q) use ($request) {
+            $q->where('name', 'like', '%' . $request->search . '%')
+              ->orWhere('nationality', 'like', '%' . $request->search . '%');
+        });
     }
 
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
@@ -43,9 +46,6 @@ public function showAllWithPaginate(Request $request)
         $query->where('gender', $request->gender);
     }
 
-    if ($request->filled('nationality')) {
-        $query->where('nationality', $request->nationality);
-    }
 
     if ($request->filled('fromDate')) {
         $query->whereDate('creationDate', '>=', $request->fromDate);
@@ -78,8 +78,11 @@ public function showAllWithoutPaginate(Request $request)
 
     $query = Pilgrim::query();
 
-    if ($request->filled('search')) {
-        $query->where('name', 'like', '%' . $request->search . '%');
+   if ($request->filled('search')) {
+        $query->where(function($q) use ($request) {
+            $q->where('name', 'like', '%' . $request->search . '%')
+              ->orWhere('nationality', 'like', '%' . $request->search . '%');
+        });
     }
 
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
@@ -90,9 +93,6 @@ public function showAllWithoutPaginate(Request $request)
         $query->where('gender', $request->gender);
     }
 
-    if ($request->filled('nationality')) {
-        $query->where('nationality', $request->nationality);
-    }
 
     if ($request->filled('fromDate')) {
         $query->whereDate('creationDate', '>=', $request->fromDate);

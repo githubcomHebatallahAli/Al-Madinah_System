@@ -138,41 +138,7 @@ public function showAllWithoutPaginate(Request $request)
     return $this->respondWithResource($Bus, "Bus retrieved for editing.");
         }
 
-// public function update(BusRequest $request, string $id)
-// {
-//     $this->authorize('manage_system');
-//     $Bus = Bus::findOrFail($id);
-//     $oldData = $Bus->toArray();
 
-//     $updateData = $request->only(['status','service_id', 'busNum', 'busModel','plateNum'
-//             ,'seatNum','quantity','sellingPrice','purchesPrice']);
-
-//     $updateData = array_merge(
-//         $updateData,
-//         $this->prepareUpdateMeta($request, $Bus->status)
-//     );
-
-//     $hasChanges = false;
-//     foreach ($updateData as $key => $value) {
-//         if ($Bus->$key != $value) {
-//             $hasChanges = true;
-//             break;
-//         }
-//     }
-
-//     if (!$hasChanges) {
-//         $this->loadCommonRelations($Bus);
-//         return $this->respondWithResource($Bus, "لا يوجد تغييرات فعلية");
-//     }
-
-//     $Bus->update($updateData);
-//     $changedData = $Bus->getChangedData($oldData, $Bus->fresh()->toArray());
-//     $Bus->changed_data = $changedData;
-//     $Bus->save();
-
-//     $this->loadCommonRelations($Bus);
-//     return $this->respondWithResource($Bus, "تم تحديث الباص بنجاح");
-// }
 
 
     public function update(BusRequest $request, string $id)

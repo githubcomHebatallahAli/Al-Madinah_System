@@ -7,358 +7,201 @@ use App\Models\Pilgrim;
 use App\Models\BusInvoice;
 use App\Models\HotelInvoice;
 use Illuminate\Http\Request;
-use App\Traits\HijriDateTrait;
-use App\Traits\HandleAddedByTrait;
-use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Traits\LoadsCreatorRelationsTrait;
-use App\Traits\LoadsUpdaterRelationsTrait;
-use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\HotelInvoiceRequest;
 use App\Http\Resources\Admin\HotelInvoiceResource;
 
 
 class HotelInvoiceController extends Controller
 {
-    use HijriDateTrait;
-    use TracksChangesTrait;
-    use HandleAddedByTrait;
-    use LoadsCreatorRelationsTrait;
-    use LoadsUpdaterRelationsTrait;
-    use HandlesControllerCrudsTrait;
-
-    public function showAllWithPaginate(Request $request)
-    {
-        $this->authorize('manage_system');
-
-        $query = HotelInvoice::query();
-
-        if ($request->filled('trip_id')) {
-            $query->where('trip_id', $request->trip_id);
-        }
-
-        if ($request->filled('hotel_id')) {
-            $query->where('hotel_id', $request->hotel_id);
-        }
-
-        if ($request->filled('bus_trip_id')) {
-            $query->where('bus_trip_id', $request->bus_trip_id);
-        }
-
-        $hotelInvoices = $query->with(['hotel', 'busTrip'])->orderBy('created_at', 'desc')->paginate(10);
-        $totalPaidAmount = HotelInvoice::sum('paidAmount');
-
-        return response()->json([
-            'data' => HotelInvoiceResource::collection($hotelInvoices),
-            'statistics' => [
-                'paid_amount' => $totalPaidAmount,
-            ],
-            'pagination' => [
-                'total' => $hotelInvoices->total(),
-                'count' => $hotelInvoices->count(),
-                'per_page' => $hotelInvoices->perPage(),
-                'current_page' => $hotelInvoices->currentPage(),
-                'total_pages' => $hotelInvoices->lastPage(),
-                'next_page_url' => $hotelInvoices->nextPageUrl(),
-                'prev_page_url' => $hotelInvoices->previousPageUrl(),
-            ],
-            'message' => "Show All Hotel Invoices."
-        ]);
-    }
-
     public function showAllWithoutPaginate(Request $request)
     {
-        $this->authorize('manage_system');
+        $query = HotelInvoice::with(['hotel', 'trip', 'busInvoice', 'paymentMethodType']);
 
-        $query = HotelInvoice::query();
-
-        if ($request->filled('trip_id')) {
-            $query->where('trip_id', $request->trip_id);
-        }
-
+        // الفلترة
         if ($request->filled('hotel_id')) {
             $query->where('hotel_id', $request->hotel_id);
         }
 
-        if ($request->filled('bus_trip_id')) {
-            $query->where('bus_trip_id', $request->bus_trip_id);
+        if ($request->filled('status')) {
+            $query->where('invoiceStatus', $request->status);
         }
 
-        $hotelInvoices = $query->with(['hotel', 'busTrip'])->orderBy('created_at', 'desc')->get();
-        $totalPaidAmount = HotelInvoice::sum('paidAmount');
+        $invoices = $query->latest()->paginate(10);
 
         return response()->json([
-            'data' => HotelInvoiceResource::collection($hotelInvoices),
-            'statistics' => [
-                'paid_amount' => $totalPaidAmount,
-            ],
-            'message' => "Show All Hotel Invoices."
+            'data' => HotelInvoiceResource::collection($invoices),
+            'message' => 'تم جلب الفواتير بنجاح'
         ]);
     }
 
-    public function edit(string $id)
-    {
-        $this->authorize('manage_system');
+public function create(HotelInvoiceRequest $request)
+{
+    $this->authorize('manage_system');
 
-        $hotelInvoice = HotelInvoice::with([
-            'pilgrims',
-            'busTrip',
-            'hotel'
-        ])->find($id);
+    $data = array_merge($request->only([
+        'hotel_id',
+        'trip_id',
+        'bus_invoice_id',
+        'payment_method_type_id',
+        'need',
+        'numDay',
+        'checkOutDateHijri',
+        'checkOutDate',
+        'checkInDateHijri',
+        'checkInDate',
+        'description',
+        'discount',
+        'tax',
+        'roomNum',
+        'reason',
+        'paidAmount',
+        'invoiceStatus',
+        'paymentStatus',
+        'bookingSource'
+    ]), $this->prepareCreationMetaData());
 
-        if (!$hotelInvoice) {
-            return response()->json(['message' => "Hotel Invoice not found."], 404);
+    DB::beginTransaction();
+    try {
+        $invoice = HotelInvoice::create($data);
+
+        // ربط الحجاج إذا تم إرسالهم
+        if ($request->has('pilgrims')) {
+            $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-        return $this->respondWithResource($hotelInvoice, "Hotel Invoice retrieved for editing.");
+        // ربط حجاج الباص إذا كانت هناك فاتورة باص
+        if ($request->has('bus_invoice_id')) {
+            $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
+        }
+
+        $invoice->calculateTotal();
+        DB::commit();
+
+        return $this->respondWithResource(
+            new HotelInvoiceResource($invoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])),
+            'تم إنشاء فاتورة الفندق بنجاح'
+        );
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+    public function edit(HotelInvoice $hotelInvoice)
+    {
+        return response()->json([
+            'data' => new HotelInvoiceResource($hotelInvoice->load([
+                'hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'
+            ])),
+            'message' => 'تم جلب الفاتورة بنجاح'
+        ]);
     }
 
-    public function update(HotelInvoiceRequest $request, $id)
+    public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
     {
-        $this->authorize('manage_system');
-
-        $hotelInvoice = HotelInvoice::with(['pilgrims', 'busTrip', 'hotel'])->findOrFail($id);
-        $oldData = $hotelInvoice->toArray();
-
-        $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount')),
-            'tax' => $this->ensureNumeric($request->input('tax')),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
-        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
+        // منع التعديل إذا كانت الفاتورة معتمدة أو مكتملة
+        if (in_array($hotelInvoice->invoiceStatus, ['approved', 'completed'])) {
+            return response()->json([
+                'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+            ], 422);
+        }
 
         DB::beginTransaction();
-
         try {
-            // تحديث بيانات الفاتورة الأساسية
-            $hotelInvoice->update($data);
+            $hotelInvoice->update($request->validated());
 
-            // معالجة المعتمرين إذا كانت موجودة في الطلب
+            // مزامنة الحجاج إذا تم إرسالهم
             if ($request->has('pilgrims')) {
-                $pilgrimsData = [];
-                $incompletePilgrims = $hotelInvoice->incomplete_pilgrims ?? [];
-
-                foreach ($request->pilgrims as $pilgrim) {
-                    $existingPilgrim = $this->findOrCreatePilgrim($pilgrim);
-
-                    if (!$existingPilgrim) {
-                        if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
-                            $incompletePilgrims[] = $pilgrim;
-                            continue;
-                        }
-                    }
-
-                    $pilgrimsData[$existingPilgrim->id] = [
-                        'status' => 'booked',
-                        'creationDateHijri' => $this->getHijriDate(),
-                        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    ];
-                }
-
-                // مزامنة بيانات المعتمرين
-                $hotelInvoice->pilgrims()->sync($pilgrimsData);
-                $hotelInvoice->update(['incomplete_pilgrims' => !empty($incompletePilgrims) ? $incompletePilgrims : null]);
+                $this->syncPilgrims($hotelInvoice, $request->pilgrims);
             }
 
-            // حساب التكلفة الإجمالية
             $hotelInvoice->calculateTotal();
-
             DB::commit();
 
-            return $this->respondWithResource($hotelInvoice->load([
-                'pilgrims', 'busTrip', 'hotel', 'paymentMethodType'
-            ]), "تم تحديث فاتورة الفندق بنجاح");
+            return response()->json([
+                'data' => new HotelInvoiceResource($hotelInvoice),
+                'message' => 'تم تحديث الفاتورة بنجاح'
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    protected function findOrCreatePilgrim(array $pilgrimData)
+    public function destroy(HotelInvoice $hotelInvoice)
     {
-        $existingPilgrim = null;
-
-        if (!empty($pilgrimData['idNum'])) {
-            $existingPilgrim = Pilgrim::where('idNum', $pilgrimData['idNum'])->first();
-        } elseif (!empty($pilgrimData['phoNum'])) {
-            $existingPilgrim = Pilgrim::where('phoNum', $pilgrimData['phoNum'])->first();
-        }
-
-        if (!$existingPilgrim && isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
-            $existingPilgrim = Pilgrim::create([
-                'idNum' => $pilgrimData['idNum'] ?? null,
-                'name' => $pilgrimData['name'],
-                'phoNum' => $pilgrimData['phoNum'] ?? null,
-                'nationality' => $pilgrimData['nationality'],
-                'gender' => $pilgrimData['gender'],
-            ]);
-        }
-
-        return $existingPilgrim;
+        $hotelInvoice->delete();
+        return response()->json([
+            'message' => 'تم حذف الفاتورة بنجاح'
+        ]);
     }
 
-    protected function prepareUpdateMetaData(): array
+
+    public function approve(HotelInvoice $hotelInvoice)
     {
-        $updatedBy = $this->getUpdatedByIdOrFail();
-        return [
-            'updated_by' => $updatedBy,
-            'updated_by_type' => $this->getUpdatedByType(),
-            'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'updated_at_hijri' => $this->getHijriDate(),
-        ];
+        $hotelInvoice->update(['invoiceStatus' => 'approved']);
+        $hotelInvoice->calculateTotal();
+
+        return response()->json([
+            'message' => 'تم اعتماد الفاتورة بنجاح'
+        ]);
     }
 
-    public function create(HotelInvoiceRequest $request)
+    public function reject(HotelInvoice $hotelInvoice)
     {
-        $this->authorize('manage_system');
-
-        $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount')),
-            'tax' => $this->ensureNumeric($request->input('tax')),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+        $hotelInvoice->update([
+            'invoiceStatus' => 'rejected',
             'subtotal' => 0,
             'total' => 0,
-        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
-
-        DB::beginTransaction();
-
-        try {
-            $hotelInvoice = HotelInvoice::create($data);
-            $pilgrimsData = [];
-            $incompletePilgrims = [];
-
-            if ($request->has('pilgrims')) {
-                foreach ($request->pilgrims as $pilgrim) {
-                    $existingPilgrim = $this->findOrCreatePilgrim($pilgrim);
-
-                    if (!$existingPilgrim) {
-                        if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
-                            $incompletePilgrims[] = $pilgrim;
-                            continue;
-                        }
-                    }
-
-                    $pilgrimsData[$existingPilgrim->id] = [
-                        'status' => 'booked',
-                        'creationDateHijri' => $this->getHijriDate(),
-                        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    ];
-                }
-
-                $hotelInvoice->pilgrims()->sync($pilgrimsData);
-            }
-
-            if (!empty($incompletePilgrims)) {
-                $hotelInvoice->update(['incomplete_pilgrims' => $incompletePilgrims]);
-            }
-
-       
-            $hotelInvoice->calculateTotal();
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'تم إنشاء فاتورة الفندق بنجاح',
-                'invoice' => new HotelInvoiceResource($hotelInvoice->load([
-                    'pilgrims', 'busTrip', 'hotel', 'paymentMethodType'
-                ])),
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function calculateTotal(HotelInvoice $hotelInvoice)
-    {
-        $hotel = $hotelInvoice->hotel;
-        $numDays = $hotelInvoice->numDay ?? 1;
-        $pilgrimsCount = $hotelInvoice->pilgrims()->count();
-
-        if ($hotelInvoice->need === 'room') {
-            // إذا كان الاختيار غرفة، يتم ضرب سعر الغرفة في عدد الأيام
-            $subtotal = $hotel->roomPrice * $numDays;
-        } else {
-            // إذا كان الاختيار سرير، يتم ضرب سعر السرير في عدد الأفراد ثم في عدد الأيام
-            $subtotal = $hotel->bedPrice * $pilgrimsCount * $numDays;
-        }
-
-        $hotelInvoice->subtotal = $subtotal;
-        $hotelInvoice->total = $subtotal - ($hotelInvoice->discount ?? 0) + ($hotelInvoice->tax ?? 0);
-        $hotelInvoice->save();
-    }
-
-    public function addPilgrimsFromBusInvoice(Request $request, HotelInvoice $hotelInvoice)
-    {
-        $this->authorize('manage_system');
-
-        $request->validate([
-            'bus_invoice_id' => 'required|exists:bus_invoices,id'
+            'paidAmount' => 0
         ]);
-
-        $busInvoice = BusInvoice::with('pilgrims')->find($request->bus_invoice_id);
-        $pilgrimsData = [];
-
-        foreach ($busInvoice->pilgrims as $pilgrim) {
-            $pilgrimsData[$pilgrim->id] = [
-                'status' => 'booked',
-                'creationDateHijri' => $this->getHijriDate(),
-                'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            ];
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $hotelInvoice->pilgrims()->syncWithoutDetaching($pilgrimsData);
-            $hotelInvoice->calculateTotal();
-            DB::commit();
-
-            return response()->json([
-                'message' => 'تم إضافة المعتمرين من فاتورة الباص بنجاح',
-                'invoice' => new HotelInvoiceResource($hotelInvoice->load('pilgrims'))
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'فشل في إضافة المعتمرين: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function checkPilgrimByIdNum(Request $request)
-    {
-        $this->authorize('manage_system');
-
-        $request->validate([
-            'idNum' => 'required|string'
-        ]);
-
-        $pilgrim = Pilgrim::where('idNum', $request->idNum)->first();
-
-        if (!$pilgrim) {
-            return response()->json([
-                'exists' => false,
-                'message' => 'لم يتم العثور على معتمر بهذا الرقم'
-            ]);
-        }
 
         return response()->json([
-            'exists' => true,
-            'pilgrim' => $pilgrim,
-            'message' => 'تم العثور على المعتمر'
+            'message' => 'تم رفض الفاتورة بنجاح'
         ]);
     }
 
-    protected function ensureNumeric($value)
+    // دوال مساعدة خاصة بربط الحجاج
+    protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
     {
-        if ($value === null || $value === '') {
-            return 0;
+        $pilgrimsData = [];
+        foreach ($pilgrims as $pilgrim) {
+            $p = Pilgrim::firstOrCreate(
+                ['idNum' => $pilgrim['idNum']],
+                $pilgrim
+            );
+            $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
         }
-
-        return is_numeric($value) ? $value : 0;
+        $invoice->pilgrims()->attach($pilgrimsData);
     }
 
-    protected function getResourceClass(): string
+    protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
     {
-        return HotelInvoiceResource::class;
+        $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
+        $pilgrimsData = $busInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
+            return [$pilgrim->id => ['type' => 'bus']];
+        });
+        $invoice->pilgrims()->attach($pilgrimsData);
+    }
+
+    protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
+    {
+        $pilgrimsData = [];
+        foreach ($pilgrims as $pilgrim) {
+            $p = Pilgrim::firstOrCreate(
+                ['idNum' => $pilgrim['idNum']],
+                $pilgrim
+            );
+            $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
+        }
+        $invoice->pilgrims()->sync($pilgrimsData);
     }
 }

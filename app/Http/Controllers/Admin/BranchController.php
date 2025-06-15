@@ -70,6 +70,7 @@ public function showAllWithPaginate(Request $request)
     ]);
 }
 
+
 public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
