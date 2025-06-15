@@ -66,12 +66,12 @@ public function create(HotelInvoiceRequest $request)
     try {
         $invoice = HotelInvoice::create($data);
 
-        // ربط الحجاج إذا تم إرسالهم
+
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-        // ربط حجاج الباص إذا كانت هناك فاتورة باص
+      
         if ($request->has('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
