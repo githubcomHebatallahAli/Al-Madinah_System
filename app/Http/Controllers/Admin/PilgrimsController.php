@@ -118,7 +118,7 @@ public function showAllWithoutPaginate(Request $request)
         //  $this->authorize('create',Pilgrim::class);
        $data = array_merge($request->only([
             'name','phoNum','nationality',
-            'description','idNum'
+            'description','idNum','gender'
         ]), $this->prepareCreationMetaData());
 
         $Pilgrims = Pilgrim::create($data);
@@ -149,7 +149,7 @@ public function update(PilgrimsRequest $request, string $id)
     $oldData = $Pilgrims->toArray();
 
     $updateData = $request->only(['status','name','phoNum','nationality',
-            'description','idNum'
+            'description','idNum','gender'
             ]);
 
     $updateData = array_merge(

@@ -28,7 +28,7 @@ class PilgrimsRequest extends FormRequest
             'idNum'=>'nullable|string',
             'nationality'=>'required|string',
             'description'=>'nullable|string',
-            'gender'=>'nullable|in:male,female,child'
+            'gender'=>'required|in:male,female,child'
         ];
     }
 

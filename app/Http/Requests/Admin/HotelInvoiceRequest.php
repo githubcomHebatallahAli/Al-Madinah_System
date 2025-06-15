@@ -27,8 +27,10 @@ class HotelInvoiceRequest extends FormRequest
         'trip_id'=>'required|exists:trips,id',
         'hotel_id'=>'required|exists:hotels,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
-        'residenceDate'=>'nullable|string',
-        'residenceDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
+        'checkInDate'=>'nullable|string',
+        'checkInDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
+        'checkOutDate'=>'nullable|string',
+        'checkOutDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
         'bookingSource'=>'nullable|in:MeccaCash, MeccaDelegate,office,otherOffice',
         'roomNum'=>'nullable|integer',
         'need'=>'nullable|in:family,single',
@@ -51,6 +53,7 @@ class HotelInvoiceRequest extends FormRequest
 'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
 'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
 'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
+'pilgrims.*.type' => 'required_with:pilgrims|in:bus,trip',
 
         ];
     }
