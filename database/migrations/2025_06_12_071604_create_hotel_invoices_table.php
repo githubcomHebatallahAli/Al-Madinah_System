@@ -29,7 +29,7 @@ return new class extends Migration
             $table->integer('numDay')->nullable();
             $table->integer('roomNum')->nullable();
             $table->text('description')->nullable();
-            $table->json('incomplete_pilgrims')->nullable();
+             
 
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);

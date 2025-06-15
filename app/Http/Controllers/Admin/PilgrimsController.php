@@ -114,6 +114,7 @@ public function showAllWithoutPaginate(Request $request)
 
     public function create(PilgrimsRequest $request)
     {
+          $this->authorize('manage_system');
         //  $this->authorize('create',Pilgrim::class);
        $data = array_merge($request->only([
             'name','phoNum','nationality',
@@ -127,6 +128,7 @@ public function showAllWithoutPaginate(Request $request)
 
         public function edit(string $id)
         {
+              $this->authorize('manage_system');
         $Pilgrims = Pilgrim::find($id);
 
         if (!$Pilgrims) {
@@ -134,15 +136,16 @@ public function showAllWithoutPaginate(Request $request)
                 'message' => "Pilgrims not found."
             ], 404);
             }
-             $this->authorize('edit',$Pilgrims);
+            //  $this->authorize('edit',$Pilgrims);
 
     return $this->respondWithResource($Pilgrims, "Pilgrims retrieved for editing.");
         }
 
 public function update(PilgrimsRequest $request, string $id)
 {
+      $this->authorize('manage_system');
     $Pilgrims = Pilgrim::findOrFail($id);
-     $this->authorize('update',$Pilgrims);
+    //  $this->authorize('update',$Pilgrims);
     $oldData = $Pilgrims->toArray();
 
     $updateData = $request->only(['status','name','phoNum','nationality',
@@ -178,16 +181,17 @@ public function update(PilgrimsRequest $request, string $id)
 
     public function active(string $id)
     {
+          $this->authorize('manage_system');
         $Pilgrims = Pilgrim::findOrFail($id);
-         $this->authorize('active',$Pilgrims);
+        //  $this->authorize('active',$Pilgrims);
 
         return $this->changeStatusSimple($Pilgrims, 'active');
     }
 
     public function notActive(string $id)
-    {
+    {  $this->authorize('manage_system');
         $Pilgrims = Pilgrim::findOrFail($id);
-         $this->authorize('notActive',$Pilgrims);
+        //  $this->authorize('notActive',$Pilgrims);
 
         return $this->changeStatusSimple($Pilgrims, 'notActive');
     }
