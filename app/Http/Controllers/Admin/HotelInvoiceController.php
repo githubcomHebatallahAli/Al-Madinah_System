@@ -17,6 +17,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\HotelInvoiceRequest;
 use App\Http\Resources\Admin\HotelInvoiceResource;
+use App\Http\Resources\Admin\ShowAllHotelInvoiceResource;
 
 
 class HotelInvoiceController extends Controller
