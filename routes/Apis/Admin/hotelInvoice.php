@@ -15,7 +15,7 @@ Route::controller(HotelInvoiceController::class)->prefix('/delegate')->middlewar
    Route::post('/create/hotelInvoice', 'create');
     Route::put('/updatePaid/hotelInvoice/{id}','updatePaidAmount');
    Route::get('/edit/hotelInvoice/{id}','edit');
-   Route::post('/update/hotelInvoice/{id}', 'update');
+   Route::post('/update/hotelInvoice/{hotelInvoice}', 'update');
 
    Route::post('/update/incomplete/pilgrims/hotelInvoice/{hotelInvoice}', 'updateIncompletePilgrims');
    Route::patch( 'pending/hotelInvoice/{id}', 'pending');
