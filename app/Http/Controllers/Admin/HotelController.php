@@ -101,7 +101,7 @@ public function showAllWithoutPaginate(Request $request)
         $this->authorize('manage_system');
        $data = array_merge($request->only([
             'service_id','company_id', 'name','place','address','bedPrice','roomPrice',
-            'description','communication','quantity','sellingPrice','purchesPrice'
+            'description','communication','quantity','sellingPrice','purchesPrice','roomType'
         ]), $this->prepareCreationMetaData());
 
               if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
@@ -134,7 +134,8 @@ public function update(HotelRequest $request, string $id)
     $oldData = $Hotel->toArray();
 
     $updateData = $request->only(['status', 'service_id','company_id','name','place','address',
-            'description','communication','quantity','sellingPrice','purchesPrice','bedPrice','roomPrice'
+            'description','communication','quantity','sellingPrice','purchesPrice','bedPrice','roomPrice',
+            'roomType'
             ]);
 
                      if (isset($updateData['sellingPrice']) || isset($updateData['purchesPrice'])) {

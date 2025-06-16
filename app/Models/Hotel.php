@@ -22,6 +22,7 @@ class Hotel extends Model
         'address',
         'communication',
         'description',
+        'roomType',
         'bedPrice',
         'roomPrice',
         'quantity',

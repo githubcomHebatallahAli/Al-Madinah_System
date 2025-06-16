@@ -33,6 +33,7 @@ class HotelRequest extends FormRequest
             'place' => 'required|in:Mecca,Almadinah',
             'address'=>'nullable|string',
             'communication'=>'nullable|string',
+            'roomType' =>'nullable|in:single,double,triple,quad,suite',
             'quantity'=>'required|string',
             'bedPrice' => 'required|numeric|min:0',
             'roomPrice' => 'required|numeric|min:0',
