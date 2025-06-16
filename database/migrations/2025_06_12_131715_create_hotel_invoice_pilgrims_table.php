@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('hotel_invoice_id')->constrained('hotel_invoices')->cascadeOnDelete();
             $table->foreignId('pilgrim_id')->constrained('pilgrims')->cascadeOnDelete();
-            $table->enum('status', ['bus', 'trip'])->default('bus');
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();

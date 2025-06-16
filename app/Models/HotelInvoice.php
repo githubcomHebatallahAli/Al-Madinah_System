@@ -84,7 +84,6 @@ public function updater()
 {
     return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims')
         ->withPivot([
-            'type',
             'creationDate',
             'creationDateHijri',
             'changed_data',

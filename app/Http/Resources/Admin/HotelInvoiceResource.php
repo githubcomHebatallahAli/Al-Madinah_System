@@ -67,7 +67,6 @@ class HotelInvoiceResource extends JsonResource
                     return [
                         'id' => $pilgrim->id,
                         'name' => $pilgrim->name ?? '-',
-                        'type' => $pilgrim->pivot->type,
                         'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->creationDateHijri),
                         'creationDate' => $pilgrim->pivot->creationDate,
 

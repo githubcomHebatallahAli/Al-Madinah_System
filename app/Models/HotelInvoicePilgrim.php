@@ -13,12 +13,11 @@ class HotelInvoicePilgrim extends Model
         protected $fillable = [
         'hotel_invoice_id',
         'pilgrim_id',
-        'type',
         'creationDate',
         'creationDateHijri',
         'changed_data'
         ];
-        
+
         public $timestamps = true;
 
     protected $casts = [
