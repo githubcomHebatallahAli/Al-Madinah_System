@@ -100,10 +100,10 @@ protected function ensureNumeric($value)
     return is_numeric($value) ? $value : 0;
 }
 
-    public function edit(HotelInvoice $hotelInvoice)
+    public function edit(HotelInvoice $id)
     {
         return response()->json([
-            'data' => new HotelInvoiceResource($hotelInvoice->load([
+            'data' => new HotelInvoiceResource($id->load([
                 'hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'
             ])),
             'message' => 'تم جلب الفاتورة بنجاح'
@@ -174,7 +174,7 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
         $hotelInvoice->calculateTotal();
 
 
-   
+
         $changedData = $hotelInvoice->getChangedData($oldData, $hotelInvoice->fresh()->toArray());
 
         if ($pilgrimsChanged) {
