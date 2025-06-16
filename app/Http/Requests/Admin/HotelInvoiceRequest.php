@@ -28,7 +28,7 @@ class HotelInvoiceRequest extends FormRequest
         'bus_invoice_id'=>'nullable|exists:bus_invoices,id',
         'trip_id'=>'nullable|exists:trips,id',
         'hotel_id'=>'required|exists:hotels,id',
-        'payment_method_type_id'=>'required|exists:payment_method_types,id',
+        'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
         'checkInDate'=>'nullable|string',
         'checkInDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
         'checkOutDate'=>'nullable|string',
