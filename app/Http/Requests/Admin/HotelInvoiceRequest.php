@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
 class HotelInvoiceRequest extends FormRequest
 {
@@ -56,5 +58,14 @@ class HotelInvoiceRequest extends FormRequest
 'pilgrims.*.type' => 'required_with:pilgrims|in:bus,trip',
 
         ];
+    }
+
+              public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success'   => false,
+            'message'   => 'Validation errors',
+            'data'      => $validator->errors()
+        ]));
     }
 }
