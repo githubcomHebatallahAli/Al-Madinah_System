@@ -61,7 +61,7 @@ class Pilgrim extends Model
 
     public function hotelInvoices()
 {
-    return $this->belongsToMany(Pilgrim::class, 'bus_invoice_pilgrims')
+    return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims')
         ->withPivot([
             'type',
             'creationDate',

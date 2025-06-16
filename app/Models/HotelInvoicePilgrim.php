@@ -11,7 +11,7 @@ class HotelInvoicePilgrim extends Model
 {
      use HasFactory, TracksChangesTrait,HijriDateTrait;
         protected $fillable = [
-        'bus_invoice_id',
+        'hotel_invoice_id',
         'pilgrim_id',
         'status',
         'creationDate',
