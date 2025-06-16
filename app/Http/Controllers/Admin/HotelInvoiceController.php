@@ -7,14 +7,26 @@ use App\Models\Pilgrim;
 use App\Models\BusInvoice;
 use App\Models\HotelInvoice;
 use Illuminate\Http\Request;
+use App\Traits\HijriDateTrait;
+use App\Traits\HandleAddedByTrait;
+use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Traits\LoadsCreatorRelationsTrait;
+use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\HotelInvoiceRequest;
 use App\Http\Resources\Admin\HotelInvoiceResource;
 
 
 class HotelInvoiceController extends Controller
 {
+     use HijriDateTrait;
+    use TracksChangesTrait;
+    use HandleAddedByTrait;
+    use LoadsCreatorRelationsTrait;
+    use LoadsUpdaterRelationsTrait;
+    use HandlesControllerCrudsTrait;
     public function showAllWithoutPaginate(Request $request)
     {
         $query = HotelInvoice::with(['hotel', 'trip', 'busInvoice', 'paymentMethodType']);
@@ -197,5 +209,10 @@ public function create(HotelInvoiceRequest $request)
             $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
         }
         $invoice->pilgrims()->sync($pilgrimsData);
+    }
+
+        protected function getResourceClass(): string
+    {
+        return HotelInvoiceResource::class;
     }
 }
