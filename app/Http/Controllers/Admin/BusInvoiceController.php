@@ -214,7 +214,7 @@ public function update(BusInvoiceRequest $request, $id)
     DB::beginTransaction();
 
     try {
-        // تحديث بيانات الفاتورة الأساسية
+     
         $busInvoice->update($data);
 
         if ($request->has('pilgrims')) {

@@ -114,6 +114,14 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
 {
     $this->authorize('manage_system');
 
+    // منع التعديل إذا كانت الفاتورة معتمدة أو مكتملة
+    if (in_array($hotelInvoice->invoiceStatus, ['approved', 'completed'])) {
+        return response()->json([
+            'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+        ], 422);
+    }
+
+    // حفظ البيانات القديمة
     $oldData = $hotelInvoice->toArray();
     $oldPilgrimsData = $hotelInvoice->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
         return [
@@ -126,16 +134,23 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
 
     DB::beginTransaction();
     try {
-        $hasChanges = false;
-        $updateData = $request->validated();
+        // إعداد بيانات التحديث
+        $data = array_merge([
+            'discount' => $this->ensureNumeric($request->input('discount')),
+            'tax' => $this->ensureNumeric($request->input('tax')),
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
 
-        foreach ($updateData as $key => $value) {
+        // التحقق من وجود تغييرات
+        $hasChanges = false;
+        foreach ($data as $key => $value) {
             if ($hotelInvoice->$key != $value) {
                 $hasChanges = true;
                 break;
             }
         }
 
+        // التحقق من تغييرات الحجاج
         $pilgrimsChanged = false;
         $newPilgrimsData = [];
         if ($request->has('pilgrims')) {
@@ -151,30 +166,26 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
             ]);
         }
 
+        // تطبيق التحديثات
+        $hotelInvoice->update($data);
 
-        $hotelInvoice->update(array_merge(
-            $updateData,
-            $this->prepareUpdateMetaData()
-        ));
-
-
+        // معالجة الحجاج إذا كان هناك تغييرات
         if ($request->has('pilgrims') && $pilgrimsChanged) {
             $this->syncPilgrims($hotelInvoice, $request->pilgrims);
             $newPilgrimsData = $hotelInvoice->fresh()->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
                 return [
                     $pilgrim->id => [
-
                         'creationDate' => $pilgrim->pivot->creationDate,
                         'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
                     ]
                 ];
             })->toArray();
         }
+
         $hotelInvoice->PilgrimsCount();
         $hotelInvoice->calculateTotal();
 
-
-
+        // تسجيل التغييرات
         $changedData = $hotelInvoice->getChangedData($oldData, $hotelInvoice->fresh()->toArray());
 
         if ($pilgrimsChanged) {
