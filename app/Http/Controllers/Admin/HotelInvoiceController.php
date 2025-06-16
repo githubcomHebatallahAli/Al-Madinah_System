@@ -169,99 +169,103 @@ protected function ensureNumeric($value)
         ]);
     }
 
-    // دوال مساعدة خاصة بربط الحجاج
-    // protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
-    // {
-    //     $pilgrimsData = [];
-    //     foreach ($pilgrims as $pilgrim) {
-    //         $p = Pilgrim::firstOrCreate(
-    //             ['idNum' => $pilgrim['idNum']],
-    //             $pilgrim
-    //         );
-    //         $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
-    //     }
-    //     $invoice->pilgrims()->attach($pilgrimsData);
-    // }
-
-    // protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
-    // {
-    //     $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
-    //     $pilgrimsData = $busInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
-    //         return [$pilgrim->id => ['type' => 'bus']];
-    //     });
-    //     $invoice->pilgrims()->attach($pilgrimsData);
-    // }
-
-    // protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
-    // {
-    //     $pilgrimsData = [];
-    //     foreach ($pilgrims as $pilgrim) {
-    //         $p = Pilgrim::firstOrCreate(
-    //             ['idNum' => $pilgrim['idNum']],
-    //             $pilgrim
-    //         );
-    //         $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
-    //     }
-    //     $invoice->pilgrims()->sync($pilgrimsData);
-    // }
-
-    protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
+/**
+ * ربط الحجاج مع استخدام التواريخ الهجرية
+ */
+protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
 {
     $pilgrimsData = [];
-    $currentDate = now();
-    $hijriDate = $this->getHijriDate($currentDate); // تأكد من وجود هذه الدالة
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
     foreach ($pilgrims as $pilgrim) {
+        // التحقق من البيانات المطلوبة للحجاج الجدد
+        if (!Pilgrim::where('idNum', $pilgrim['idNum'])->exists()) {
+            if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+                throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع');
+            }
+        }
+
+        // إنشاء أو جلب الحاج
         $p = Pilgrim::firstOrCreate(
             ['idNum' => $pilgrim['idNum']],
-            $pilgrim
+            [
+                'name' => $pilgrim['name'] ?? null,
+                'nationality' => $pilgrim['nationality'] ?? null,
+                'gender' => $pilgrim['gender'] ?? null,
+                'phoNum' => $pilgrim['phoNum'] ?? null
+            ]
         );
 
+        // إعداد بيانات الربط
         $pilgrimsData[$p->id] = [
             'type' => $pilgrim['type'],
             'creationDate' => $currentDate,
-            'creationDateHijri' => $hijriDate
+            'creationDateHijri' => $hijriDate,
+            'changed_data' => null
         ];
     }
 
     $invoice->pilgrims()->attach($pilgrimsData);
 }
 
+/**
+ * ربط حجاج الباص مع التواريخ المخصصة
+ */
 protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
 {
     $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
-    $currentDate = now();
-    $hijriDate = $this->getHijriDate($currentDate);
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
     $pilgrimsData = $busInvoice->pilgrims->mapWithKeys(function ($pilgrim) use ($currentDate, $hijriDate) {
         return [
             $pilgrim->id => [
                 'type' => 'bus',
                 'creationDate' => $currentDate,
-                'creationDateHijri' => $hijriDate
+                'creationDateHijri' => $hijriDate,
+                'changed_data' => null
             ]
         ];
     });
 
-    $invoice->pilgrims()->attach($pilgrimsData);
+    $invoice->pilgrims()->attach($pilgrimsData->toArray());
 }
 
+/**
+ * مزامنة الحجاج مع الحفاظ على التواريخ الأصلية
+ */
 protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
 {
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
-    $currentDate = now();
-    $hijriDate = $this->getHijriDate($currentDate);
 
     foreach ($pilgrims as $pilgrim) {
-        $p = Pilgrim::firstOrCreate(
-            ['idNum' => $pilgrim['idNum']],
-            $pilgrim
-        );
+        $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
 
-        $pilgrimsData[$p->id] = [
+        if (!$existingPilgrim) {
+            if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+                throw new \Exception('بيانات غير مكتملة للحاج الجديد');
+            }
+
+            $existingPilgrim = Pilgrim::create([
+                'idNum' => $pilgrim['idNum'],
+                'name' => $pilgrim['name'],
+                'nationality' => $pilgrim['nationality'],
+                'gender' => $pilgrim['gender'],
+                'phoNum' => $pilgrim['phoNum'] ?? null
+            ]);
+        }
+
+        // الحفاظ على التواريخ الأصلية إذا كانت موجودة
+        $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $existingPilgrim->id)->first();
+
+        $pilgrimsData[$existingPilgrim->id] = [
             'type' => $pilgrim['type'],
-            'creationDate' => $currentDate,
-            'creationDateHijri' => $hijriDate
+            'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
+            'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
+            'changed_data' => null
         ];
     }
 

@@ -50,12 +50,20 @@ class HotelInvoiceRequest extends FormRequest
         'creationDateHijri'=>'nullable|string',
 
 
+// 'pilgrims' => 'nullable|array',
+// 'pilgrims.*.idNum' => 'nullable|string',
+// 'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
+// 'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
+// 'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
+// 'pilgrims.*.type' => 'required_with:pilgrims|in:bus,trip',
+
 'pilgrims' => 'nullable|array',
-'pilgrims.*.idNum' => 'nullable|string',
-'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
-'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
-'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
-'pilgrims.*.type' => 'required_with:pilgrims|in:bus,trip',
+        'pilgrims.*.idNum' => 'nullable|string',
+        'pilgrims.*.type' => 'required|in:bus,trip',
+        'pilgrims.*.name' => 'required_if:pilgrims.*.idNum,!=,exists:pilgrims,idNum|nullable|string',
+        'pilgrims.*.nationality' => 'required_if:pilgrims.*.idNum,!=,exists:pilgrims,idNum|nullable|string',
+        'pilgrims.*.gender' => 'required_if:pilgrims.*.idNum,!=,exists:pilgrims,idNum|nullable|in:male,female,child',
+        'pilgrims.*.phoNum' => 'nullable|string'
 
         ];
     }
