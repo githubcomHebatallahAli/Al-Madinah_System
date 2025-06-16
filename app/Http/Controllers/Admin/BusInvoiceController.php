@@ -214,7 +214,7 @@ public function update(BusInvoiceRequest $request, $id)
     DB::beginTransaction();
 
     try {
-     
+
         $busInvoice->update($data);
 
         if ($request->has('pilgrims')) {
@@ -512,6 +512,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     }
 
     $busInvoice->invoiceStatus = 'rejected';
+    
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $busInvoice->creationDateHijri = $this->getHijriDate();
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
