@@ -27,24 +27,95 @@ class HotelInvoiceController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
-    public function showAllWithoutPaginate(Request $request)
-    {
-        $query = HotelInvoice::with(['hotel', 'trip', 'busInvoice', 'paymentMethodType']);
 
-        // الفلترة
+        public function showAllWithPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $query = BusInvoice::query();
+
+             if ($request->filled('bus_invoice_id')) {
+            $query->where('bus_invoice_id', $request->bus_invoice_id);
+        }
+
+
+        if ($request->filled('trip_id')) {
+            $query->where('trip_id', $request->trip_id);
+        }
+
         if ($request->filled('hotel_id')) {
             $query->where('hotel_id', $request->hotel_id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('invoiceStatus', $request->status);
+
+        if ($request->filled('paymentStatus')) {
+            $query->where('paymentStatus', $request->paymentStatus);
         }
 
-        $invoices = $query->latest()->paginate(10);
+        if ($request->filled('invoiceStatus')) {
+            $query->where('invoiceStatus', $request->invoiceStatus);
+        }
+
+        $busInvoices = $query->orderBy('created_at', 'desc')->paginate(10);
+        $totalPaidAmount = HotelInvoice::sum('paidAmount');
 
         return response()->json([
-            'data' => HotelInvoiceResource::collection($invoices),
-            'message' => 'تم جلب الفواتير بنجاح'
+            'data' => ShowAllHotelInvoiceResource::collection($busInvoices),
+             'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+        ],
+            'pagination' => [
+                'total' => $busInvoices->total(),
+                'count' => $busInvoices->count(),
+                'per_page' => $busInvoices->perPage(),
+                'current_page' => $busInvoices->currentPage(),
+                'total_pages' => $busInvoices->lastPage(),
+                'next_page_url' => $busInvoices->nextPageUrl(),
+                'prev_page_url' => $busInvoices->previousPageUrl(),
+            ],
+            'message' => "Show All Hotel Invoices."
+        ]);
+    }
+
+    public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $query = BusInvoice::query();
+
+        if ($request->filled('bus_invoice_id')) {
+            $query->where('bus_invoice_id', $request->bus_invoice_id);
+        }
+
+
+        if ($request->filled('trip_id')) {
+            $query->where('trip_id', $request->trip_id);
+        }
+
+        if ($request->filled('hotel_id')) {
+            $query->where('hotel_id', $request->hotel_id);
+        }
+
+          if ($request->filled('paymentStatus')) {
+            $query->where('paymentStatus', $request->paymentStatus);
+        }
+
+        if ($request->filled('invoiceStatus')) {
+            $query->where('invoiceStatus', $request->invoiceStatus);
+        }
+
+
+
+        $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->get();
+        $totalPaidAmount = HotelInvoice::sum('paidAmount');
+
+        return response()->json([
+            'data' => ShowAllHotelInvoiceResource::collection($busInvoices),
+             'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+
+        ],
+            'message' => "Show All Hotel Invoices."
         ]);
     }
 

@@ -23,7 +23,6 @@ class HotelInvoiceResource extends JsonResource
 }),
 
             'invoiceNumber' => $this->invoiceNumber,
-            'pilgrimsCount'=> $this ->pilgrimsCount,
             'bus_invoice_id'=> $this ->busInvoice?->id,
             'bedPrice' => $this->hotel?->bedPrice ?? 0,
             'roomPrice' => $this->hotel?->roomPrice ?? 0,
@@ -37,6 +36,7 @@ class HotelInvoiceResource extends JsonResource
 
         'checkInDate' => $this-> checkInDate ,
         'checkInDateHijri'=> $this-> checkInDateHijri,
+        'checkOutDate'=> $this-> checkOutDate,
         'checkOutDateHijri'=> $this-> checkOutDateHijri,
         'bookingSource'=> $this-> bookingSource,
         'roomNum'=> $this-> roomNum,
