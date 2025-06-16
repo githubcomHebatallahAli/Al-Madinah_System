@@ -33,7 +33,7 @@ class HotelInvoiceController extends Controller
     {
         $this->authorize('manage_system');
 
-        $query = BusInvoice::query();
+        $query = HotelInvoice::query();
 
              if ($request->filled('bus_invoice_id')) {
             $query->where('bus_invoice_id', $request->bus_invoice_id);
