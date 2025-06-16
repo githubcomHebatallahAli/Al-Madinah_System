@@ -52,37 +52,21 @@ public function create(HotelInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
-    $data = array_merge($request->only([
-        'hotel_id',
-        'trip_id',
-        'bus_invoice_id',
-        'payment_method_type_id',
-        'need',
-        'numDay',
-        'checkOutDateHijri',
-        'checkOutDate',
-        'checkInDateHijri',
-        'checkInDate',
-        'description',
-        'discount',
-        'tax',
-        'roomNum',
-        'reason',
-        'paidAmount',
-        'invoiceStatus',
-        'paymentStatus',
-        'bookingSource'
-    ]), $this->prepareCreationMetaData());
+    $data = array_merge([
+        'discount' => $this->ensureNumeric($request->input('discount', 0)),
+        'tax' => $this->ensureNumeric($request->input('tax', 0)),
+        'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+        'subtotal' => 0,
+        'total' => 0,
+    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
     try {
         $invoice = HotelInvoice::create($data);
 
-
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
-
 
         if ($request->has('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
@@ -102,6 +86,16 @@ public function create(HotelInvoiceRequest $request)
             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
         ], 500);
     }
+}
+
+
+protected function ensureNumeric($value)
+{
+    if ($value === null || $value === '') {
+        return 0;
+    }
+
+    return is_numeric($value) ? $value : 0;
 }
 
     public function edit(HotelInvoice $hotelInvoice)
