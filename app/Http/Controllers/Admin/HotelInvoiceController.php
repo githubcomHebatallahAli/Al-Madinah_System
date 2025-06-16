@@ -64,13 +64,16 @@ public function create(HotelInvoiceRequest $request)
     try {
         $invoice = HotelInvoice::create($data);
 
+        // ربط الحجاج العاديين إذا وجدوا
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-        if ($request->has('bus_invoice_id')) {
+        // ربط حجاج الباص فقط إذا تم إرسال bus_invoice_id وقيمته ليست فارغة
+        if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
+
         $invoice->PilgrimsCount();
         $invoice->calculateTotal();
         DB::commit();
@@ -209,12 +212,19 @@ protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
     $invoice->pilgrims()->attach($pilgrimsData);
 }
 
-/**
- * ربط حجاج الباص مع التواريخ المخصصة
- */
 protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
 {
-    $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
+    // التأكد من أن قيمة busInvoiceId ليست فارغة أو null
+    if (empty($busInvoiceId)) {
+        return; // لا تفعل شيئًا إذا كانت القيمة فارغة
+    }
+
+    $busInvoice = BusInvoice::with('pilgrims')->find($busInvoiceId);
+
+    if (!$busInvoice) {
+        throw new \Exception('عفواً، فاتورة الباص المحددة غير موجودة!');
+    }
+
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
@@ -231,7 +241,6 @@ protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
 
     $invoice->pilgrims()->attach($pilgrimsData->toArray());
 }
-
 /**
  * مزامنة الحجاج مع الحفاظ على التواريخ الأصلية
  */
