@@ -57,22 +57,22 @@ class HotelInvoiceController extends Controller
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
-        $busInvoices = $query->with(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->paginate(10);
+        $hotelInvoices = $query->with(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->paginate(10);
         $totalPaidAmount = HotelInvoice::sum('paidAmount');
 
         return response()->json([
-            'data' => ShowAllHotelInvoiceResource::collection($busInvoices),
+            'data' => ShowAllHotelInvoiceResource::collection($hotelInvoices),
              'statistics' => [
             'paid_amount' => $totalPaidAmount,
         ],
             'pagination' => [
-                'total' => $busInvoices->total(),
-                'count' => $busInvoices->count(),
-                'per_page' => $busInvoices->perPage(),
-                'current_page' => $busInvoices->currentPage(),
-                'total_pages' => $busInvoices->lastPage(),
-                'next_page_url' => $busInvoices->nextPageUrl(),
-                'prev_page_url' => $busInvoices->previousPageUrl(),
+                'total' => $hotelInvoices->total(),
+                'count' => $hotelInvoices->count(),
+                'per_page' => $hotelInvoices->perPage(),
+                'current_page' => $hotelInvoices->currentPage(),
+                'total_pages' => $hotelInvoices->lastPage(),
+                'next_page_url' => $hotelInvoices->nextPageUrl(),
+                'prev_page_url' => $hotelInvoices->previousPageUrl(),
             ],
             'message' => "Show All Hotel Invoices."
         ]);
@@ -82,7 +82,7 @@ class HotelInvoiceController extends Controller
     {
         $this->authorize('manage_system');
 
-        $query = BusInvoice::query();
+        $query = HotelInvoice::query();
 
         if ($request->filled('bus_invoice_id')) {
             $query->where('bus_invoice_id', $request->bus_invoice_id);
@@ -107,11 +107,11 @@ class HotelInvoiceController extends Controller
 
 
 
-        $busInvoices = $query->with(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->get();
+        $hotelInvoices = $query->with(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->get();
         $totalPaidAmount = HotelInvoice::sum('paidAmount');
 
         return response()->json([
-            'data' => ShowAllHotelInvoiceResource::collection($busInvoices),
+            'data' => ShowAllHotelInvoiceResource::collection($hotelInvoices),
              'statistics' => [
             'paid_amount' => $totalPaidAmount,
 
