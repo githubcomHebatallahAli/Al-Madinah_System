@@ -71,7 +71,7 @@ public function create(HotelInvoiceRequest $request)
         if ($request->has('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
-
+        $invoice->PilgrimsCount();
         $invoice->calculateTotal();
         DB::commit();
 
