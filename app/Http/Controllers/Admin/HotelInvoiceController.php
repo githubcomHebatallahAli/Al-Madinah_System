@@ -170,40 +170,104 @@ protected function ensureNumeric($value)
     }
 
     // دوال مساعدة خاصة بربط الحجاج
+    // protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
+    // {
+    //     $pilgrimsData = [];
+    //     foreach ($pilgrims as $pilgrim) {
+    //         $p = Pilgrim::firstOrCreate(
+    //             ['idNum' => $pilgrim['idNum']],
+    //             $pilgrim
+    //         );
+    //         $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
+    //     }
+    //     $invoice->pilgrims()->attach($pilgrimsData);
+    // }
+
+    // protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
+    // {
+    //     $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
+    //     $pilgrimsData = $busInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
+    //         return [$pilgrim->id => ['type' => 'bus']];
+    //     });
+    //     $invoice->pilgrims()->attach($pilgrimsData);
+    // }
+
+    // protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
+    // {
+    //     $pilgrimsData = [];
+    //     foreach ($pilgrims as $pilgrim) {
+    //         $p = Pilgrim::firstOrCreate(
+    //             ['idNum' => $pilgrim['idNum']],
+    //             $pilgrim
+    //         );
+    //         $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
+    //     }
+    //     $invoice->pilgrims()->sync($pilgrimsData);
+    // }
+
     protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
-    {
-        $pilgrimsData = [];
-        foreach ($pilgrims as $pilgrim) {
-            $p = Pilgrim::firstOrCreate(
-                ['idNum' => $pilgrim['idNum']],
-                $pilgrim
-            );
-            $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
-        }
-        $invoice->pilgrims()->attach($pilgrimsData);
+{
+    $pilgrimsData = [];
+    $currentDate = now();
+    $hijriDate = $this->getHijriDate($currentDate); // تأكد من وجود هذه الدالة
+
+    foreach ($pilgrims as $pilgrim) {
+        $p = Pilgrim::firstOrCreate(
+            ['idNum' => $pilgrim['idNum']],
+            $pilgrim
+        );
+
+        $pilgrimsData[$p->id] = [
+            'type' => $pilgrim['type'],
+            'creationDate' => $currentDate,
+            'creationDateHijri' => $hijriDate
+        ];
     }
 
-    protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
-    {
-        $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
-        $pilgrimsData = $busInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
-            return [$pilgrim->id => ['type' => 'bus']];
-        });
-        $invoice->pilgrims()->attach($pilgrimsData);
+    $invoice->pilgrims()->attach($pilgrimsData);
+}
+
+protected function attachBusPilgrims(HotelInvoice $invoice, $busInvoiceId)
+{
+    $busInvoice = BusInvoice::with('pilgrims')->findOrFail($busInvoiceId);
+    $currentDate = now();
+    $hijriDate = $this->getHijriDate($currentDate);
+
+    $pilgrimsData = $busInvoice->pilgrims->mapWithKeys(function ($pilgrim) use ($currentDate, $hijriDate) {
+        return [
+            $pilgrim->id => [
+                'type' => 'bus',
+                'creationDate' => $currentDate,
+                'creationDateHijri' => $hijriDate
+            ]
+        ];
+    });
+
+    $invoice->pilgrims()->attach($pilgrimsData);
+}
+
+protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
+{
+    $pilgrimsData = [];
+    $currentDate = now();
+    $hijriDate = $this->getHijriDate($currentDate);
+
+    foreach ($pilgrims as $pilgrim) {
+        $p = Pilgrim::firstOrCreate(
+            ['idNum' => $pilgrim['idNum']],
+            $pilgrim
+        );
+
+        $pilgrimsData[$p->id] = [
+            'type' => $pilgrim['type'],
+            'creationDate' => $currentDate,
+            'creationDateHijri' => $hijriDate
+        ];
     }
 
-    protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
-    {
-        $pilgrimsData = [];
-        foreach ($pilgrims as $pilgrim) {
-            $p = Pilgrim::firstOrCreate(
-                ['idNum' => $pilgrim['idNum']],
-                $pilgrim
-            );
-            $pilgrimsData[$p->id] = ['type' => $pilgrim['type']];
-        }
-        $invoice->pilgrims()->sync($pilgrimsData);
-    }
+    $invoice->pilgrims()->sync($pilgrimsData);
+}
+
 
         protected function getResourceClass(): string
     {

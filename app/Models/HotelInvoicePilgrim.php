@@ -18,6 +18,7 @@ class HotelInvoicePilgrim extends Model
         'creationDateHijri',
         'changed_data'
         ];
+        
         public $timestamps = true;
 
     protected $casts = [
