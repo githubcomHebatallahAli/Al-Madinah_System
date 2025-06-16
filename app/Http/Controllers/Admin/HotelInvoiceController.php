@@ -100,28 +100,36 @@ protected function ensureNumeric($value)
     return is_numeric($value) ? $value : 0;
 }
 
-    public function edit(HotelInvoice $id)
+
+
+
+        public function edit(string $id)
     {
-        return response()->json([
-            'data' => new HotelInvoiceResource($id->load([
-                'hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'
-            ])),
-            'message' => 'تم جلب الفاتورة بنجاح'
-        ]);
+        $this->authorize('manage_system');
+
+        $hotelInvoice =HotelInvoice::with([
+         'hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'
+    ])->find($id);
+
+        if (!$hotelInvoice) {
+            return response()->json(['message' => "Hotel Invoice not found."], 404);
+        }
+
+        return $this->respondWithResource($hotelInvoice, "Hotel Invoice retrieved for editing.");
     }
 
 public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
 {
     $this->authorize('manage_system');
 
-    // منع التعديل إذا كانت الفاتورة معتمدة أو مكتملة
+
     if (in_array($hotelInvoice->invoiceStatus, ['approved', 'completed'])) {
         return response()->json([
             'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
         ], 422);
     }
 
-    // حفظ البيانات القديمة
+
     $oldData = $hotelInvoice->toArray();
     $oldPilgrimsData = $hotelInvoice->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
         return [
@@ -134,14 +142,13 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
 
     DB::beginTransaction();
     try {
-        // إعداد بيانات التحديث
+
         $data = array_merge([
             'discount' => $this->ensureNumeric($request->input('discount')),
             'tax' => $this->ensureNumeric($request->input('tax')),
             'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
         ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
 
-        // التحقق من وجود تغييرات
         $hasChanges = false;
         foreach ($data as $key => $value) {
             if ($hotelInvoice->$key != $value) {
@@ -150,7 +157,7 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
             }
         }
 
-        // التحقق من تغييرات الحجاج
+
         $pilgrimsChanged = false;
         $newPilgrimsData = [];
         if ($request->has('pilgrims')) {
@@ -166,10 +173,9 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
             ]);
         }
 
-        // تطبيق التحديثات
         $hotelInvoice->update($data);
 
-        // معالجة الحجاج إذا كان هناك تغييرات
+
         if ($request->has('pilgrims') && $pilgrimsChanged) {
             $this->syncPilgrims($hotelInvoice, $request->pilgrims);
             $newPilgrimsData = $hotelInvoice->fresh()->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
@@ -185,7 +191,6 @@ public function update(HotelInvoiceRequest $request, HotelInvoice $hotelInvoice)
         $hotelInvoice->PilgrimsCount();
         $hotelInvoice->calculateTotal();
 
-        // تسجيل التغييرات
         $changedData = $hotelInvoice->getChangedData($oldData, $hotelInvoice->fresh()->toArray());
 
         if ($pilgrimsChanged) {
@@ -312,14 +317,14 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
     foreach ($pilgrims as $pilgrim) {
-        // التحقق من البيانات المطلوبة للحجاج الجدد
+
         if (!Pilgrim::where('idNum', $pilgrim['idNum'])->exists()) {
             if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
                 throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع');
             }
         }
 
-        // إنشاء أو جلب الحاج
+
         $p = Pilgrim::firstOrCreate(
             ['idNum' => $pilgrim['idNum']],
             [
