@@ -71,7 +71,7 @@ public function create(HotelInvoiceRequest $request)
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-      
+
         if ($request->has('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
@@ -136,13 +136,7 @@ public function create(HotelInvoiceRequest $request)
         }
     }
 
-    public function destroy(HotelInvoice $hotelInvoice)
-    {
-        $hotelInvoice->delete();
-        return response()->json([
-            'message' => 'تم حذف الفاتورة بنجاح'
-        ]);
-    }
+
 
 
     public function approve(HotelInvoice $hotelInvoice)
