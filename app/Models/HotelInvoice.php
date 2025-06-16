@@ -104,8 +104,9 @@ public function calculateTotal(): void
     }
 
     $bedPrice = $this->hotel->bedPrice ?? 0;
+     $numDays = $this->numDay ?? 1;
 
-    $this->subtotal = $bedPrice * $this->pilgrimsCount;
+    $this->subtotal = $bedPrice * $this->pilgrimsCount* $numDays;
     $this->total = $this->subtotal
                   - ($this->discount ?? 0)
                   + ($this->tax ?? 0);
