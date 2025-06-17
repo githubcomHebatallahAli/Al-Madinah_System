@@ -44,7 +44,8 @@ class ShipmentRequest extends FormRequest
         'items.*.rentalStartHijri' => 'nullable|string',
         'items.*.rentalEndHijri' => 'nullable|string',
         'items.*.class'=>'nullable|string',
-        'items.*.seatNum'=>'nullable|integer',
+        'items.*.seatNum' => 'nullable|array', // تأكد أن seatNum هي مصفوفة
+        'items.*.seatNum.*' => 'integer',
         'items.*.DateTimeTrip' =>'nullable|date_format:Y-m-d H:i:s',
         'items.*.DateTimeTripHijri'=>'nullable|string',
     ];
