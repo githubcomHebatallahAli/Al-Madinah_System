@@ -871,13 +871,19 @@ protected function attachPilgrims(BusInvoice $invoice, array $pilgrims, array $s
 
 protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
 {
-
+    // الحالة 1: عندما لا يوجد رقم هوية (الأطفال)
     if (empty($pilgrimData['idNum'])) {
         if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
             throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
         }
 
-        return Pilgrim::create([
+        $existingChild = Pilgrim::whereNull('idNum')
+            ->where('name', $pilgrimData['name'])
+            ->where('nationality', $pilgrimData['nationality'])
+            ->where('gender', $pilgrimData['gender'])
+            ->first();
+
+        return $existingChild ?? Pilgrim::create([
             'name' => $pilgrimData['name'],
             'nationality' => $pilgrimData['nationality'],
             'gender' => $pilgrimData['gender'],
@@ -886,7 +892,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
         ]);
     }
 
-
+    // الحالة 2: عندما يوجد رقم هوية
     $pilgrim = Pilgrim::where('idNum', $pilgrimData['idNum'])->first();
 
     if (!$pilgrim) {
@@ -903,7 +909,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
         ]);
     }
 
-
+   
     $updates = [];
     if (!empty($pilgrimData['name']) && $pilgrim->name !== $pilgrimData['name']) {
         $updates['name'] = $pilgrimData['name'];

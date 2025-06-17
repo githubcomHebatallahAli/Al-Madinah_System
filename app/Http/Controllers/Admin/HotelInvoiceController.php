@@ -29,6 +29,123 @@ class HotelInvoiceController extends Controller
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
 
+
+    protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
+{
+    // الحالة 1: عندما لا يوجد رقم هوية (الأطفال)
+    if (empty($pilgrimData['idNum'])) {
+        if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
+            throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
+        }
+
+        $existingChild = Pilgrim::whereNull('idNum')
+            ->where('name', $pilgrimData['name'])
+            ->where('nationality', $pilgrimData['nationality'])
+            ->where('gender', $pilgrimData['gender'])
+            ->first();
+
+        return $existingChild ?? Pilgrim::create([
+            'name' => $pilgrimData['name'],
+            'nationality' => $pilgrimData['nationality'],
+            'gender' => $pilgrimData['gender'],
+            'phoNum' => $pilgrimData['phoNum'] ?? null,
+            'idNum' => null
+        ]);
+    }
+
+    // الحالة 2: عندما يوجد رقم هوية
+    $pilgrim = Pilgrim::where('idNum', $pilgrimData['idNum'])->first();
+
+    if (!$pilgrim) {
+        if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
+            throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
+        }
+
+        return Pilgrim::create([
+            'idNum' => $pilgrimData['idNum'],
+            'name' => $pilgrimData['name'],
+            'nationality' => $pilgrimData['nationality'],
+            'gender' => $pilgrimData['gender'],
+            'phoNum' => $pilgrimData['phoNum'] ?? null
+        ]);
+    }
+
+    // تحديث بيانات الحاج الموجود
+    $updates = [];
+    if (!empty($pilgrimData['name']) && $pilgrim->name !== $pilgrimData['name']) {
+        $updates['name'] = $pilgrimData['name'];
+    }
+    if (!empty($pilgrimData['nationality']) && $pilgrim->nationality !== $pilgrimData['nationality']) {
+        $updates['nationality'] = $pilgrimData['nationality'];
+    }
+    if (!empty($pilgrimData['gender']) && $pilgrim->gender !== $pilgrimData['gender']) {
+        $updates['gender'] = $pilgrimData['gender'];
+    }
+    if (!empty($pilgrimData['phoNum']) && $pilgrim->phoNum !== $pilgrimData['phoNum']) {
+        $updates['phoNum'] = $pilgrimData['phoNum'];
+    }
+
+    if (!empty($updates)) {
+        $pilgrim->update($updates);
+    }
+
+    return $pilgrim;
+}
+
+protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
+{
+    $pilgrimsData = [];
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    foreach ($pilgrims as $pilgrim) {
+        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+
+        $pilgrimsData[$p->id] = [
+            'creationDate' => $currentDate,
+            'creationDateHijri' => $hijriDate,
+            'changed_data' => null
+        ];
+    }
+
+    $invoice->pilgrims()->attach($pilgrimsData);
+}
+
+protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
+{
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $pilgrimsData = [];
+
+    foreach ($pilgrims as $pilgrim) {
+        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+        $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
+
+        $pilgrimsData[$p->id] = [
+            'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
+            'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
+            'changed_data' => null
+        ];
+    }
+
+    $invoice->pilgrims()->sync($pilgrimsData);
+}
+protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims): bool
+{
+    $currentPilgrims = $invoice->pilgrims()->pluck('pilgrims.id')->toArray();
+
+    $newPilgrimsIds = [];
+    foreach ($newPilgrims as $pilgrim) {
+        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+        $newPilgrimsIds[] = $p->id;
+    }
+
+    sort($currentPilgrims);
+    sort($newPilgrimsIds);
+
+    return $currentPilgrims !== $newPilgrimsIds;
+}
+
         public function showAllWithPaginate(Request $request)
     {
         $this->authorize('manage_system');
@@ -531,7 +648,7 @@ public function absence(string $id, Request $request)
     }
 
     $hotelInvoice->invoiceStatus = 'absence';
-    $hotelInvoice->reason = $validated['reason'] ?? null; 
+    $hotelInvoice->reason = $validated['reason'] ?? null;
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
@@ -744,122 +861,122 @@ protected function preparePilgrimsData(array $pilgrims): array
 }
 
 
-protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims): bool
-{
-    $currentPilgrims = $invoice->pilgrims()->pluck('pilgrims.id')->toArray();
+// protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims): bool
+// {
+//     $currentPilgrims = $invoice->pilgrims()->pluck('pilgrims.id')->toArray();
 
-    // جمع معرفات الحجاج الجديدة (تجاهل الذين ليس لديهم idNum)
-    $newPilgrimsIds = collect($newPilgrims)
-        ->filter(fn($p) => !empty($p['idNum']))
-        ->pluck('idNum')
-        ->toArray();
+//     // جمع معرفات الحجاج الجديدة (تجاهل الذين ليس لديهم idNum)
+//     $newPilgrimsIds = collect($newPilgrims)
+//         ->filter(fn($p) => !empty($p['idNum']))
+//         ->pluck('idNum')
+//         ->toArray();
 
-    // الحجاج الحاليون الذين لديهم idNum
-    $currentWithIdNum = $invoice->pilgrims()
-        ->whereNotNull('idNum')
-        ->pluck('idNum')
-        ->toArray();
+//     // الحجاج الحاليون الذين لديهم idNum
+//     $currentWithIdNum = $invoice->pilgrims()
+//         ->whereNotNull('idNum')
+//         ->pluck('idNum')
+//         ->toArray();
 
-    if (count(array_diff($currentWithIdNum, $newPilgrimsIds)) > 0) return true;
-    if (count(array_diff($newPilgrimsIds, $currentWithIdNum)) > 0) return true;
+//     if (count(array_diff($currentWithIdNum, $newPilgrimsIds)) > 0) return true;
+//     if (count(array_diff($newPilgrimsIds, $currentWithIdNum)) > 0) return true;
 
-    // التحقق من عدد الحجاج بدون idNum (الأطفال)
-    $currentChildrenCount = $invoice->pilgrims()
-        ->whereNull('idNum')
-        ->count();
+//     // التحقق من عدد الحجاج بدون idNum (الأطفال)
+//     $currentChildrenCount = $invoice->pilgrims()
+//         ->whereNull('idNum')
+//         ->count();
 
-    $newChildrenCount = collect($newPilgrims)
-        ->filter(fn($p) => empty($p['idNum']))
-        ->count();
+//     $newChildrenCount = collect($newPilgrims)
+//         ->filter(fn($p) => empty($p['idNum']))
+//         ->count();
 
-    return $currentChildrenCount != $newChildrenCount;
-}
+//     return $currentChildrenCount != $newChildrenCount;
+// }
 
 
-protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
-{
-    $hijriDate = $this->getHijriDate();
-    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $pilgrimsData = [];
+// protected function syncPilgrims(HotelInvoice $invoice, array $pilgrims)
+// {
+//     $hijriDate = $this->getHijriDate();
+//     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+//     $pilgrimsData = [];
 
-    foreach ($pilgrims as $pilgrim) {
-        if (empty($pilgrim['idNum'])) {
-            // إنشاء حاج جديد (طفل) بدون idNum
-            $existingPilgrim = Pilgrim::create([
-                'name' => $pilgrim['name'],
-                'nationality' => $pilgrim['nationality'],
-                'gender' => $pilgrim['gender'],
-                'phoNum' => $pilgrim['phoNum'] ?? null,
-                'idNum' => null
-            ]);
-        } else {
-            // البحث عن الحاج الموجود أو إنشائه
-            $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
+//     foreach ($pilgrims as $pilgrim) {
+//         if (empty($pilgrim['idNum'])) {
+//             // إنشاء حاج جديد (طفل) بدون idNum
+//             $existingPilgrim = Pilgrim::create([
+//                 'name' => $pilgrim['name'],
+//                 'nationality' => $pilgrim['nationality'],
+//                 'gender' => $pilgrim['gender'],
+//                 'phoNum' => $pilgrim['phoNum'] ?? null,
+//                 'idNum' => null
+//             ]);
+//         } else {
+//             // البحث عن الحاج الموجود أو إنشائه
+//             $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
 
-            if (!$existingPilgrim) {
-                $existingPilgrim = Pilgrim::create([
-                    'idNum' => $pilgrim['idNum'],
-                    'name' => $pilgrim['name'],
-                    'nationality' => $pilgrim['nationality'],
-                    'gender' => $pilgrim['gender'],
-                    'phoNum' => $pilgrim['phoNum'] ?? null
-                ]);
-            }
-        }
+//             if (!$existingPilgrim) {
+//                 $existingPilgrim = Pilgrim::create([
+//                     'idNum' => $pilgrim['idNum'],
+//                     'name' => $pilgrim['name'],
+//                     'nationality' => $pilgrim['nationality'],
+//                     'gender' => $pilgrim['gender'],
+//                     'phoNum' => $pilgrim['phoNum'] ?? null
+//                 ]);
+//             }
+//         }
 
-        $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $existingPilgrim->id)->first();
+//         $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $existingPilgrim->id)->first();
 
-        $pilgrimsData[$existingPilgrim->id] = [
-            'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
-            'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
-            'changed_data' => null
-        ];
-    }
+//         $pilgrimsData[$existingPilgrim->id] = [
+//             'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
+//             'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
+//             'changed_data' => null
+//         ];
+//     }
 
-    $invoice->pilgrims()->sync($pilgrimsData);
-}
+//     $invoice->pilgrims()->sync($pilgrimsData);
+// }
 
-protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
-{
-    $pilgrimsData = [];
-    $hijriDate = $this->getHijriDate();
-    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+// protected function attachPilgrims(HotelInvoice $invoice, array $pilgrims)
+// {
+//     $pilgrimsData = [];
+//     $hijriDate = $this->getHijriDate();
+//     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
-    foreach ($pilgrims as $pilgrim) {
-        // التحقق من البيانات الأساسية للأطفال (بدون idNum أو phone)
-        if (empty($pilgrim['idNum'])) {
-            if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
-                throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
-            }
+//     foreach ($pilgrims as $pilgrim) {
+//         // التحقق من البيانات الأساسية للأطفال (بدون idNum أو phone)
+//         if (empty($pilgrim['idNum'])) {
+//             if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+//                 throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
+//             }
 
-            // إنشاء حاج جديد بدون idNum أو phone
-            $p = Pilgrim::create([
-                'name' => $pilgrim['name'],
-                'nationality' => $pilgrim['nationality'],
-                'gender' => $pilgrim['gender'],
-                'phoNum' => $pilgrim['phoNum'] ?? null,
-                'idNum' => null // صراحة تعيين كقيمة null
-            ]);
-        } else {
-            // البحث أو الإنشاء للحاج العادي
-            $p = Pilgrim::firstOrCreate(
-                ['idNum' => $pilgrim['idNum']],
-                [
-                    'name' => $pilgrim['name'] ?? null,
-                    'nationality' => $pilgrim['nationality'] ?? null,
-                    'gender' => $pilgrim['gender'] ?? null,
-                    'phoNum' => $pilgrim['phoNum'] ?? null
-                ]
-            );
-        }
+//             // إنشاء حاج جديد بدون idNum أو phone
+//             $p = Pilgrim::create([
+//                 'name' => $pilgrim['name'],
+//                 'nationality' => $pilgrim['nationality'],
+//                 'gender' => $pilgrim['gender'],
+//                 'phoNum' => $pilgrim['phoNum'] ?? null,
+//                 'idNum' => null // صراحة تعيين كقيمة null
+//             ]);
+//         } else {
+//             // البحث أو الإنشاء للحاج العادي
+//             $p = Pilgrim::firstOrCreate(
+//                 ['idNum' => $pilgrim['idNum']],
+//                 [
+//                     'name' => $pilgrim['name'] ?? null,
+//                     'nationality' => $pilgrim['nationality'] ?? null,
+//                     'gender' => $pilgrim['gender'] ?? null,
+//                     'phoNum' => $pilgrim['phoNum'] ?? null
+//                 ]
+//             );
+//         }
 
-        $pilgrimsData[$p->id] = [
-            'creationDate' => $currentDate,
-            'creationDateHijri' => $hijriDate,
-            'changed_data' => null
-        ];
-    }
+//         $pilgrimsData[$p->id] = [
+//             'creationDate' => $currentDate,
+//             'creationDateHijri' => $hijriDate,
+//             'changed_data' => null
+//         ];
+//     }
 
-    $invoice->pilgrims()->attach($pilgrimsData);
-}
+//     $invoice->pilgrims()->attach($pilgrimsData);
+// }
 }
