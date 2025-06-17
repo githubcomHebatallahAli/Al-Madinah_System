@@ -37,14 +37,15 @@ class BusInvoiceRequest extends FormRequest
 
 'pilgrims' => 'nullable|array',
 'pilgrims.*.idNum' => 'nullable|string',
+'pilgrims.*.phoNum' => 'nullable|string',
 
 'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',
 'pilgrims.*.nationality' => 'required_without:pilgrims.*.idNum|string|max:50',
 'pilgrims.*.gender' => 'required_without:pilgrims.*.idNum|in:male,female,child',
 'pilgrims.*.seatNumber' => 'required|array|min:1',
 'pilgrims.*.seatNumber.*' => 'required|string',
-'pilgrims.*.type' => 'nullable|string',
-'pilgrims.*.position' => 'nullable|string',
+// 'pilgrims.*.type' => 'nullable|string',
+// 'pilgrims.*.position' => 'nullable|string',
 
         ];
     }

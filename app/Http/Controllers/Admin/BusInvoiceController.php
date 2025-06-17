@@ -178,143 +178,143 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
     }
 
 
-public function update(BusInvoiceRequest $request, $id)
-{
-    $this->authorize('manage_system');
+// public function update(BusInvoiceRequest $request, $id)
+// {
+//     $this->authorize('manage_system');
 
-    $busInvoice = BusInvoice::with(['pilgrims', 'busTrip'])->findOrFail($id);
-    $oldData = $busInvoice->toArray();
-    $oldPivot = $busInvoice->pilgrims->keyBy('id')->map(fn($p) => $p->pivot->toArray())->toArray();
+//     $busInvoice = BusInvoice::with(['pilgrims', 'busTrip'])->findOrFail($id);
+//     $oldData = $busInvoice->toArray();
+//     $oldPivot = $busInvoice->pilgrims->keyBy('id')->map(fn($p) => $p->pivot->toArray())->toArray();
 
-    $busTrip = $busInvoice->busTrip;
-    $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
-    $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
+//     $busTrip = $busInvoice->busTrip;
+//     $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
+//     $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
-    // التحقق من المقاعد المتاحة
-    if ($request->has('pilgrims')) {
-        $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
-        $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
-        $availableSeats = $availableSeats->merge($originalSeats)->unique();
-        $unavailableSeats = $requestedSeats->diff($availableSeats);
+//     // التحقق من المقاعد المتاحة
+//     if ($request->has('pilgrims')) {
+//         $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
+//         $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
+//         $availableSeats = $availableSeats->merge($originalSeats)->unique();
+//         $unavailableSeats = $requestedSeats->diff($availableSeats);
 
-        if ($unavailableSeats->isNotEmpty()) {
-            return response()->json([
-                'message' => 'بعض المقاعد غير متوفرة',
-                'unavailable_seats' => $unavailableSeats
-            ], 422);
-        }
-    }
+//         if ($unavailableSeats->isNotEmpty()) {
+//             return response()->json([
+//                 'message' => 'بعض المقاعد غير متوفرة',
+//                 'unavailable_seats' => $unavailableSeats
+//             ], 422);
+//         }
+//     }
 
-    $data = array_merge([
-        'discount' => $this->ensureNumeric($request->input('discount')),
-        'tax' => $this->ensureNumeric($request->input('tax')),
-        'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
-    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
+//     $data = array_merge([
+//         'discount' => $this->ensureNumeric($request->input('discount')),
+//         'tax' => $this->ensureNumeric($request->input('tax')),
+//         'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+//     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
 
-    DB::beginTransaction();
+//     DB::beginTransaction();
 
-    try {
+//     try {
 
-        $busInvoice->update($data);
+//         $busInvoice->update($data);
 
-        if ($request->has('pilgrims')) {
-            $pilgrimsData = [];
-            $incompletePilgrims = $busInvoice->incomplete_pilgrims ?? [];
+//         if ($request->has('pilgrims')) {
+//             $pilgrimsData = [];
+//             $incompletePilgrims = $busInvoice->incomplete_pilgrims ?? [];
 
-            foreach ($request->pilgrims as $pilgrim) {
-                $existingPilgrim = null;
+//             foreach ($request->pilgrims as $pilgrim) {
+//                 $existingPilgrim = null;
 
-                // البحث عن المعتمر
-                if (!empty($pilgrim['idNum'])) {
-                    $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
-                } elseif (!empty($pilgrim['phoNum'])) {
-                    $existingPilgrim = Pilgrim::where('phoNum', $pilgrim['phoNum'])->first();
-                }
+//                 // البحث عن المعتمر
+//                 if (!empty($pilgrim['idNum'])) {
+//                     $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
+//                 } elseif (!empty($pilgrim['phoNum'])) {
+//                     $existingPilgrim = Pilgrim::where('phoNum', $pilgrim['phoNum'])->first();
+//                 }
 
-                if ($existingPilgrim) {
-                    // تحديث بيانات المعتمر الحالي
-                    foreach ($pilgrim['seatNumber'] as $seatNumber) {
-                        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
+//                 if ($existingPilgrim) {
+//                     // تحديث بيانات المعتمر الحالي
+//                     foreach ($pilgrim['seatNumber'] as $seatNumber) {
+//                         $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
 
-                        if (!$seatInfo) {
-                            throw new \Exception("المقعد {$seatNumber} غير موجود");
-                        }
+//                         if (!$seatInfo) {
+//                             throw new \Exception("المقعد {$seatNumber} غير موجود");
+//                         }
 
-                        // تحديث أو إنشاء علاقة جديدة
-                        $pilgrimsData[$existingPilgrim->id] = [
-                            'seatNumber' => $seatNumber,
-                            'status' => 'booked',
-                            'type' => $seatInfo['type'] ?? null,
-                            'position' => $seatInfo['position'] ?? null,
-                            'creationDateHijri' => $this->getHijriDate(),
-                            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                        ];
+//                         // تحديث أو إنشاء علاقة جديدة
+//                         $pilgrimsData[$existingPilgrim->id] = [
+//                             'seatNumber' => $seatNumber,
+//                             'status' => 'booked',
+//                             'type' => $seatInfo['type'] ?? null,
+//                             'position' => $seatInfo['position'] ?? null,
+//                             'creationDateHijri' => $this->getHijriDate(),
+//                             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//                         ];
 
-                        if ($busTrip) {
-                            $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
-                        }
-                    }
-                } else {
-                    // معالجة المعتمرين غير المكتملين
-                    if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
-                        $incompletePilgrims[] = $pilgrim;
-                        continue;
-                    }
+//                         if ($busTrip) {
+//                             $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+//                         }
+//                     }
+//                 } else {
 
-                    // إنشاء معتمر جديد
-                    $newPilgrim = Pilgrim::create([
-                        'idNum' => $pilgrim['idNum'] ?? null,
-                        'name' => $pilgrim['name'],
-                        'phoNum' => $pilgrim['phoNum'] ?? null,
-                        'nationality' => $pilgrim['nationality'],
-                        'gender' => $pilgrim['gender'],
-                    ]);
+//                     if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+//                         $incompletePilgrims[] = $pilgrim;
+//                         continue;
+//                     }
 
-                    foreach ($pilgrim['seatNumber'] as $seatNumber) {
-                        $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
+//                     // إنشاء معتمر جديد
+//                     $newPilgrim = Pilgrim::create([
+//                         'idNum' => $pilgrim['idNum'] ?? null,
+//                         'name' => $pilgrim['name'],
+//                         'phoNum' => $pilgrim['phoNum'] ?? null,
+//                         'nationality' => $pilgrim['nationality'],
+//                         'gender' => $pilgrim['gender'],
+//                     ]);
 
-                        if (!$seatInfo) {
-                            throw new \Exception("المقعد {$seatNumber} غير موجود");
-                        }
+//                     foreach ($pilgrim['seatNumber'] as $seatNumber) {
+//                         $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
 
-                        $pilgrimsData[$newPilgrim->id] = [
-                            'seatNumber' => $seatNumber,
-                            'status' => 'booked',
-                            'type' => $seatInfo['type'] ?? null,
-                            'position' => $seatInfo['position'] ?? null,
-                            'creationDateHijri' => $this->getHijriDate(),
-                            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                        ];
+//                         if (!$seatInfo) {
+//                             throw new \Exception("المقعد {$seatNumber} غير موجود");
+//                         }
 
-                        if ($busTrip) {
-                            $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
-                        }
-                    }
-                }
-            }
+//                         $pilgrimsData[$newPilgrim->id] = [
+//                             'seatNumber' => $seatNumber,
+//                             'status' => 'booked',
+//                             'type' => $seatInfo['type'] ?? null,
+//                             'position' => $seatInfo['position'] ?? null,
+//                             'creationDateHijri' => $this->getHijriDate(),
+//                             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//                         ];
 
-            // الحفاظ على المعتمرين الحاليين وإضافة/تحديث الجدد فقط
-            $currentPilgrims = $busInvoice->pilgrims->keyBy('id')->map(fn($p) => $p->pivot->toArray())->toArray();
-            $finalPilgrimsData = array_merge($currentPilgrims, $pilgrimsData);
+//                         if ($busTrip) {
+//                             $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+//                         }
+//                     }
+//                 }
+//             }
 
-            // مزامنة البيانات
-            $busInvoice->pilgrims()->sync($finalPilgrimsData);
-            $busInvoice->update(['incomplete_pilgrims' => !empty($incompletePilgrims) ? $incompletePilgrims : null]);
-        }
 
-        $busInvoice->PilgrimsCount();
-        $busInvoice->calculateTotal();
+//             $currentPilgrims = $busInvoice->pilgrims->keyBy('id')->map(fn($p) => $p->pivot->toArray())->toArray();
+//             $finalPilgrimsData = array_merge($currentPilgrims, $pilgrimsData);
 
-        DB::commit();
 
-        return $this->respondWithResource($busInvoice->load([
-            'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
-        ]), "تم تحديث فاتورة الباص بنجاح");
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()], 500);
-    }
-}
+//             $busInvoice->pilgrims()->sync($finalPilgrimsData);
+//             $busInvoice->update(['incomplete_pilgrims' => !empty($incompletePilgrims) ? $incompletePilgrims : null]);
+//         }
+
+//         $busInvoice->PilgrimsCount();
+//         $busInvoice->calculateTotal();
+
+//         DB::commit();
+
+//         return $this->respondWithResource($busInvoice->load([
+//             'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
+//         ]), "تم تحديث فاتورة الباص بنجاح");
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return response()->json(['message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()], 500);
+//     }
+// }
 
 
 
@@ -455,7 +455,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice set to pending');
 }
 
@@ -491,7 +491,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice set to approved');
 }
 
@@ -512,7 +512,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     }
 
     $busInvoice->invoiceStatus = 'rejected';
-    
+
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $busInvoice->creationDateHijri = $this->getHijriDate();
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
@@ -528,7 +528,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice set to rejected');
 }
 
@@ -564,7 +564,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice set to completed');
 }
 
@@ -600,7 +600,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice set to absence');
 }
 
@@ -637,7 +637,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice Payment set to pendind');
 }
 
@@ -709,19 +709,240 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
+    // $this->loadCommonRelations($busInvoice);
     return $this->respondWithResource($busInvoice, 'BusInvoice set to paid');
 }
 
 
-public function create(BusInvoiceRequest $request)
+// public function create(BusInvoiceRequest $request)
+// {
+//     $this->authorize('manage_system');
+
+//     $busTrip = null;
+//     $seatMapArray = [];
+//     $unavailableSeats = collect();
+
+//     if ($request->filled('bus_trip_id')) {
+//         $busTrip = BusTrip::find($request->bus_trip_id);
+//         if (!$busTrip) {
+//             return response()->json(['message' => 'رحلة الباص غير موجودة'], 404);
+//         }
+
+//         $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
+
+//         if ($request->has('pilgrims')) {
+//             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
+//             $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
+//             $unavailableSeats = $requestedSeats->diff($availableSeats);
+//             if ($unavailableSeats->isNotEmpty()) {
+//                 return response()->json([
+//                     'message' => 'بعض المقاعد غير متوفرة',
+//                     'unavailable_seats' => $unavailableSeats
+//                 ], 422);
+//             }
+//         }
+//     }
+
+//     $data = array_merge([
+//         'discount' => $this->ensureNumeric($request->input('discount')),
+//         'tax' => $this->ensureNumeric($request->input('tax')),
+//         'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+//         'subtotal' => 0,
+//         'total' => 0,
+//     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
+
+//     DB::beginTransaction();
+
+//     try {
+//         $busInvoice = BusInvoice::create($data);
+//         $pilgrimsData = [];
+//         $incompletePilgrims = [];
+
+//         if ($request->has('pilgrims')) {
+//             foreach ($request->pilgrims as $pilgrim) {
+//                 $existingPilgrim = null;
+
+//                 if (!empty($pilgrim['idNum'])) {
+//                     $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
+//                 } elseif (!empty($pilgrim['phoNum'])) {
+//                     $existingPilgrim = Pilgrim::where('phoNum', $pilgrim['phoNum'])->first();
+//                 }
+
+//                 if (!$existingPilgrim) {
+//                     if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
+//                         $incompletePilgrims[] = $pilgrim;
+//                         continue;
+//                     }
+
+//                     $existingPilgrim = Pilgrim::create([
+//                         'idNum' => $pilgrim['idNum'] ?? null,
+//                         'name' => $pilgrim['name'],
+//                         'phoNum' => $pilgrim['phoNum'] ?? null,
+//                         'nationality' => $pilgrim['nationality'],
+//                         'gender' => $pilgrim['gender'],
+//                     ]);
+//                 }
+
+//                 foreach ($pilgrim['seatNumber'] as $seatNumber) {
+//                     $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
+
+//                     if (!$seatInfo) {
+//                         throw new \Exception("المقعد {$seatNumber} غير موجود.");
+//                     }
+
+//                     $pilgrimsData[] = [
+//                         'pilgrim_id' => $existingPilgrim->id,
+//                         'seatNumber' => $seatNumber,
+//                         'status' => 'booked',
+//                         'type' => $seatInfo['type'] ?? null,
+//                         'position' => $seatInfo['position'] ?? null,
+//                         'creationDateHijri' => $this->getHijriDate(),
+//                         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//                     ];
+
+//                     if ($busTrip) {
+//                         $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+//                     }
+//                 }
+//             }
+
+//             if (!empty($pilgrimsData)) {
+//                 $busInvoice->pilgrims()->attach($pilgrimsData);
+//             }
+//         }
+
+//         if (!empty($incompletePilgrims)) {
+//             $busInvoice->update(['incomplete_pilgrims' => $incompletePilgrims]);
+//         }
+
+//         $busInvoice->PilgrimsCount();
+//         $busInvoice->calculateTotal();
+//         DB::commit();
+
+//         return response()->json([
+//             'message' => 'تم إنشاء الفاتورة بنجاح',
+//             'invoice' => new BusInvoiceResource($busInvoice->load([
+//                 'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
+//             ])),
+//         ], 201);
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
+//     }
+// }
+
+
+
+
+protected function attachPilgrims(BusInvoice $invoice, array $pilgrims, array $seatMapArray = [], ?BusTrip $busTrip = null): void
+{
+    $pilgrimsData = [];
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    foreach ($pilgrims as $pilgrim) {
+        $existingPilgrim = $this->findOrCreatePilgrim($pilgrim);
+
+        foreach ($pilgrim['seatNumber'] as $seatNumber) {
+            $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
+
+            if (!$seatInfo) {
+                throw new \Exception("المقعد {$seatNumber} غير موجود");
+            }
+
+            $pilgrimsData[$existingPilgrim->id] = [
+                'seatNumber' => $seatNumber,
+                'status' => 'booked',
+                'type' => $seatInfo['type'] ?? null,
+                'position' => $seatInfo['position'] ?? null,
+                'creationDate' => $currentDate,
+                'creationDateHijri' => $hijriDate,
+            ];
+
+            if ($busTrip) {
+                $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+            }
+        }
+    }
+
+    $invoice->pilgrims()->sync($pilgrimsData);
+}
+
+
+protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
+{
+
+    if (empty($pilgrimData['idNum'])) {
+        if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
+            throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
+        }
+
+        return Pilgrim::create([
+            'name' => $pilgrimData['name'],
+            'nationality' => $pilgrimData['nationality'],
+            'gender' => $pilgrimData['gender'],
+            'phoNum' => $pilgrimData['phoNum'] ?? null,
+            'idNum' => null
+        ]);
+    }
+
+
+    $pilgrim = Pilgrim::where('idNum', $pilgrimData['idNum'])->first();
+
+    if (!$pilgrim) {
+        if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
+            throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
+        }
+
+        return Pilgrim::create([
+            'idNum' => $pilgrimData['idNum'],
+            'name' => $pilgrimData['name'],
+            'nationality' => $pilgrimData['nationality'],
+            'gender' => $pilgrimData['gender'],
+            'phoNum' => $pilgrimData['phoNum'] ?? null
+        ]);
+    }
+
+
+    $updates = [];
+    if (!empty($pilgrimData['name']) && $pilgrim->name !== $pilgrimData['name']) {
+        $updates['name'] = $pilgrimData['name'];
+    }
+    if (!empty($pilgrimData['nationality']) && $pilgrim->nationality !== $pilgrimData['nationality']) {
+        $updates['nationality'] = $pilgrimData['nationality'];
+    }
+    if (!empty($pilgrimData['gender']) && $pilgrim->gender !== $pilgrimData['gender']) {
+        $updates['gender'] = $pilgrimData['gender'];
+    }
+    if (!empty($pilgrimData['phoNum']) && $pilgrim->phoNum !== $pilgrimData['phoNum']) {
+        $updates['phoNum'] = $pilgrimData['phoNum'];
+    }
+
+    if (!empty($updates)) {
+        $pilgrim->update($updates);
+    }
+
+    return $pilgrim;
+}
+
+
+
+
+
+        protected function getResourceClass(): string
+    {
+        return BusInvoiceResource::class;
+    }
+
+
+    public function create(BusInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
     $busTrip = null;
     $seatMapArray = [];
-    $unavailableSeats = collect();
 
+    // التحضيرات الأولية لرحلة الباص والمقاعد
     if ($request->filled('bus_trip_id')) {
         $busTrip = BusTrip::find($request->bus_trip_id);
         if (!$busTrip) {
@@ -730,10 +951,12 @@ public function create(BusInvoiceRequest $request)
 
         $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
 
+        // التحقق من توفر المقاعد المطلوبة
         if ($request->has('pilgrims')) {
             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
             $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
             $unavailableSeats = $requestedSeats->diff($availableSeats);
+
             if ($unavailableSeats->isNotEmpty()) {
                 return response()->json([
                     'message' => 'بعض المقاعد غير متوفرة',
@@ -743,80 +966,28 @@ public function create(BusInvoiceRequest $request)
         }
     }
 
+    // إعداد بيانات الفاتورة
     $data = array_merge([
-        'discount' => $this->ensureNumeric($request->input('discount')),
-        'tax' => $this->ensureNumeric($request->input('tax')),
-        'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+        'discount' => $this->ensureNumeric($request->input('discount', 0)),
+        'tax' => $this->ensureNumeric($request->input('tax', 0)),
+        'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         'subtotal' => 0,
         'total' => 0,
     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
-
     try {
         $busInvoice = BusInvoice::create($data);
-        $pilgrimsData = [];
-        $incompletePilgrims = [];
 
+        // معالجة الحجاج إذا وجدوا في الطلب
         if ($request->has('pilgrims')) {
-            foreach ($request->pilgrims as $pilgrim) {
-                $existingPilgrim = null;
-
-                if (!empty($pilgrim['idNum'])) {
-                    $existingPilgrim = Pilgrim::where('idNum', $pilgrim['idNum'])->first();
-                } elseif (!empty($pilgrim['phoNum'])) {
-                    $existingPilgrim = Pilgrim::where('phoNum', $pilgrim['phoNum'])->first();
-                }
-
-                if (!$existingPilgrim) {
-                    if (!isset($pilgrim['name'], $pilgrim['nationality'], $pilgrim['gender'])) {
-                        $incompletePilgrims[] = $pilgrim;
-                        continue;
-                    }
-
-                    $existingPilgrim = Pilgrim::create([
-                        'idNum' => $pilgrim['idNum'] ?? null,
-                        'name' => $pilgrim['name'],
-                        'phoNum' => $pilgrim['phoNum'] ?? null,
-                        'nationality' => $pilgrim['nationality'],
-                        'gender' => $pilgrim['gender'],
-                    ]);
-                }
-
-                foreach ($pilgrim['seatNumber'] as $seatNumber) {
-                    $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
-
-                    if (!$seatInfo) {
-                        throw new \Exception("المقعد {$seatNumber} غير موجود.");
-                    }
-
-                    $pilgrimsData[] = [
-                        'pilgrim_id' => $existingPilgrim->id,
-                        'seatNumber' => $seatNumber,
-                        'status' => 'booked',
-                        'type' => $seatInfo['type'] ?? null,
-                        'position' => $seatInfo['position'] ?? null,
-                        'creationDateHijri' => $this->getHijriDate(),
-                        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    ];
-
-                    if ($busTrip) {
-                        $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
-                    }
-                }
-            }
-
-            if (!empty($pilgrimsData)) {
-                $busInvoice->pilgrims()->attach($pilgrimsData);
-            }
+            $this->attachPilgrims($busInvoice, $request->pilgrims, $seatMapArray, $busTrip);
         }
 
-        if (!empty($incompletePilgrims)) {
-            $busInvoice->update(['incomplete_pilgrims' => $incompletePilgrims]);
-        }
-
+        // حساب الإجماليات
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
+
         DB::commit();
 
         return response()->json([
@@ -827,106 +998,77 @@ public function create(BusInvoiceRequest $request)
         ], 201);
     } catch (\Exception $e) {
         DB::rollBack();
-        return response()->json(['message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()], 500);
+        return response()->json([
+            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
+        ], 500);
     }
 }
 
-public function updateIncompletePilgrims(UpdatePilgrimDataRequest $request, BusInvoice $busInvoice)
+public function update(BusInvoiceRequest $request, $id)
 {
-    $busInvoice = $busInvoice->fresh('busTrip');
+    $this->authorize('manage_system');
+
+    $busInvoice = BusInvoice::with(['pilgrims', 'busTrip'])->findOrFail($id);
     $busTrip = $busInvoice->busTrip;
+    $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
+    $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
-    if (!$busTrip) {
-        return response()->json(['message' => 'لا توجد رحلة مرتبطة بهذه الفاتورة'], 422);
+    // التحقق من حالة الفاتورة قبل التعديل
+    if (in_array($busInvoice->invoiceStatus, ['approved', 'completed'])) {
+        return response()->json([
+            'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+        ], 422);
     }
 
-    $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
-    $pilgrimsData = [];
 
+    if ($request->has('pilgrims')) {
+        $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
+        $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
+        $availableSeats = $availableSeats->merge($originalSeats)->unique();
+        $unavailableSeats = $requestedSeats->diff($availableSeats);
 
-    $validatedData = $request->validated();
-
-    foreach ($validatedData['pilgrims'] as $pilgrim) {
-        $existingPilgrimQuery = Pilgrim::query();
-
-        if (!empty($pilgrim['idNum'])) {
-            $existingPilgrimQuery->where('idNum', $pilgrim['idNum']);
-        }
-
-        if (!empty($pilgrim['phoNum'])) {
-            $existingPilgrimQuery->orWhere('phoNum', $pilgrim['phoNum']);
-        }
-
-        $existingPilgrim = $existingPilgrimQuery->first();
-
-        if ($existingPilgrim) {
-            $existingPilgrim->update([
-                'name'         => $pilgrim['name'],
-                'nationality'  => $pilgrim['nationality'],
-                'gender'       => $pilgrim['gender'],
-                'phoNum'       => $pilgrim['phoNum'] ?? $existingPilgrim->phoNum,
-            ]);
-        } else {
-            $existingPilgrim = Pilgrim::create([
-                'idNum'        => $pilgrim['idNum'] ?? null,
-                'name'         => $pilgrim['name'],
-                'nationality'  => $pilgrim['nationality'],
-                'gender'       => $pilgrim['gender'],
-                'phoNum'       => $pilgrim['phoNum'] ?? null,
-            ]);
-        }
-
-
-        foreach ($pilgrim['seatNumber'] as $seatNumber) {
-
-            $seatInfo = collect($seatMapArray)->firstWhere('seatNumber', $seatNumber);
-            if (!$seatInfo) {
-                return response()->json(["message" => "المقعد $seatNumber غير موجود في seatMap"], 422);
-            }
-
-
-            $alreadyBooked = DB::table('bus_invoice_pilgrims')
-                ->where('bus_invoice_id', $busInvoice->id)
-                ->where('seatNumber', $seatNumber)
-                ->exists();
-            if ($alreadyBooked) {
-                return response()->json(["message" => "المقعد $seatNumber محجوز بالفعل"], 422);
-            }
-
-            $pilgrimsData[] = [
-                'pilgrim_id'         => $existingPilgrim->id,
-                'seatNumber'         => $seatNumber,
-                'status'             => 'booked',
-                'type'               => $seatInfo['type'] ?? null,
-                'position'           => $seatInfo['position'] ?? null,
-                'creationDateHijri'  => $this->getHijriDate(),
-                'creationDate'       => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            ];
-
-            $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+        if ($unavailableSeats->isNotEmpty()) {
+            return response()->json([
+                'message' => 'بعض المقاعد غير متوفرة',
+                'unavailable_seats' => $unavailableSeats
+            ], 422);
         }
     }
 
 
-    $busInvoice->pilgrims()->attach($pilgrimsData);
+    $data = array_merge([
+        'discount' => $this->ensureNumeric($request->input('discount', 0)),
+        'tax' => $this->ensureNumeric($request->input('tax', 0)),
+        'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
 
-    $busInvoice->PilgrimsCount();
-    $busInvoice->calculateTotal();
+    DB::beginTransaction();
+    try {
 
-    return response()->json([
-        'message' => 'تم تحديث بيانات المعتمرين بنجاح',
-        'invoice' => new BusInvoiceResource($busInvoice->load(['pilgrims']))
-    ]);
+        $busInvoice->update($data);
+
+
+        if ($request->has('pilgrims')) {
+            $this->attachPilgrims($busInvoice, $request->pilgrims, $seatMapArray, $busTrip);
+        }
+
+
+        $busInvoice->PilgrimsCount();
+        $busInvoice->calculateTotal();
+
+        DB::commit();
+
+        return response()->json([
+            'data' => new BusInvoiceResource($busInvoice->load([
+                'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
+            ])),
+            'message' => 'تم تحديث الفاتورة بنجاح'
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()
+        ], 500);
+    }
 }
-
-
-
-
-
-
-
-        protected function getResourceClass(): string
-    {
-        return BusInvoiceResource::class;
-    }
 }

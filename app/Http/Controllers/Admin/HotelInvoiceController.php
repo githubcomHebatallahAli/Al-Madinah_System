@@ -427,7 +427,7 @@ public function rejected(string $id, Request $request)
 {
     $this->authorize('manage_system');
      $validated = $request->validate([
-        'reason' => 'nullable|string', // أو 'required' إذا كان السبب إجباريًا
+        'reason' => 'nullable|string',
     ]);
 
     $hotelInvoice = HotelInvoice::find($id);
@@ -515,7 +515,7 @@ public function absence(string $id, Request $request)
     $this->authorize('manage_system');
 
     $validated = $request->validate([
-        'reason' => 'nullable|string', // يمكنك تعديل القواعد حسب احتياجاتك
+        'reason' => 'nullable|string',
     ]);
 
     $hotelInvoice = HotelInvoice::find($id);
@@ -531,7 +531,7 @@ public function absence(string $id, Request $request)
     }
 
     $hotelInvoice->invoiceStatus = 'absence';
-    $hotelInvoice->reason = $validated['reason'] ?? null; // تحديث حقل السبب
+    $hotelInvoice->reason = $validated['reason'] ?? null; 
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
