@@ -347,8 +347,6 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 }
 
 
-
-
  // Invoice Status Methods
 public function pending($id)
 {
@@ -409,8 +407,8 @@ public function approved($id)
     $hotelInvoice->updated_by_type = $this->getUpdatedByType();
     $hotelInvoice->save();
 
-    // إعادة حساب الإجمالي بعد الاعتماد
-    $hotelInvoice->calculateTotal();
+    //  $hotelInvoice->PilgrimsCount();
+    // $hotelInvoice->calculateTotal();
 
     $metaForDiffOnly = [
         'creationDate' => $hotelInvoice->creationDate,
@@ -442,14 +440,17 @@ public function rejected($id)
     }
 
     $hotelInvoice->invoiceStatus = 'rejected';
-    $hotelInvoice->subtotal = 0;
-    $hotelInvoice->total = 0;
-    $hotelInvoice->paidAmount = 0;
+    // $hotelInvoice->subtotal = 0;
+    // $hotelInvoice->total = 0;
+    // $hotelInvoice->paidAmount = 0;
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $hotelInvoice->updated_by_type = $this->getUpdatedByType();
     $hotelInvoice->save();
+
+    //  $hotelInvoice->PilgrimsCount();
+    // $hotelInvoice->calculateTotal();
 
     $metaForDiffOnly = [
         'creationDate' => $hotelInvoice->creationDate,
@@ -487,6 +488,9 @@ public function completed($id)
     $hotelInvoice->updated_by_type = $this->getUpdatedByType();
     $hotelInvoice->save();
 
+    //  $hotelInvoice->PilgrimsCount();
+    // $hotelInvoice->calculateTotal();
+
     $metaForDiffOnly = [
         'creationDate' => $hotelInvoice->creationDate,
         'creationDateHijri' => $hotelInvoice->creationDateHijri,
@@ -504,7 +508,7 @@ public function completed($id)
 {
     $this->authorize('manage_system');
 
-    $hotelInvoice = BusInvoice::find($id);
+    $hotelInvoice = HotelInvoice::find($id);
     if (!$hotelInvoice) {
         return response()->json(['message' => "Hotel Invoice not found."], 404);
     }
@@ -517,14 +521,17 @@ public function completed($id)
     }
 
     $hotelInvoice->invoiceStatus = 'absence';
-    $hotelInvoice->subtotal = 0;
-    $hotelInvoice->total = 0;
-    $hotelInvoice->paidAmount = 0;
+    // $hotelInvoice->subtotal = 0;
+    // $hotelInvoice->total = 0;
+    // $hotelInvoice->paidAmount = 0;
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $hotelInvoice->updated_by_type = $this->getUpdatedByType();
     $hotelInvoice->save();
+
+    //  $hotelInvoice->PilgrimsCount();
+    // $hotelInvoice->calculateTotal();
 
     $metaForDiffOnly = [
         'creationDate' => $hotelInvoice->creationDate,
@@ -634,6 +641,9 @@ public function paid($id)
     $hotelInvoice->updated_by_type = $this->getUpdatedByType();
     $hotelInvoice->save();
 
+    //  $hotelInvoice->PilgrimsCount();
+    // $hotelInvoice->calculateTotal();
+
     $metaForDiffOnly = [
         'creationDate' => $hotelInvoice->creationDate,
         'creationDateHijri' => $hotelInvoice->creationDateHijri,
@@ -642,6 +652,8 @@ public function paid($id)
     $changedData = $hotelInvoice->getChangedData($oldData, array_merge($hotelInvoice->fresh()->toArray(), $metaForDiffOnly));
     $hotelInvoice->changed_data = $changedData;
     $hotelInvoice->save();
+
+
 
     $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment set to paid');
@@ -683,10 +695,6 @@ protected function attachBusPilgrims(HotelInvoice $invoice, $hotelInvoiceId)
 
     $invoice->pilgrims()->attach($pilgrimsData->toArray());
 }
-
-
-
-
 
 
 
