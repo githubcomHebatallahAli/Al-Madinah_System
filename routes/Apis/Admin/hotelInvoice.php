@@ -24,7 +24,7 @@ Route::controller(HotelInvoiceController::class)->prefix('/delegate')->middlewar
     Route::patch('completed/hotelInvoice/{id}', 'completed');
     Route::put('absence/hotelInvoice/{id}', 'absence');
     Route::patch('pending/payment/hotelInvoice/{id}', 'pendingPayment');
-    Route::patch('paid/hotelInvoice/{id}', 'paid');
+    Route::put('paid/hotelInvoice/{id}', 'paid');
     Route::patch('refunded/hotelInvoice/{id}', 'refunded');
 
 
