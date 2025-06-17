@@ -588,9 +588,12 @@ public function pendingPayment($id)
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment set to pending');
 }
 
-public function refund($id)
+public function refund(string $id, Request $request)
 {
     $this->authorize('manage_system');
+     $validated = $request->validate([
+        'reason' => 'nullable|string', // يمكنك تعديل القواعد حسب احتياجاتك
+    ]);
 
     $hotelInvoice = HotelInvoice::find($id);
     if (!$hotelInvoice) {
@@ -605,6 +608,7 @@ public function refund($id)
     }
 
     $hotelInvoice->paymentStatus = 'refunded';
+    $hotelInvoice->reason = $validated['reason'] ?? null;
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
