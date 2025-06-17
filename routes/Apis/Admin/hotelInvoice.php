@@ -22,7 +22,7 @@ Route::controller(HotelInvoiceController::class)->prefix('/delegate')->middlewar
     Route::patch('approved/hotelInvoice/{id}', 'approved');
     Route::patch('rejected/hotelInvoice/{id}', 'rejected');
     Route::patch('completed/hotelInvoice/{id}', 'completed');
-    Route::patch('absence/hotelInvoice/{id}', 'absence');
+    Route::put('absence/hotelInvoice/{id}', 'absence');
     Route::patch('pending/payment/hotelInvoice/{id}', 'pendingPayment');
     Route::patch('paid/hotelInvoice/{id}', 'paid');
     Route::patch('refunded/hotelInvoice/{id}', 'refunded');
