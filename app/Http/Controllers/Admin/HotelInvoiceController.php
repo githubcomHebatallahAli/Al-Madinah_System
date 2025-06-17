@@ -624,9 +624,13 @@ public function refund($id)
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment set to refunded');
 }
 
-public function paid($id)
+public function paid(string $id, Request $request)
 {
     $this->authorize('manage_system');
+      $validated = $request->validate([
+        'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
+    ]);
+
 
     $hotelInvoice = HotelInvoice::find($id);
     if (!$hotelInvoice) {
@@ -641,6 +645,7 @@ public function paid($id)
     }
 
     $hotelInvoice->paymentStatus = 'paid';
+    $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'] ?? null;
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
