@@ -423,9 +423,12 @@ public function approved($id)
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to approved');
 }
 
-public function rejected($id)
+public function rejected(string $id, Request $request)
 {
     $this->authorize('manage_system');
+     $validated = $request->validate([
+        'reason' => 'nullable|string', // أو 'required' إذا كان السبب إجباريًا
+    ]);
 
     $hotelInvoice = HotelInvoice::find($id);
     if (!$hotelInvoice) {
@@ -440,6 +443,7 @@ public function rejected($id)
     }
 
     $hotelInvoice->invoiceStatus = 'rejected';
+    $hotelInvoice->reason = $validated['reason'] ?? null;
     // $hotelInvoice->subtotal = 0;
     // $hotelInvoice->total = 0;
     // $hotelInvoice->paidAmount = 0;
@@ -504,47 +508,6 @@ public function completed($id)
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to completed');
 }
 
-//     public function absence(string $id)
-// {
-//     $this->authorize('manage_system');
-
-//     $hotelInvoice = HotelInvoice::find($id);
-//     if (!$hotelInvoice) {
-//         return response()->json(['message' => "Hotel Invoice not found."], 404);
-//     }
-
-//     $oldData = $hotelInvoice->toArray();
-
-//     if ($hotelInvoice->invoiceStatus === 'absence') {
-//         $this->loadCommonRelations($hotelInvoice);
-//         return $this->respondWithResource($hotelInvoice, 'Hotel Invoice is already set to absence');
-//     }
-
-//     $hotelInvoice->invoiceStatus = 'absence';
-//     // $hotelInvoice->subtotal = 0;
-//     // $hotelInvoice->total = 0;
-//     // $hotelInvoice->paidAmount = 0;
-//     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-//     $hotelInvoice->creationDateHijri = $this->getHijriDate();
-//     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
-//     $hotelInvoice->updated_by_type = $this->getUpdatedByType();
-//     $hotelInvoice->save();
-
-//     //  $hotelInvoice->PilgrimsCount();
-//     // $hotelInvoice->calculateTotal();
-
-//     $metaForDiffOnly = [
-//         'creationDate' => $hotelInvoice->creationDate,
-//         'creationDateHijri' => $hotelInvoice->creationDateHijri,
-//     ];
-
-//     $changedData = $hotelInvoice->getChangedData($oldData, array_merge($hotelInvoice->fresh()->toArray(), $metaForDiffOnly));
-//     $hotelInvoice->changed_data = $changedData;
-//     $hotelInvoice->save();
-
-//     $this->loadCommonRelations($hotelInvoice);
-//     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to absence');
-// }
 
 
 public function absence(string $id, Request $request)
@@ -552,7 +515,7 @@ public function absence(string $id, Request $request)
     $this->authorize('manage_system');
 
     $validated = $request->validate([
-        'reason' => 'nullable|string|max:255', // يمكنك تعديل القواعد حسب احتياجاتك
+        'reason' => 'nullable|string', // يمكنك تعديل القواعد حسب احتياجاتك
     ]);
 
     $hotelInvoice = HotelInvoice::find($id);
@@ -584,7 +547,7 @@ public function absence(string $id, Request $request)
     $hotelInvoice->changed_data = $changedData;
     $hotelInvoice->save();
 
-    // $this->loadCommonRelations($hotelInvoice);
+
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to absence');
 }
 
