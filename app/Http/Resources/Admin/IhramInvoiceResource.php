@@ -55,6 +55,19 @@ class IhramInvoiceResource extends JsonResource
                 });
             }),
 
+            'ihramSupplies' => $this->ihramSupplies->map(function ($ihramSupply) {
+                    return [
+                        'id' => $ihramSupply->id,
+                        'name' => $ihramSupply->ihramItem->name,
+
+
+                        'sellingPrice' => $ihramSupply->sellingPrice,
+                        'quantity' => $ihramSupply->pivot->quantity,
+                        'total' => $ihramSupply->pivot->total,
+
+                    ];
+                }),
+
         ];
     }
 }

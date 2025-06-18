@@ -28,6 +28,7 @@ require __DIR__ . '/Apis/Admin/shipmentInvoice.php';
 require __DIR__ . '/Apis/Admin/busTrip.php';
 require __DIR__ . '/Apis/Admin/busInvoice.php';
 require __DIR__ . '/Apis/Admin/hotelInvoice.php';
+require __DIR__ . '/Apis/Admin/ihramInvoice.php';
 require __DIR__ . '/Apis/Admin/ihramItem.php';
 require __DIR__ . '/Apis/Admin/workerLogin.php';
 
