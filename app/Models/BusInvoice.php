@@ -75,7 +75,7 @@ class BusInvoice extends Model
     {
         return $this->belongsTo(PaymentMethodType::class);
     }
-    
+
 
            public function hotelInvoices()
     {
@@ -170,7 +170,6 @@ public function updater()
 
     protected $casts = [
     'changed_data' => 'array',
-    'incomplete_pilgrims'=>'array',
     'subtotal' => 'decimal:2',
     'discount' => 'decimal:2',
     'tax' => 'decimal:2',

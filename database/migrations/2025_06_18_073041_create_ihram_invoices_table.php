@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('ihram_invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bus_invoice_id')->nullable()->constrained('bus_invoices')->cascadeOnDelete();
+            $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->text('description')->nullable();
-            $table->unsignedBigInteger('invoiceProductCount')->default(0);
+            $table->unsignedBigInteger('ihramSuppliesCount')->default(0);
 
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);

@@ -22,7 +22,7 @@ class HotelInvoiceResource extends JsonResource
     ];
 }),
 
-            'invoiceNumber' => $this->invoiceNumber,
+            // 'invoiceNumber' => $this->invoiceNumber,
             'bus_invoice_id'=> $this ->busInvoice?->id,
             'bedPrice' => $this->hotel?->bedPrice ?? 0,
             'roomPrice' => $this->hotel?->roomPrice ?? 0,
@@ -56,7 +56,6 @@ class HotelInvoiceResource extends JsonResource
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
             'paymentStatus' => $this->paymentStatus,
-            'incomplete_pilgrims' => $this->incomplete_pilgrims,
             'creationDateHijri' => $this->creationDateHijri,
             'creationDate' => $this->creationDate,
             'changed_data' => $this->changed_data,

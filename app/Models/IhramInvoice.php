@@ -14,7 +14,7 @@ class IhramInvoice extends Model
         'bus_invoice_id',
         'payment_method_type_id',
         'main_pilgrim_id',
-        'productsCount',
+        'ihramSuppliesCount',
         'subtotal',
         'discount',
         'tax',
@@ -67,6 +67,13 @@ public function updater()
         ]);
 }
 
+public function ihramSupplies()
+{
+    return $this->belongsToMany(IhramSupply::class, 'ihram_invoice_supplies')
+                ->withPivot('quantity', 'price', 'creationDate',
+            'creationDateHijri', 'changed_data');
+}
+
     protected $casts = [
     'changed_data' => 'array',
     'subtotal' => 'decimal:2',
@@ -81,5 +88,35 @@ protected $attributes = [
     'invoiceStatus' => 'pending',
     'paymentStatus' => 'pending'
 ];
+
+
+    protected static function booted()
+{
+
+    static::created(function ($ihramInvoice) {
+        $ihramInvoice->load('ihramSupplies');
+        $ihramInvoice->updateIhramSuppliesCount();
+    });
+
+
+}
+
+public function calculateTotalPrice()
+{
+    $total = 0;
+
+    foreach ($this->ihramSupplies as $ihramSupply) {
+        $total += $ihramSupply->pivot->total;
+    }
+
+    return $total;
+}
+
+
+
+public function getIhramSuppliesCountAttribute()
+{
+    return $this->attributes['ihramSuppliesCount'] ?? 0;
+}
 
 }

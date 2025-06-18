@@ -6,14 +6,14 @@ use Illuminate\Http\Request;
 use App\Traits\AddedByResourceTrait;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BusInvoiceResource extends JsonResource
+class IhramInvoiceResource extends JsonResource
 {
     use AddedByResourceTrait;
     public function toArray(Request $request): array
     {
         return [
             "id" => $this->id,
-            'pilgrimsCount'=> $this ->pilgrimsCount,
+            "ihramSuppliesCount"=> $this->ihramSuppliesCount,
             'main_pilgrim' => $this->whenLoaded('mainPilgrim', function () {
     return [
         'id' => $this->mainPilgrim->id,
@@ -22,30 +22,19 @@ class BusInvoiceResource extends JsonResource
     ];
 }),
 
-            'invoiceNumber' => $this->invoiceNumber,
-            'pilgrimsCount'=> $this ->pilgrimsCount,
-            'bus_trip_id'=> $this ->busTrip?->id,
-            'seatPrice' => $this->busTrip?->bus?->seatPrice ?? 0,
-            'campaign_id' => $this->campaign?->id,
-            'campaign_name' => $this->campaign?->name,
-            'office_id' => $this->office?->id,
-            'office_name' => $this->office?->name,
-            'group_id' => $this->group?->id,
-            'group_num' => $this->group?->groupNum,
-            'worker_id' => $this->worker?->id,
-            'worker_name' => $this->worker?->name,
+            // 'invoiceNumber' => $this->invoiceNumber,
+            'bus_invoice_id'=> $this ->busInvoice?->id,
             'payment_method_type_id' => $this->paymentMethodType?->id,
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
+            'description'=> $this-> description,
 
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'tax' => $this->tax,
             'total' => $this->total,
             'paidAmount' => $this->paidAmount,
-            'bookedSeats' => $this->busTrip->bookedSeats ?? 0,
-            'availableSeats' => $this->busTrip->availableSeats ?? 0,
-            'cancelledSeats' => $this->busTrip->cancelledSeats ?? 0,
+
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
             'paymentStatus' => $this->paymentStatus,
@@ -59,20 +48,13 @@ class BusInvoiceResource extends JsonResource
                     return [
                         'id' => $pilgrim->id,
                         'name' => $pilgrim->name ?? '-',
-                        'seatNumber' => $pilgrim->pivot->seatNumber,
-                        'status' => $pilgrim->pivot->status,
-                        'type' => $pilgrim->pivot->type,
-                        'position' => $pilgrim->pivot->position,
                         'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->creationDateHijri),
                         'creationDate' => $pilgrim->pivot->creationDate,
 
                     ];
                 });
             }),
+
         ];
     }
-
-
-
-    }
-
+}
