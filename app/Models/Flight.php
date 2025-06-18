@@ -24,6 +24,7 @@ class Flight extends Model
         'DateTimeTrip',
         'DateTimeTripHijri',
         'quantity',
+        'ticketPrice',
         'sellingPrice',
         'purchesPrice',
         'profit',

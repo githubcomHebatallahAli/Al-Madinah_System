@@ -11,25 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hotel_invoices', function (Blueprint $table) {
+        Schema::create('ihram_invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bus_invoice_id')->nullable()->constrained('bus_invoices')->cascadeOnDelete();
-            $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
-            $table->foreignId('hotel_id')->constrained('hotels')->cascadeOnDelete();
-            $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
-            $table->unsignedBigInteger('pilgrimsCount')->default(0);
-            $table->enum('need', ['family','single']);
-            $table->enum('sleep', ['bed', 'room']);
-            $table->enum('bookingSource', ['MeccaCash','MeccaDelegate','office','otherOffice']);
-            $table->dateTime('checkInDate')->nullable();
-            $table->string('checkInDateHijri')->nullable();
-            $table->dateTime('checkOutDate')->nullable();
-            $table->string('checkOutDateHijri')->nullable();
-            $table->integer('numDay')->nullable();
-            $table->integer('roomNum')->nullable();
             $table->text('description')->nullable();
-
+            $table->unsignedBigInteger('invoiceProductCount')->default(0);
 
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
@@ -47,7 +34,6 @@ return new class extends Migration
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
-
             $table->timestamps();
         });
     }
@@ -57,6 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('hotel_invoices');
+        Schema::dropIfExists('ihram_invoices');
     }
 };

@@ -25,6 +25,7 @@ class FlightResource extends JsonResource
             // 'DateTimeTripHijri'=> $this->DateTimeTripHijri,
             'description' => $this->description,
             'quantity' => $this-> quantity,
+            
             'sellingPrice' => $this-> sellingPrice,
             'purchesPrice' => $this-> purchesPrice,
             'profit' => $this-> profit,

@@ -7,25 +7,14 @@ use App\Traits\TracksChangesTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class HotelInvoice extends Model
+class IhramInvoice extends Model
 {
-      use HasFactory, TracksChangesTrait,HijriDateTrait;
+       use HasFactory, TracksChangesTrait,HijriDateTrait;
         protected $fillable = [
-        'trip_id',
         'bus_invoice_id',
-        'main_pilgrim_id',
-        'hotel_id',
         'payment_method_type_id',
-        'pilgrimsCount',
-        'checkInDate',
-        'checkInDateHijri',
-        'checkOutDate',
-        'checkOutDateHijri',
-        'bookingSource',
-        'roomNum',
-        'need',
-        'sleep',
-        'numDay',
+        'main_pilgrim_id',
+        'productsCount',
         'subtotal',
         'discount',
         'tax',
@@ -41,23 +30,12 @@ class HotelInvoice extends Model
         'updated_by_type',
         ];
 
-            public function mainPilgrim()
+        public function mainPilgrim()
 {
     return $this->belongsTo(Pilgrim::class, 'main_pilgrim_id');
 }
 
-        public function trip()
-    {
-        return $this->belongsTo(Trip::class);
-    }
-
-        public function hotel()
-    {
-        return $this->belongsTo(Hotel::class);
-    }
-
-
-       public function busInvoice()
+      public function busInvoice()
     {
         return $this->belongsTo(BusInvoice::class);
     }
@@ -81,48 +59,13 @@ public function updater()
 
     public function pilgrims()
 {
-    return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims')
+    return $this->belongsToMany(Pilgrim::class, 'ihram_invoice_pilgrims')
         ->withPivot([
             'creationDate',
             'creationDateHijri',
             'changed_data',
         ]);
 }
-
-public function PilgrimsCount(): void
-{
-    $this->pilgrimsCount = $this->pilgrims()->count();
-    $this->save();
-}
-
-public function calculateTotal(): void
-{
-    if (!isset($this->pilgrimsCount)) {
-        $this->PilgrimsCount();
-    }
-
-    $bedPrice = $this->hotel->bedPrice ?? 0;
-    $roomPrice = $this->hotel->roomPrice ?? 0;
-    $numDays = $this->numDay ?? 1;
-
-
-    if ($this->sleep === 'room') {
-
-        $this->subtotal = $roomPrice * $numDays;
-    } else {
-
-        $this->subtotal = $bedPrice * $this->pilgrimsCount * $numDays;
-    }
-
-
-    $this->total = $this->subtotal
-                  - ($this->discount ?? 0)
-                  + ($this->tax ?? 0);
-
-    $this->save();
-}
-
-
 
     protected $casts = [
     'changed_data' => 'array',
@@ -131,12 +74,12 @@ public function calculateTotal(): void
     'tax' => 'decimal:2',
     'total' => 'decimal:2',
     'paidAmount' => 'decimal:2',
-    'bedPrice' => 'decimal:2',
-    'roomPrice' => 'decimal:2',
+
 ];
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
     'paymentStatus' => 'pending'
 ];
+
 }
