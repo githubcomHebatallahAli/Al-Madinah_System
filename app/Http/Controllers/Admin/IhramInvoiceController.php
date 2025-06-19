@@ -65,14 +65,14 @@ public function create(IhramInvoiceRequest $request)
                     ], 400);
                 }
 
-                // تقليل الكمية في المخزون
+
                 $supplyModel->decrement('quantity', $supply['quantity']);
 
                 if ($supplyModel->quantity === 0) {
                     $outOfStockSupplies[] = $supplyModel->ihramItem->name;
                 }
 
-                // حساب السعر الإجمالي باستخدام sellingPrice
+       
                 $totalPriceForSupply = $supplyModel->sellingPrice * $supply['quantity'];
                 $totalPrice += $totalPriceForSupply;
 

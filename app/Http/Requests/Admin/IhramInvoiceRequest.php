@@ -41,7 +41,7 @@ class IhramInvoiceRequest extends FormRequest
         'pilgrims.*.phoNum' => 'nullable|string',
 
         'ihramSupplies' => 'required|array',
-        'ihramSupplies.*.id' => 'required|exists:ihramSupplies,id',
+        'ihramSupplies.*.id' => 'required|exists:ihram_supplies,id',
         'ihramSupplies.*.quantity' => 'required|integer|min:1',
         ];
 
