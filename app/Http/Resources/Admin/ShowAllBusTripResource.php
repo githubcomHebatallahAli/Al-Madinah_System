@@ -19,6 +19,7 @@ class ShowAllBusTripResource extends JsonResource
             'bus_driver_id' => $this->busDriver?->id,
             'bus_driver_name' => $this->busDriver?->name,
             'travelDateHijri' => $this->travelDateHijri,
+            'creationDateHijri' => $this->creationDateHijri,
             'status' => $this->status,
             'creationDate' => $this->creationDate,
         ];
