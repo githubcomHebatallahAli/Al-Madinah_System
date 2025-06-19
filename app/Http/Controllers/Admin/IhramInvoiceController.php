@@ -36,7 +36,7 @@ public function create(IhramInvoiceRequest $request)
         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         'subtotal'   => 0,
         'total'      => 0,
-    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'supplies']), $this->prepareCreationMetaData());
+    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'ihramSupplies']), $this->prepareCreationMetaData());
 
     DB::beginTransaction();
     try {
@@ -47,7 +47,7 @@ public function create(IhramInvoiceRequest $request)
         $outOfStockSupplies = [];
 
         // معالجة المستلزمات
-        if ($request->has('supplies')) {
+        if ($request->has('ihramSupplies')) {
             foreach ($request->supplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
                 // التحقق من المخزون
