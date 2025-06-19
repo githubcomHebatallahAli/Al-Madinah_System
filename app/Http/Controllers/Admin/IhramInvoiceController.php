@@ -171,8 +171,8 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         $errors = [];
 
         // معالجة المستلزمات عند التحديث
-        if ($request->has('supplies')) {
-            foreach ($request->supplies as $supply) {
+        if ($request->has('ihramSupplies')) {
+            foreach ($request->ihramSupplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
                 $previousQuantity = $previousSupplies[$supply['id']] ?? 0;
                 $newQuantity = $supply['quantity'];
@@ -240,7 +240,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
             }
         }
 
-        if ($hasChanges || $request->has('supplies') || ($request->has('pilgrims') && isset($pilgrimsChanged) && $pilgrimsChanged)) {
+        if ($hasChanges || $request->has('ihramSupplies') || ($request->has('pilgrims') && isset($pilgrimsChanged) && $pilgrimsChanged)) {
             $ihramInvoice->update($data);
 
             $subtotal = $totalPrice;
