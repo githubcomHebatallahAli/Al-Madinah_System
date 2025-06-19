@@ -86,8 +86,6 @@ class IhramInvoiceController extends Controller
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
-
-
         $ihramInvoices = $query->with(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])->orderBy('created_at', 'desc')->get();
         $totalPaidAmount = IhramInvoice::sum('paidAmount');
 
