@@ -48,7 +48,7 @@ public function create(IhramInvoiceRequest $request)
 
         // معالجة المستلزمات
         if ($request->has('ihramSupplies')) {
-            foreach ($request->supplies as $supply) {
+            foreach ($request->ihramSupplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
                 // التحقق من المخزون
                 if ($supplyModel->quantity <= 0) {
