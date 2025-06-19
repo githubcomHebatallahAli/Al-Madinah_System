@@ -138,11 +138,26 @@ public function create(IhramInvoiceRequest $request)
     }
 }
 
+        public function edit(string $id)
+    {
+        $this->authorize('manage_system');
+
+        $ihramInvoice =IhramInvoice::with([
+          'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'
+    ])->find($id);
+
+        if (!$ihramInvoice) {
+            return response()->json(['message' => "Ihram Supplies Invoice not found."], 404);
+        }
+
+        return $this->respondWithResource($ihramInvoice, "Ihram Supplies Invoice retrieved for editing.");
+    }
+
 public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
 {
     $this->authorize('manage_system');
 
-    // لا يسمح بتعديل الفواتير المعتمدة أو المكتملة
+
     if (in_array($ihramInvoice->invoiceStatus, ['approved', 'completed'])) {
         return response()->json([
             'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
@@ -151,7 +166,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
 
     $oldData = $ihramInvoice->toArray();
 
-    // 🟠 حفظ بيانات البفوت القديمة للمستلزمات
+
     $oldPivotSupplies = $ihramInvoice->ihramSupplies->mapWithKeys(function ($supply) {
         return [
             $supply->id => [
@@ -162,7 +177,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         ];
     })->toArray();
 
-    // 🟠 حفظ بيانات البفوت القديمة للحجاج
+
     $oldPivotPilgrims = $ihramInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
         return [
             $pilgrim->id => [
@@ -185,7 +200,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         $suppliesData = [];
         $errors = [];
 
-        // ✅ التعامل مع المستلزمات
+
         if ($request->has('ihramSupplies')) {
             foreach ($request->ihramSupplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
@@ -224,7 +239,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
                 ], 400);
             }
 
-            // ✅ حساب التغيرات للمستلزمات
+
             $supplyPivotChanges = $this->getPivotChanges($oldPivotSupplies, $suppliesData);
             foreach ($supplyPivotChanges as $supplyId => $change) {
                 if (isset($suppliesData[$supplyId])) {
@@ -239,19 +254,19 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
             });
         }
 
-        // ✅ التعامل مع الحجاج
+
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($ihramInvoice, $request->bus_invoice_id);
         } elseif ($request->has('pilgrims')) {
             $pilgrimsChanged = $this->hasPilgrimsChanges($ihramInvoice, $request->pilgrims);
 
             if ($pilgrimsChanged) {
-                // ❗ تمرير بيانات pivot القديمة إلى دالة syncPilgrims لتسجيل التغييرات
+
                 $this->syncPilgrims($ihramInvoice, $request->pilgrims);
             }
         }
 
-        // ✅ التأكد من وجود تغيرات فعلية
+
         $hasChanges = false;
         foreach ($data as $key => $value) {
             if ($ihramInvoice->$key != $value) {
@@ -260,7 +275,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
             }
         }
 
-        // ✅ تحديث الفاتورة إن وجد تغيير
+
         if ($hasChanges || $request->has('ihramSupplies') || ($request->has('pilgrims') && isset($pilgrimsChanged) && $pilgrimsChanged)) {
             $ihramInvoice->update($data);
 
@@ -276,7 +291,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
 
             $ihramInvoice->updateIhramSuppliesCount();
 
-            // ✅ تسجيل التغيرات في جدول الفاتورة (الموديل نفسه)
+
             $changedData = $ihramInvoice->getChangedData($oldData, $ihramInvoice->fresh()->toArray());
             $ihramInvoice->changed_data = $changedData;
             $ihramInvoice->save();
