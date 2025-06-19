@@ -138,7 +138,6 @@ public function create(IhramInvoiceRequest $request)
     }
 }
 
-
 public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
 {
     $this->authorize('manage_system');
@@ -151,11 +150,27 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
     }
 
     $oldData = $ihramInvoice->toArray();
-    // جلب كميات المستلزمات السابقة من جدول pivot
-    $previousSupplies = $ihramInvoice->ihramSupplies()
-        ->select('ihram_supplies.id', 'ihram_invoice_supplies.quantity')
-        ->pluck('ihram_invoice_supplies.quantity', 'ihram_supplies.id')
-        ->toArray();
+
+    // 🟠 حفظ بيانات البفوت القديمة للمستلزمات
+    $oldPivotSupplies = $ihramInvoice->ihramSupplies->mapWithKeys(function ($supply) {
+        return [
+            $supply->id => [
+                'quantity' => $supply->pivot->quantity,
+                'price' => $supply->pivot->price,
+                'total' => $supply->pivot->total,
+            ],
+        ];
+    })->toArray();
+
+    // 🟠 حفظ بيانات البفوت القديمة للحجاج
+    $oldPivotPilgrims = $ihramInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
+        return [
+            $pilgrim->id => [
+                'creationDate' => $pilgrim->pivot->creationDate,
+                'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+            ],
+        ];
+    })->toArray();
 
     DB::beginTransaction();
     try {
@@ -170,39 +185,34 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         $suppliesData = [];
         $errors = [];
 
-        // معالجة المستلزمات عند التحديث
+        // ✅ التعامل مع المستلزمات
         if ($request->has('ihramSupplies')) {
             foreach ($request->ihramSupplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
-                $previousQuantity = $previousSupplies[$supply['id']] ?? 0;
+                $previousQuantity = $oldPivotSupplies[$supply['id']]['quantity'] ?? 0;
                 $newQuantity = $supply['quantity'];
 
                 if ($newQuantity > $previousQuantity) {
-                    $difference = $newQuantity - $previousQuantity;
-                    if ($difference > $supplyModel->quantity) {
+                    $diff = $newQuantity - $previousQuantity;
+                    if ($diff > $supplyModel->quantity) {
                         $errors[] = "الكمية غير كافية لـ'{$supplyModel->ihramItem->name}'. المتاح: {$supplyModel->quantity}";
                         continue;
                     }
-                    $supplyModel->decrement('quantity', $difference);
+                    $supplyModel->decrement('quantity', $diff);
                 } elseif ($newQuantity < $previousQuantity) {
-                    $difference = $previousQuantity - $newQuantity;
-                    $supplyModel->increment('quantity', $difference);
-                }
-
-                if ($supplyModel->quantity === 0) {
-                    $outOfStockSupplies[] = $supplyModel->ihramItem->name;
+                    $supplyModel->increment('quantity', $previousQuantity - $newQuantity);
                 }
 
                 $totalPriceForSupply = $supplyModel->sellingPrice * $newQuantity;
                 $totalPrice += $totalPriceForSupply;
 
                 $suppliesData[$supply['id']] = [
-                    'quantity'         => $newQuantity,
-                    'price'            => $supplyModel->sellingPrice,
-                    'total'            => $totalPriceForSupply,
-                    'creationDate'     => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    'creationDateHijri'=> $this->getHijriDate(),
-                    'changed_data'     => null
+                    'quantity' => $newQuantity,
+                    'price' => $supplyModel->sellingPrice,
+                    'total' => $totalPriceForSupply,
+                    'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                    'creationDateHijri' => $this->getHijriDate(),
+                    'changed_data' => null
                 ];
             }
 
@@ -214,6 +224,14 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
                 ], 400);
             }
 
+            // ✅ حساب التغيرات للمستلزمات
+            $supplyPivotChanges = $this->getPivotChanges($oldPivotSupplies, $suppliesData);
+            foreach ($supplyPivotChanges as $supplyId => $change) {
+                if (isset($suppliesData[$supplyId])) {
+                    $suppliesData[$supplyId]['changed_data'] = json_encode($change, JSON_UNESCAPED_UNICODE);
+                }
+            }
+
             $ihramInvoice->ihramSupplies()->sync($suppliesData);
         } else {
             $totalPrice = $ihramInvoice->ihramSupplies->sum(function($supply) {
@@ -221,17 +239,19 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
             });
         }
 
-        // معالجة بيانات الحجاج في التحديث:
+        // ✅ التعامل مع الحجاج
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($ihramInvoice, $request->bus_invoice_id);
         } elseif ($request->has('pilgrims')) {
             $pilgrimsChanged = $this->hasPilgrimsChanges($ihramInvoice, $request->pilgrims);
+
             if ($pilgrimsChanged) {
+                // ❗ تمرير بيانات pivot القديمة إلى دالة syncPilgrims لتسجيل التغييرات
                 $this->syncPilgrims($ihramInvoice, $request->pilgrims);
             }
         }
 
-        // التأكد من وجود أي تغييرات إضافية في بيانات الفاتورة
+        // ✅ التأكد من وجود تغيرات فعلية
         $hasChanges = false;
         foreach ($data as $key => $value) {
             if ($ihramInvoice->$key != $value) {
@@ -240,6 +260,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
             }
         }
 
+        // ✅ تحديث الفاتورة إن وجد تغيير
         if ($hasChanges || $request->has('ihramSupplies') || ($request->has('pilgrims') && isset($pilgrimsChanged) && $pilgrimsChanged)) {
             $ihramInvoice->update($data);
 
@@ -250,11 +271,12 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
 
             $ihramInvoice->update([
                 'subtotal' => $subtotal,
-                'total'    => $total
+                'total' => $total
             ]);
 
             $ihramInvoice->updateIhramSuppliesCount();
 
+            // ✅ تسجيل التغيرات في جدول الفاتورة (الموديل نفسه)
             $changedData = $ihramInvoice->getChangedData($oldData, $ihramInvoice->fresh()->toArray());
             $ihramInvoice->changed_data = $changedData;
             $ihramInvoice->save();
@@ -265,10 +287,10 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         $response = [
             'data'       => new IhramInvoiceResource($ihramInvoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
             'message'    => 'تم تحديث فاتورة مستلزمات الإحرام بنجاح',
-            'subtotal'   => $subtotal,
-            'discount'   => $discount,
-            'tax'        => $tax,
-            'total'      => $total,
+            'subtotal'   => $subtotal ?? $ihramInvoice->subtotal,
+            'discount'   => $discount ?? $ihramInvoice->discount,
+            'tax'        => $tax ?? $ihramInvoice->tax,
+            'total'      => $total ?? $ihramInvoice->total,
             'paidAmount' => $ihramInvoice->paidAmount,
         ];
 
@@ -280,10 +302,158 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json([
-            'message' => 'فشل في تحديث فاتورة مستلزمات الإحرام: ' . $e->getMessage()
+            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()
         ], 500);
     }
 }
+
+
+
+// public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
+// {
+//     $this->authorize('manage_system');
+
+//     // لا يسمح بتعديل الفواتير المعتمدة أو المكتملة
+//     if (in_array($ihramInvoice->invoiceStatus, ['approved', 'completed'])) {
+//         return response()->json([
+//             'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+//         ], 422);
+//     }
+
+//     $oldData = $ihramInvoice->toArray();
+//     // جلب كميات المستلزمات السابقة من جدول pivot
+//     $previousSupplies = $ihramInvoice->ihramSupplies()
+//         ->select('ihram_supplies.id', 'ihram_invoice_supplies.quantity')
+//         ->pluck('ihram_invoice_supplies.quantity', 'ihram_supplies.id')
+//         ->toArray();
+
+//     DB::beginTransaction();
+//     try {
+//         $data = array_merge([
+//             'discount'   => $this->ensureNumeric($request->input('discount')),
+//             'tax'        => $this->ensureNumeric($request->input('tax')),
+//             'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+//         ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'ihramSupplies']), $this->prepareUpdateMetaData());
+
+//         $totalPrice = 0;
+//         $outOfStockSupplies = [];
+//         $suppliesData = [];
+//         $errors = [];
+
+//         // معالجة المستلزمات عند التحديث
+//         if ($request->has('ihramSupplies')) {
+//             foreach ($request->ihramSupplies as $supply) {
+//                 $supplyModel = IhramSupply::find($supply['id']);
+//                 $previousQuantity = $previousSupplies[$supply['id']] ?? 0;
+//                 $newQuantity = $supply['quantity'];
+
+//                 if ($newQuantity > $previousQuantity) {
+//                     $difference = $newQuantity - $previousQuantity;
+//                     if ($difference > $supplyModel->quantity) {
+//                         $errors[] = "الكمية غير كافية لـ'{$supplyModel->ihramItem->name}'. المتاح: {$supplyModel->quantity}";
+//                         continue;
+//                     }
+//                     $supplyModel->decrement('quantity', $difference);
+//                 } elseif ($newQuantity < $previousQuantity) {
+//                     $difference = $previousQuantity - $newQuantity;
+//                     $supplyModel->increment('quantity', $difference);
+//                 }
+
+//                 if ($supplyModel->quantity === 0) {
+//                     $outOfStockSupplies[] = $supplyModel->ihramItem->name;
+//                 }
+
+//                 $totalPriceForSupply = $supplyModel->sellingPrice * $newQuantity;
+//                 $totalPrice += $totalPriceForSupply;
+
+//                 $suppliesData[$supply['id']] = [
+//                     'quantity'         => $newQuantity,
+//                     'price'            => $supplyModel->sellingPrice,
+//                     'total'            => $totalPriceForSupply,
+//                     'creationDate'     => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//                     'creationDateHijri'=> $this->getHijriDate(),
+//                     'changed_data'     => null
+//                 ];
+//             }
+
+//             if (!empty($errors)) {
+//                 DB::rollBack();
+//                 return response()->json([
+//                     'message' => 'حدثت أخطاء أثناء تحديث الفاتورة',
+//                     'errors'  => $errors,
+//                 ], 400);
+//             }
+
+//             $ihramInvoice->ihramSupplies()->sync($suppliesData);
+//         } else {
+//             $totalPrice = $ihramInvoice->ihramSupplies->sum(function($supply) {
+//                 return $supply->pivot->quantity * $supply->pivot->price;
+//             });
+//         }
+
+//         // معالجة بيانات الحجاج في التحديث:
+//         if ($request->filled('bus_invoice_id')) {
+//             $this->attachBusPilgrims($ihramInvoice, $request->bus_invoice_id);
+//         } elseif ($request->has('pilgrims')) {
+//             $pilgrimsChanged = $this->hasPilgrimsChanges($ihramInvoice, $request->pilgrims);
+//             if ($pilgrimsChanged) {
+//                 $this->syncPilgrims($ihramInvoice, $request->pilgrims);
+//             }
+//         }
+
+//         // التأكد من وجود أي تغييرات إضافية في بيانات الفاتورة
+//         $hasChanges = false;
+//         foreach ($data as $key => $value) {
+//             if ($ihramInvoice->$key != $value) {
+//                 $hasChanges = true;
+//                 break;
+//             }
+//         }
+
+//         if ($hasChanges || $request->has('ihramSupplies') || ($request->has('pilgrims') && isset($pilgrimsChanged) && $pilgrimsChanged)) {
+//             $ihramInvoice->update($data);
+
+//             $subtotal = $totalPrice;
+//             $discount = $ihramInvoice->discount;
+//             $tax = $ihramInvoice->tax;
+//             $total = $subtotal - $discount + $tax;
+
+//             $ihramInvoice->update([
+//                 'subtotal' => $subtotal,
+//                 'total'    => $total
+//             ]);
+
+//             $ihramInvoice->updateIhramSuppliesCount();
+
+//             $changedData = $ihramInvoice->getChangedData($oldData, $ihramInvoice->fresh()->toArray());
+//             $ihramInvoice->changed_data = $changedData;
+//             $ihramInvoice->save();
+//         }
+
+//         DB::commit();
+
+//         $response = [
+//             'data'       => new IhramInvoiceResource($ihramInvoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
+//             'message'    => 'تم تحديث فاتورة مستلزمات الإحرام بنجاح',
+//             'subtotal'   => $subtotal,
+//             'discount'   => $discount,
+//             'tax'        => $tax,
+//             'total'      => $total,
+//             'paidAmount' => $ihramInvoice->paidAmount,
+//         ];
+
+//         if (!empty($outOfStockSupplies)) {
+//             $response['warning'] = "المستلزمات التالية نفدت من المخزون: " . implode(', ', $outOfStockSupplies);
+//         }
+
+//         return response()->json($response);
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return response()->json([
+//             'message' => 'فشل في تحديث فاتورة مستلزمات الإحرام: ' . $e->getMessage()
+//         ], 500);
+//     }
+// }
 
 
         protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
@@ -373,6 +543,16 @@ protected function syncPilgrims(IhramInvoice $invoice, array $pilgrims)
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
 
+    // 🟠 حفظ بيانات البفوت القديمة قبل التعديل
+    $oldPivotPilgrims = $invoice->pilgrims->mapWithKeys(function ($pilgrim) {
+        return [
+            $pilgrim->id => [
+                'creationDate' => $pilgrim->pivot->creationDate,
+                'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+            ],
+        ];
+    })->toArray();
+
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
         $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
@@ -380,12 +560,22 @@ protected function syncPilgrims(IhramInvoice $invoice, array $pilgrims)
         $pilgrimsData[$p->id] = [
             'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
             'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
-            'changed_data' => null
+            'changed_data' => null, // هيتحدث لاحقًا
         ];
+    }
+
+    // 🟢 تنفيذ منطق التغيير وتسجيل الفرق
+    $pivotChanges = $this->getPivotChanges($oldPivotPilgrims, $pilgrimsData);
+
+    foreach ($pivotChanges as $pilgrimId => $change) {
+        if (isset($pilgrimsData[$pilgrimId])) {
+            $pilgrimsData[$pilgrimId]['changed_data'] = json_encode($change, JSON_UNESCAPED_UNICODE);
+        }
     }
 
     $invoice->pilgrims()->sync($pilgrimsData);
 }
+
 protected function hasPilgrimsChanges(IhramInvoice $invoice, array $newPilgrims): bool
 {
     $currentPilgrims = $invoice->pilgrims()->pluck('pilgrims.id')->toArray();
