@@ -16,6 +16,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\IhramInvoiceRequest;
 use App\Http\Resources\Admin\IhramInvoiceResource;
+use App\Http\Resources\Admin\ShowAllIhramInvoiceResource;
 
 class IhramInvoiceController extends Controller
 {
@@ -25,6 +26,80 @@ class IhramInvoiceController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
+
+            public function showAllWithPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $query = IhramInvoice::query();
+
+             if ($request->filled('bus_invoice_id')) {
+            $query->where('bus_invoice_id', $request->bus_invoice_id);
+        }
+
+
+        if ($request->filled('paymentStatus')) {
+            $query->where('paymentStatus', $request->paymentStatus);
+        }
+
+        if ($request->filled('invoiceStatus')) {
+            $query->where('invoiceStatus', $request->invoiceStatus);
+        }
+
+        $ihramInvoices = $query->with(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])->orderBy('created_at', 'desc')->paginate(10);
+        $totalPaidAmount = IhramInvoice::sum('paidAmount');
+
+        return response()->json([
+            'data' => ShowAllIhramInvoiceResource::collection($ihramInvoices),
+             'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+        ],
+            'pagination' => [
+                'total' => $ihramInvoices->total(),
+                'count' => $ihramInvoices->count(),
+                'per_page' => $ihramInvoices->perPage(),
+                'current_page' => $ihramInvoices->currentPage(),
+                'total_pages' => $ihramInvoices->lastPage(),
+                'next_page_url' => $ihramInvoices->nextPageUrl(),
+                'prev_page_url' => $ihramInvoices->previousPageUrl(),
+            ],
+            'message' => "Show All Ihram Invoices."
+        ]);
+    }
+
+    public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_system');
+
+        $query = IhramInvoice::query();
+
+        if ($request->filled('bus_invoice_id')) {
+            $query->where('bus_invoice_id', $request->bus_invoice_id);
+        }
+
+
+          if ($request->filled('paymentStatus')) {
+            $query->where('paymentStatus', $request->paymentStatus);
+        }
+
+        if ($request->filled('invoiceStatus')) {
+            $query->where('invoiceStatus', $request->invoiceStatus);
+        }
+
+
+
+        $ihramInvoices = $query->with(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])->orderBy('created_at', 'desc')->get();
+        $totalPaidAmount = IhramInvoice::sum('paidAmount');
+
+        return response()->json([
+            'data' => ShowAllIhramInvoiceResource::collection($ihramInvoices),
+             'statistics' => [
+            'paid_amount' => $totalPaidAmount,
+
+        ],
+            'message' => "Show All Ihram Invoices."
+        ]);
+    }
 
 public function create(IhramInvoiceRequest $request)
 {
@@ -40,17 +115,17 @@ public function create(IhramInvoiceRequest $request)
 
     DB::beginTransaction();
     try {
-        // إنشاء الفاتورة بدون ارتباط أولي للحجاج أو المستلزمات
+
         $invoice = IhramInvoice::create($data);
 
         $totalPrice = 0;
         $outOfStockSupplies = [];
 
-        // معالجة المستلزمات
+
         if ($request->has('ihramSupplies')) {
             foreach ($request->ihramSupplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
-                // التحقق من المخزون
+
                 if ($supplyModel->quantity <= 0) {
                     DB::rollBack();
                     return response()->json([
@@ -76,7 +151,6 @@ public function create(IhramInvoiceRequest $request)
                 $totalPriceForSupply = $supplyModel->sellingPrice * $supply['quantity'];
                 $totalPrice += $totalPriceForSupply;
 
-                // ربط المستلزمات مع الفاتورة عبر جدول pivot مع تمرير البيانات اللازمة
                 $invoice->ihramSupplies()->attach($supply['id'], [
                     'quantity'         => $supply['quantity'],
                     'price'            => $supplyModel->sellingPrice,
@@ -88,23 +162,22 @@ public function create(IhramInvoiceRequest $request)
             }
         }
 
-        // تطبيق منطق الحجاج:
-        // 1. إذا تم إرسال bus_invoice_id نستخدم بيانات الحجاج من فاتورة الباص
+
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
-        // 2. وإن لم تكن موجودة بيانات فاتورة باص فيقوم النظام بإرفاق الحجاج المرسلة في الطلب
+
         elseif ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-        // حساب الحسابات النهائية
+
         $subtotal = $totalPrice;
         $discount = $invoice->discount;
         $tax = $invoice->tax;
         $total = $subtotal - $discount + $tax;
 
-        // تحديث الفاتورة بعد حساب الحسابات النهائية
+
         $invoice->update([
             'subtotal'      => $subtotal,
             'total'         => $total,
