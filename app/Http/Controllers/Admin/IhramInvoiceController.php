@@ -108,7 +108,7 @@ public function create(IhramInvoiceRequest $request)
         $invoice->update([
             'subtotal'      => $subtotal,
             'total'         => $total,
-    
+
         ]);
 
         $invoice->updateIhramSuppliesCount();
@@ -116,7 +116,7 @@ public function create(IhramInvoiceRequest $request)
         DB::commit();
 
         $response = [
-            'data'      => new IhramInvoiceResource($invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
+            'data'      => new IhramInvoiceResource($invoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
             'message'   => 'تم إنشاء فاتورة مستلزمات الإحرام بنجاح',
             'subtotal'  => $subtotal,
             'discount'  => $discount,
