@@ -323,14 +323,14 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
             'item_type' => $this->getMorphClass($item['item_type']),
             'quantity'  => (float) $item['quantity'],
             'unitPrice' => (float) $item['unitPrice'],
-            'rentalStart'          => $item->rentalStart,
-            'rentalEnd'            => $item->rentalEnd,
-            'rentalStartHijri'     => $item->rentalStartHijri,
-            'rentalEndHijri'       => $item->rentalEndHijri,
-            'DateTimeTripHijri'    => $item->DateTimeTripHijri,
-            'DateTimeTrip'         => $item->DateTimeTrip,
-            'seatNum'              => $item->seatNum,
-            'class'                => $item->class,
+             'rentalStart'          => $item['rentalStart'] ?? null,
+        'rentalEnd'            => $item['rentalEnd'] ?? null,
+        'rentalStartHijri'     => $item['rentalStartHijri'] ?? null,
+        'rentalEndHijri'       => $item['rentalEndHijri'] ?? null,
+        'DateTimeTripHijri'    => $item['DateTimeTripHijri'] ?? null,
+        'DateTimeTrip'         => $item['DateTimeTrip'] ?? null,
+        'seatNum'              => $item['seatNum'] ?? null,
+        'class'                => $item['class'] ?? null,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
 

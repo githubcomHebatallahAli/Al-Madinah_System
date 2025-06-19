@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class IhramSupply extends Model
 {
+    protected $table = 'ihram_supplies';
         use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
         'added_by',
