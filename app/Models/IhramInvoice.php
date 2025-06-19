@@ -112,6 +112,12 @@ public function calculateTotalPrice()
     return $total;
 }
 
+public function updateIhramSuppliesCount()
+{
+    $this->ihramSuppliesCount = $this->ihramSupplies()->count();
+    $this->save();
+}
+
 
 
 public function getIhramSuppliesCountAttribute()
