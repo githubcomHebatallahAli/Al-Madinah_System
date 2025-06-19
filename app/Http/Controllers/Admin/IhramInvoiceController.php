@@ -72,7 +72,7 @@ public function create(IhramInvoiceRequest $request)
                     $outOfStockSupplies[] = $supplyModel->ihramItem->name;
                 }
 
-       
+
                 $totalPriceForSupply = $supplyModel->sellingPrice * $supply['quantity'];
                 $totalPrice += $totalPriceForSupply;
 
@@ -108,7 +108,7 @@ public function create(IhramInvoiceRequest $request)
         $invoice->update([
             'subtotal'      => $subtotal,
             'total'         => $total,
-            'paymentStatus' => $invoice->paidAmount >= $total ? 'paid' : 'pending'
+    
         ]);
 
         $invoice->updateIhramSuppliesCount();
