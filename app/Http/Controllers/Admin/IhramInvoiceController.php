@@ -163,7 +163,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
             'discount'   => $this->ensureNumeric($request->input('discount')),
             'tax'        => $this->ensureNumeric($request->input('tax')),
             'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
-        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'supplies']), $this->prepareUpdateMetaData());
+        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims', 'ihramSupplies']), $this->prepareUpdateMetaData());
 
         $totalPrice = 0;
         $outOfStockSupplies = [];
@@ -263,7 +263,7 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         DB::commit();
 
         $response = [
-            'data'       => new IhramInvoiceResource($ihramInvoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
+            'data'       => new IhramInvoiceResource($ihramInvoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
             'message'    => 'تم تحديث فاتورة مستلزمات الإحرام بنجاح',
             'subtotal'   => $subtotal,
             'discount'   => $discount,
