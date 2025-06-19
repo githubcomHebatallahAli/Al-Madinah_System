@@ -27,7 +27,7 @@ class BusTripRequest extends FormRequest
         'bus_id' =>'required|exists:buses,id',
         'trip_id'=>'required|exists:trips,id',
         'bus_driver_id'=>'required|exists:bus_drivers,id',
-        'travelDate'=>'nullable|date_format:Y-m-d H:i:s',
+        'travelDate'=>'nullable|date_format:Y-m-d H:i',
         'travelDateHijri'=>'nullable|string',
         'status' => 'nullable|in:active,notActive',
         'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
