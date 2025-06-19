@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('ihram_supply_id')->constrained('ihram_supplies')->cascadeOnDelete();
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('total', 15, 2);
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
