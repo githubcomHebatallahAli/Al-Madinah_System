@@ -141,6 +141,31 @@ public function update(BusTripRequest $request, string $id)
     $BusTrip->update($updateData);
 
     $changedData = $BusTrip->getChangedData($oldData, $BusTrip->fresh()->toArray());
+
+    // إضافة رقم الباص لو bus_id اتغير
+if (isset($changedData['bus_id'])) {
+    $oldBus = \App\Models\Bus::find($changedData['bus_id']['old']);
+    $newBus = \App\Models\Bus::find($changedData['bus_id']['new']);
+
+    $changedData['busNum'] = [
+        'old' => optional($oldBus)->busNum,
+        'new' => optional($newBus)->busNum,
+    ];
+}
+
+// إضافة اسم السائق لو bus_driver_id اتغير
+if (isset($changedData['bus_driver_id'])) {
+    $oldDriver = \App\Models\BusDriver::find($changedData['bus_driver_id']['old']);
+    $newDriver = \App\Models\BusDriver::find($changedData['bus_driver_id']['new']);
+
+    $changedData['bus_driver_name'] = [
+        'old' => optional($oldDriver)->name,
+        'new' => optional($newDriver)->name,
+    ];
+}
+
+
+
     $BusTrip->changed_data = $changedData;
     $BusTrip->save();
 

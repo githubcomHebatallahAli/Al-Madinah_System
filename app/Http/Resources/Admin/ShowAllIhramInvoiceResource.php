@@ -11,11 +11,9 @@ class ShowAllIhramInvoiceResource extends JsonResource
     public function toArray(Request $request): array
     {
 
-                 return [
+        return [
             "id" => $this->id,
             "ihramSuppliesCount"=> $this->ihramSuppliesCount,
-  
-
 
             'bus_invoice_id'=> $this ->busInvoice?->id,
             'payment_method_type_id' => $this->paymentMethodType?->id,

@@ -79,5 +79,15 @@ class Pilgrim extends Model
         ]);
 }
 
+    public function flightInvoices()
+{
+    return $this->belongsToMany(Pilgrim::class, 'flight_invoice_pilgrims')
+        ->withPivot([
+            'creationDate',
+            'creationDateHijri',
+            'changed_data',
+        ]);
+}
+
 
 }
