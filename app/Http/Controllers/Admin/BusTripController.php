@@ -164,8 +164,7 @@ if (isset($changedData['bus_driver_id'])) {
     ];
 }
 
-
-
+ 
     $BusTrip->changed_data = $changedData;
     $BusTrip->save();
 
