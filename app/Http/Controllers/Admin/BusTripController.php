@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Bus;
 use App\Models\BusTrip;
+use App\Models\BusDriver;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
 use App\Traits\HandleAddedByTrait;
@@ -99,7 +100,7 @@ public function showAllWithoutPaginate(Request $request)
     {
         $this->authorize('manage_system');
         $data = array_merge($request->only([
-            'bus_id', 'trip_id','bus_driver_id','travelDate','travelDateHijri'
+            'bus_id', 'trip_id','bus_driver_id','travelDate'
 
         ]), $this->prepareCreationMetaData());
 
@@ -118,7 +119,7 @@ public function update(BusTripRequest $request, string $id)
     $BusTrip = BusTrip::findOrFail($id);
     $oldData = $BusTrip->toArray();
 
-    $updateData = $request->only(['bus_id','trip_id','bus_driver_id','travelDate','travelDateHijri','status']);
+    $updateData = $request->only(['bus_id','trip_id','bus_driver_id','travelDate','status']);
 
     $updateData = array_merge(
         $updateData,
@@ -142,10 +143,10 @@ public function update(BusTripRequest $request, string $id)
 
     $changedData = $BusTrip->getChangedData($oldData, $BusTrip->fresh()->toArray());
 
-    // إضافة رقم الباص لو bus_id اتغير
+
 if (isset($changedData['bus_id'])) {
-    $oldBus = \App\Models\Bus::find($changedData['bus_id']['old']);
-    $newBus = \App\Models\Bus::find($changedData['bus_id']['new']);
+    $oldBus = Bus::find($changedData['bus_id']['old']);
+    $newBus = Bus::find($changedData['bus_id']['new']);
 
     $changedData['busNum'] = [
         'old' => optional($oldBus)->busNum,
@@ -155,8 +156,8 @@ if (isset($changedData['bus_id'])) {
 
 // إضافة اسم السائق لو bus_driver_id اتغير
 if (isset($changedData['bus_driver_id'])) {
-    $oldDriver = \App\Models\BusDriver::find($changedData['bus_driver_id']['old']);
-    $newDriver = \App\Models\BusDriver::find($changedData['bus_driver_id']['new']);
+    $oldDriver = BusDriver::find($changedData['bus_driver_id']['old']);
+    $newDriver = BusDriver::find($changedData['bus_driver_id']['new']);
 
     $changedData['bus_driver_name'] = [
         'old' => optional($oldDriver)->name,
@@ -164,7 +165,7 @@ if (isset($changedData['bus_driver_id'])) {
     ];
 }
 
- 
+
     $BusTrip->changed_data = $changedData;
     $BusTrip->save();
 

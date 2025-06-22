@@ -20,29 +20,23 @@ trait HijriDateTrait
     //     return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$now->format('H:i:s')}";
     // }
 
-public function getHijriDate($date = null)
-{
-    $date = $date
-        ? \Carbon\Carbon::parse($date)->timezone('Asia/Riyadh')
-        : now()->timezone('Asia/Riyadh');
+        public function getHijriDate($date = null)
+    {
+        $date = $date
+            ? Carbon::parse($date)->timezone('Asia/Riyadh')
+            : now()->timezone('Asia/Riyadh');
 
-    $response = Http::get('https://api.aladhan.com/v1/gToH', [
-        'date' => $date->format('d-m-Y'),
-    ]);
+        $response = Http::get('https://api.aladhan.com/v1/gToH', [
+            'date' => $date->format('d-m-Y'),
+        ]);
 
-    if ($response->ok() && isset($response['data']['hijri'])) {
-        $hijri = $response['data']['hijri'];
+        if ($response->ok() && isset($response['data']['hijri'])) {
+            $hijri = $response['data']['hijri'];
 
-        $weekday = mb_convert_encoding($hijri['weekday']['ar'], 'UTF-8', 'UTF-8');
-        $day     = $hijri['day'];
-        $month   = mb_convert_encoding($hijri['month']['ar'], 'UTF-8', 'UTF-8');
-        $year    = $hijri['year'];
+            return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$date->format('H:i:s')}";
+        }
 
-        return "{$weekday} {$day} {$month} {$year} - {$date->format('H:i:s')}";
+        return null;
     }
-
-    return null;
-}
-
 
 }
