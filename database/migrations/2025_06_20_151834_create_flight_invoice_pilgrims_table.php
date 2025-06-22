@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('flight_invoice_id')->constrained('flight_invoices')->cascadeOnDelete();
             $table->foreignId('pilgrim_id')->constrained('pilgrims')->cascadeOnDelete();
+            $table->string('seatNumber');
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();

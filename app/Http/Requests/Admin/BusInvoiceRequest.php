@@ -23,7 +23,7 @@ class BusInvoiceRequest extends FormRequest
         'office_id'=>'required|exists:offices,id',
         'group_id'=>'nullable|exists:groups,id',
         'worker_id'=>'nullable|exists:workers,id',
-        'payment_method_type_id'=>'required|exists:payment_method_types,id',
+        'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
 
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',

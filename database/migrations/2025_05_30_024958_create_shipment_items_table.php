@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
             $table->decimal('unitPrice', 15, 2);
             $table->decimal('totalPrice', 15, 2)->nullable();
+            $table->enum('roomType', ['single', 'double','triple','quad','suite'])->nullable();
             $table->dateTime('rentalStart')->nullable();
             $table->dateTime('rentalEnd')->nullable();
             $table->string('rentalStartHijri')->nullable();

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
             $table->foreignId('hotel_id')->nullable()->constrained('hotels')->cascadeOnDelete();
-            $table->foreignId('flight_id')->nullable()->constrained('flights')->cascadeOnDelete();
+            $table->foreignId('flight_id')->constrained('flights')->cascadeOnDelete();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
@@ -23,12 +23,12 @@ return new class extends Migration
 
             $table->text('description')->nullable();
 
-
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
+            $table->decimal('ticketPrice', 10, 2);
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
