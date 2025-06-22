@@ -21,7 +21,7 @@ class BusInvoiceRequest extends FormRequest
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
         'campaign_id'=>'nullable|exists:campaigns,id',
         'office_id'=>'required|exists:offices,id',
-        'group_id'=>'required|exists:groups,id',
+        'group_id'=>'nullable|exists:groups,id',
         'worker_id'=>'nullable|exists:workers,id',
         'payment_method_type_id'=>'required|exists:payment_method_types,id',
 
