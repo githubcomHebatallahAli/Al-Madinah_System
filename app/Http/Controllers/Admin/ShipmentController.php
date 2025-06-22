@@ -282,23 +282,44 @@ public function create(ShipmentRequest $request)
                 $itemTotal = $item['quantity'] * $item['unitPrice'];
                 $total += $itemTotal;
 
+                $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
+                $rentalEndHijri   = $item['rentalEnd']   ? $this->getHijriDate($item['rentalEnd'])   : null;
+                $tripDateHijri    = $item['DateTimeTrip']? $this->getHijriDate($item['DateTimeTrip']) : null;
+
         ShipmentItem::create([
-        'shipment_id' => $shipment->id,
-        'item_id'     => $item['item_id'],
-        'item_type'   => $this->getMorphClass($item['item_type']),
-        'quantity'    => $item['quantity'],
-        'unitPrice'   => $item['unitPrice'],
-        'totalPrice'  => $itemTotal,
-        'rentalStart'     => $item['rentalStart'] ?? null,
-        'rentalEnd'       => $item['rentalEnd'] ?? null,
-        'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
-        'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
-        'DateTimeTripHijri'=> $item['DateTimeTripHijri'] ?? null,
-        'DateTimeTrip'=>$item['DateTimeTrip'] ?? null,
-        'seatNum'=>$item['seatNum'] ?? null,
-        'class'=>$item['class'] ?? null,
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
+        // 'shipment_id' => $shipment->id,
+        // 'item_id'     => $item['item_id'],
+        // 'item_type'   => $this->getMorphClass($item['item_type']),
+        // 'quantity'    => $item['quantity'],
+        // 'unitPrice'   => $item['unitPrice'],
+        // 'totalPrice'  => $itemTotal,
+        // 'rentalStart'     => $item['rentalStart'] ?? null,
+        // 'rentalEnd'       => $item['rentalEnd'] ?? null,
+        // 'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
+        // 'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
+        // 'DateTimeTripHijri'=> $item['DateTimeTripHijri'] ?? null,
+        // 'DateTimeTrip'=>$item['DateTimeTrip'] ?? null,
+        // 'seatNum'=>$item['seatNum'] ?? null,
+        // 'class'=>$item['class'] ?? null,
+        // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        // 'creationDateHijri' => $this->getHijriDate(),
+
+                'shipment_id'         => $shipment->id,
+                    'item_id'             => $item['item_id'],
+                    'item_type'           => $this->getMorphClass($item['item_type']),
+                    'quantity'            => $item['quantity'],
+                    'unitPrice'           => $item['unitPrice'],
+                    'totalPrice'          => $itemTotal,
+                    'rentalStart'         => $item['rentalStart'] ?? null,
+                    'rentalEnd'           => $item['rentalEnd'] ?? null,
+                    'rentalStartHijri'    => $rentalStartHijri,
+                    'rentalEndHijri'      => $rentalEndHijri,
+                    'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
+                    'DateTimeTripHijri'   => $tripDateHijri,
+                    'seatNum'             => $item['seatNum'] ?? null,
+                    'class'               => $item['class'] ?? null,
+                    'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                    'creationDateHijri'   => $this->getHijriDate(),
                 ]);
             }
 
