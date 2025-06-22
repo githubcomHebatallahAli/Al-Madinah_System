@@ -104,6 +104,8 @@ public function showAllWithoutPaginate(Request $request)
 
         ]), $this->prepareCreationMetaData());
 
+         $data['travelDateHijri'] = $this->getHijriDate($request->travelDate);
+
            $bus = Bus::findOrFail($request->bus_id);
     $data['seatMap'] = $bus->seatMap ?? [];
 
@@ -121,6 +123,10 @@ public function update(BusTripRequest $request, string $id)
 
     $updateData = $request->only(['bus_id','trip_id','bus_driver_id','travelDate','status']);
 
+     if ($request->filled('travelDate')) {
+        $updateData['travelDateHijri'] = $this->getHijriDate($request->travelDate);
+    }
+    
     $updateData = array_merge(
         $updateData,
         $this->prepareUpdateMeta($request, $BusTrip->status)
@@ -154,7 +160,7 @@ if (isset($changedData['bus_id'])) {
     ];
 }
 
-// إضافة اسم السائق لو bus_driver_id اتغير
+
 if (isset($changedData['bus_driver_id'])) {
     $oldDriver = BusDriver::find($changedData['bus_driver_id']['old']);
     $newDriver = BusDriver::find($changedData['bus_driver_id']['new']);
@@ -165,10 +171,8 @@ if (isset($changedData['bus_driver_id'])) {
     ];
 }
 
-
     $BusTrip->changed_data = $changedData;
     $BusTrip->save();
-
 
 
     $this->loadCommonRelations($BusTrip);
