@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
 trait HijriDateTrait
@@ -20,23 +21,35 @@ trait HijriDateTrait
     //     return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$now->format('H:i:s')}";
     // }
 
-        public function getHijriDate($date = null)
-    {
-        $date = $date
-            ? Carbon::parse($date)->timezone('Asia/Riyadh')
+
+    public function getHijriDate(?string $gregorianInput = null)
+{
+    try {
+        // لو المستخدم دخل تاريخ، نستخدمه، وإلا نستخدم تاريخ الآن
+        $date = $gregorianInput
+            ? \Carbon\Carbon::parse($gregorianInput)->timezone('Asia/Riyadh')
             : now()->timezone('Asia/Riyadh');
 
+        // إرسال التاريخ بصيغة يوم-شهر-سنة
         $response = Http::get('https://api.aladhan.com/v1/gToH', [
             'date' => $date->format('d-m-Y'),
         ]);
 
-        if ($response->ok() && isset($response['data']['hijri'])) {
-            $hijri = $response['data']['hijri'];
-
-            return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$date->format('H:i:s')}";
+        if (!$response->ok()) {
+            return response()->json(['message' => 'فشل في جلب التاريخ الهجري من API'], 500);
         }
 
-        return null;
+        $hijri = $response['data']['hijri'];
+
+        return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$date->format('H:i:s')}";
+    } catch (\Exception $e) {
+        Log::error('getHijriDate error: ' . $e->getMessage());
+        return response()->json([
+            'message' => 'حدث خطأ أثناء تحويل التاريخ: ' . mb_convert_encoding($e->getMessage(), 'UTF-8', 'UTF-8')
+        ], 500);
     }
+}
+
+
 
 }
