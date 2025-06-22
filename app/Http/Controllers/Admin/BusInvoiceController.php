@@ -770,8 +770,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json([
-            'message' => 'فشل في إنشاء الفاتورة: ' . mb_convert_encoding($e->getMessage(), 'UTF-8', 'UTF-8')
-
+            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
         ], 500);
     }
 }
