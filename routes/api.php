@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PaymentController;
+
 require __DIR__ . '/Apis/Auth/auth.php';
 require __DIR__ . '/Apis/Admin/city.php';
 require __DIR__ . '/Apis/Admin/branch.php';
@@ -31,4 +34,7 @@ require __DIR__ . '/Apis/Admin/hotelInvoice.php';
 require __DIR__ . '/Apis/Admin/ihramInvoice.php';
 require __DIR__ . '/Apis/Admin/ihramItem.php';
 require __DIR__ . '/Apis/Admin/workerLogin.php';
-
+Route::controller(PaymentController::class)->prefix('/payment')->group(function () {
+        Route::post('/checkout', 'cPaymentControllerreate');
+    }
+);
