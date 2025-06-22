@@ -396,9 +396,13 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to rejected');
 }
 
-    public function completed(string $id)
+    public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
+        $validated = $request->validate([
+         'payment_method_type_id' => 'required|exists:payment_method_types,id',
+         'paidAmount'=>'required|numeric|min:0|max:99999.99',
+    ]);
 
     $busInvoice = BusInvoice::find($id);
     if (!$busInvoice) {
@@ -413,6 +417,8 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     }
 
     $busInvoice->invoiceStatus = 'completed';
+    $busInvoice->reason = $validated['payment_method_type_id'] ?? null;
+    $busInvoice->reason = $validated['paidAmount'] ?? null;
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $busInvoice->creationDateHijri = $this->getHijriDate();
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
@@ -473,125 +479,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to absence');
 }
 
-// Payment Status
-    public function pendingPayment(string $id)
-{
-    $this->authorize('manage_system');
 
-    $busInvoice = BusInvoice::find($id);
-    if (!$busInvoice) {
-        return response()->json(['message' => "BusInvoice not found."], 404);
-    }
-
-    $oldData = $busInvoice->toArray();
-
-    if ($busInvoice->paymentStatus === 'pending') {
-        $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to pending');
-    }
-
-    $busInvoice->paymentStatus = 'pending';
-    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
-    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $busInvoice->updated_by_type = $this->getUpdatedByType();
-    $busInvoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $busInvoice->creationDate,
-        'creationDateHijri' => $busInvoice->creationDateHijri,
-    ];
-
-    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
-    $busInvoice->changed_data = $changedData;
-    $busInvoice->save();
-
-    // $this->loadCommonRelations($busInvoice);
-    return $this->respondWithResource($busInvoice, 'BusInvoice Payment set to pendind');
-}
-
-    public function refuneded($id, Request $request)
-{
-
-       $this->authorize('manage_system');
-    $validated = $request->validate([
-        'reason' => 'nullable|string',
-    ]);
-
-    $busInvoice = BusInvoice::find($id);
-    if (!$busInvoice) {
-        return response()->json(['message' => "BusInvoice not found."], 404);
-    }
-
-    $oldData = $busInvoice->toArray();
-
-    if ($busInvoice->paymentStatus === 'refuneded') {
-        $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'BusInvoice Payment is already set to refuneded');
-    }
-
-    $busInvoice->paymentStatus = 'refuneded';
-    $busInvoice->reason = $validated['reason'] ?? null;
-    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
-    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $busInvoice->updated_by_type = $this->getUpdatedByType();
-    $busInvoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $busInvoice->creationDate,
-        'creationDateHijri' => $busInvoice->creationDateHijri,
-    ];
-
-    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
-    $busInvoice->changed_data = $changedData;
-    $busInvoice->save();
-
-    $this->loadCommonRelations($busInvoice);
-    return $this->respondWithResource($busInvoice, 'BusInvoice Payment set to refuneded');
-}
-
-    public function paid($id, Request $request)
-{
-    $this->authorize('manage_system');
-
-      $this->authorize('manage_system');
-    $validated = $request->validate([
-        'payment_method_type_id' => 'nullable|exists:payment_method_types,id',
-    ]);
-
-    $busInvoice = BusInvoice::find($id);
-    if (!$busInvoice) {
-        return response()->json(['message' => "BusInvoice not found."], 404);
-    }
-
-    $oldData = $busInvoice->toArray();
-
-    if ($busInvoice->paymentStatus === 'paid') {
-        $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to paid');
-    }
-
-    $busInvoice->paymentStatus = 'paid';
-    $busInvoice->payment_method_type_id = $validated['payment_method_type_id'] ?? null;
-    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
-    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $busInvoice->updated_by_type = $this->getUpdatedByType();
-    $busInvoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $busInvoice->creationDate,
-        'creationDateHijri' => $busInvoice->creationDateHijri,
-    ];
-
-    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
-    $busInvoice->changed_data = $changedData;
-    $busInvoice->save();
-
-    // $this->loadCommonRelations($busInvoice);
-    return $this->respondWithResource($busInvoice, 'BusInvoice set to paid');
-}
 
 
 
@@ -713,7 +601,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
     $busTrip = null;
     $seatMapArray = [];
 
-    // التحضيرات الأولية لرحلة الباص والمقاعد
+
     if ($request->filled('bus_trip_id')) {
         $busTrip = BusTrip::find($request->bus_trip_id);
         if (!$busTrip) {
@@ -722,7 +610,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
 
         $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
 
-        // التحقق من توفر المقاعد المطلوبة
+
         if ($request->has('pilgrims')) {
             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
             $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
@@ -737,7 +625,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
         }
     }
 
-    // إعداد بيانات الفاتورة
+
     $data = array_merge([
         'discount' => $this->ensureNumeric($request->input('discount', 0)),
         'tax' => $this->ensureNumeric($request->input('tax', 0)),
@@ -750,12 +638,10 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
     try {
         $busInvoice = BusInvoice::create($data);
 
-        // معالجة الحجاج إذا وجدوا في الطلب
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($busInvoice, $request->pilgrims, $seatMapArray, $busTrip);
         }
 
-        // حساب الإجماليات
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
@@ -784,7 +670,6 @@ public function update(BusInvoiceRequest $request, $id)
     $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
     $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
-    // التحقق من حالة الفاتورة قبل التعديل
     if (in_array($busInvoice->invoiceStatus, ['approved', 'completed'])) {
         return response()->json([
             'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'

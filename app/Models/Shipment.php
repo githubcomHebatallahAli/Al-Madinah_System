@@ -49,7 +49,7 @@ class Shipment extends Model
 
     public function shipmentInvoices()
 {
-    return $this->hasMany(ShipmentInvoice::class);
+    return $this->hasOne(ShipmentInvoice::class);
 }
 
         public function creator()
