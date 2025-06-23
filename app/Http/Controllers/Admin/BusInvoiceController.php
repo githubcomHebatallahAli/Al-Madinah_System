@@ -7,9 +7,11 @@ use App\Models\Pilgrim;
 use App\Models\BusInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
+use App\Models\PaymentMethodType;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
@@ -432,11 +434,96 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to absence');
 }
 
+public function completed($id, Request $request)
+{
+    $this->authorize('manage_system');
+
+    // التحقق من الصلاحيات والبيانات الأساسية فقط
+    $validated = $request->validate([
+        'payment_method_type_id' => 'required|exists:payment_method_types,id',
+        'paidAmount' => 'required|numeric|min:0|max:99999.99',
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99'
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $busInvoice = BusInvoice::with(['paymentMethodType'])->findOrFail($id);
+
+        if ($busInvoice->invoiceStatus === 'completed') {
+            $this->loadCommonRelations($busInvoice);
+            DB::commit();
+            return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+        }
+
+       
+        $originalData = $busInvoice->getOriginal();
 
 
+        $updateData = [
+            'invoiceStatus' => 'completed',
+            'payment_method_type_id' => $validated['payment_method_type_id'],
+            'paidAmount' => $validated['paidAmount'],
+            'discount' => $validated['discount'] ?? 0,
+            'tax' => $validated['tax'] ?? 0,
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
+            'updated_by' => $this->getUpdatedByIdOrFail(),
+            'updated_by_type' => $this->getUpdatedByType()
+        ];
 
+        // حساب التغييرات
+        $changedData = [];
+        foreach ($updateData as $field => $newValue) {
+            if (array_key_exists($field, $originalData)) {
+                $oldValue = $originalData[$field];
 
+                if ($oldValue != $newValue) {
+                    $changedData[$field] = [
+                        'old' => $oldValue,
+                        'new' => $newValue
+                    ];
+                }
+            }
+        }
 
+        // إضافة تغيير نوع طريقة الدفع إذا اختلفت
+        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+            $paymentMethodType = PaymentMethodType::find($validated['payment_method_type_id']);
+            $changedData['payment_method_type'] = [
+                'old' => $busInvoice->paymentMethodType?->name,
+                'new' => $paymentMethodType ? $paymentMethodType->name : null
+            ];
+        }
+
+        // تطبيق التغييرات
+        $busInvoice->fill($updateData);
+        $busInvoice->changed_data = $changedData;
+        $busInvoice->save();
+
+        // تحديث الحسابات
+        $busInvoice->PilgrimsCount();
+        $busInvoice->calculateTotal();
+
+        $this->loadCommonRelations($busInvoice);
+        DB::commit();
+
+        return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        Log::error('فشل إكمال الفاتورة: ' . $e->getMessage(), [
+            'invoice_id' => $id,
+            'error' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'message' => 'فشل في إكمال الفاتورة: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 
 
@@ -603,7 +690,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
         return response()->json([
             'message' => 'تم إنشاء الفاتورة بنجاح',
             'invoice' => new BusInvoiceResource($busInvoice->load([
-                'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
+                'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType','mainPilgrim'
             ])),
         ], 201);
     } catch (\Exception $e) {
@@ -669,7 +756,7 @@ public function update(BusInvoiceRequest $request, $id)
 
         return response()->json([
             'data' => new BusInvoiceResource($busInvoice->load([
-                'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType'
+                'pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker', 'paymentMethodType','mainPilgrim'
             ])),
             'message' => 'تم تحديث الفاتورة بنجاح'
         ]);
