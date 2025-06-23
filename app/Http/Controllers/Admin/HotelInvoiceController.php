@@ -613,7 +613,7 @@ public function completed($id, Request $request)
     DB::beginTransaction();
 
     try {
-        $busInvoice = BusInvoice::with([
+        $busInvoice = HotelInvoice::with([
             'paymentMethodType.paymentMethod',
             'mainPilgrim',
             'hotel', 'trip', 'busInvoice','pilgrims'
