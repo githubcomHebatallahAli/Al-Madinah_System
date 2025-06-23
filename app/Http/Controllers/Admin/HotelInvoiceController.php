@@ -261,7 +261,9 @@ public function create(HotelInvoiceRequest $request)
         DB::commit();
 
         return $this->respondWithResource(
-            new HotelInvoiceResource($invoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])),
+            new HotelInvoiceResource($invoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims'])),
             'تم إنشاء فاتورة الفندق بنجاح'
         );
 
@@ -291,7 +293,9 @@ protected function ensureNumeric($value)
         $this->authorize('manage_system');
 
         $hotelInvoice =HotelInvoice::with([
-         'hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'
+          'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims'
     ])->find($id);
 
         if (!$hotelInvoice) {
@@ -471,7 +475,9 @@ public function pending($id)
     $oldData = $hotelInvoice->toArray();
 
     if ($hotelInvoice->invoiceStatus === 'pending') {
-        $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
+        $hotelInvoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims']);
         return $this->respondWithResource($hotelInvoice, 'Hotel Invoice is already set to pending');
     }
 
@@ -491,7 +497,9 @@ public function pending($id)
     $hotelInvoice->changed_data = $changedData;
     $hotelInvoice->save();
 
-    $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
+    $hotelInvoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims']);
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to pending');
 }
 
@@ -507,7 +515,9 @@ public function approved($id)
     $oldData = $hotelInvoice->toArray();
 
     if ($hotelInvoice->invoiceStatus === 'approved') {
-        $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
+        $hotelInvoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims']);
         return $this->respondWithResource($hotelInvoice, 'Hotel Invoice is already set to approved');
     }
 
@@ -530,7 +540,9 @@ public function approved($id)
     $hotelInvoice->changed_data = $changedData;
     $hotelInvoice->save();
 
-    $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
+    $hotelInvoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims']);
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to approved');
 }
 
@@ -549,7 +561,9 @@ public function rejected(string $id, Request $request)
     $oldData = $hotelInvoice->toArray();
 
     if ($hotelInvoice->invoiceStatus === 'rejected') {
-        $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
+        $hotelInvoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims']);
         return $this->respondWithResource($hotelInvoice, 'Hotel Invoice is already set to rejected');
     }
 
@@ -576,7 +590,9 @@ public function rejected(string $id, Request $request)
     $hotelInvoice->changed_data = $changedData;
     $hotelInvoice->save();
 
-    $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
+    $hotelInvoice->load([ 'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel', 'trip', 'busInvoice','pilgrims']);
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to rejected');
 }
 
