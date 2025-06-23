@@ -37,7 +37,7 @@ class IhramInvoiceResource extends JsonResource
 
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
-            'paymentStatus' => $this->paymentStatus,
+            
             'creationDateHijri' => $this->creationDateHijri,
             'creationDate' => $this->creationDate,
             'changed_data' => $this->changed_data,

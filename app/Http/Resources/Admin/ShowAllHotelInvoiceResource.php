@@ -28,7 +28,7 @@ class ShowAllHotelInvoiceResource extends JsonResource
             'total' => $this->total,
             'paidAmount' => $this->paidAmount,
             'invoiceStatus' => $this->invoiceStatus,
-            'paymentStatus' => $this->paymentStatus,
+             
             'creationDate' => $this->creationDate,
 
         ];

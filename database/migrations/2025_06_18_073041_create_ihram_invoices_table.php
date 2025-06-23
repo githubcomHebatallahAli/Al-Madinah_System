@@ -27,7 +27,7 @@ return new class extends Migration
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
-            $table->enum('paymentStatus', ['pending','paid','refunded'])->default('pending');
+
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

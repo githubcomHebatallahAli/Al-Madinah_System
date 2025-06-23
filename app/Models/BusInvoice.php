@@ -28,7 +28,6 @@ class BusInvoice extends Model
         'pilgrimsCount',
         'invoiceStatus',
         'reason',
-        'paymentStatus',
         'creationDate',
         'creationDateHijri',
         'changed_data',
@@ -36,7 +35,7 @@ class BusInvoice extends Model
         'added_by_type',
         'updated_by',
         'updated_by_type',
-        
+
 
     ];
 

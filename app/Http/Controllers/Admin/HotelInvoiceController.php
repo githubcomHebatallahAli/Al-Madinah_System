@@ -166,9 +166,6 @@ protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims)
         }
 
 
-        if ($request->filled('paymentStatus')) {
-            $query->where('paymentStatus', $request->paymentStatus);
-        }
 
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
@@ -214,14 +211,9 @@ protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims)
             $query->where('hotel_id', $request->hotel_id);
         }
 
-          if ($request->filled('paymentStatus')) {
-            $query->where('paymentStatus', $request->paymentStatus);
-        }
-
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
-
 
 
         $hotelInvoices = $query->with(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->get();
@@ -586,9 +578,15 @@ public function rejected(string $id, Request $request)
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to rejected');
 }
 
-public function completed($id)
+public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
+          $validated = $request->validate([
+         'payment_method_type_id' => 'required|exists:payment_method_types,id',
+         'paidAmount'=>'required|numeric|min:0|max:99999.99',
+          'discount'=>'nullable|numeric|min:0|max:99999.99',
+        'tax'=>'nullable|numeric|min:0|max:99999.99',
+    ]);
 
     $hotelInvoice = HotelInvoice::find($id);
     if (!$hotelInvoice) {
@@ -603,6 +601,10 @@ public function completed($id)
     }
 
     $hotelInvoice->invoiceStatus = 'completed';
+    $hotelInvoice->reason = $validated['payment_method_type_id'] ?? null;
+    $hotelInvoice->reason = $validated['paidAmount'] ?? null;
+    $hotelInvoice->reason = $validated['discount'] ?? null;
+    $hotelInvoice->reason = $validated['tax'] ?? null;
     $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $hotelInvoice->creationDateHijri = $this->getHijriDate();
     $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
@@ -668,128 +670,7 @@ public function absence(string $id, Request $request)
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to absence');
 }
 
-// Payment Status Methods
-public function pendingPayment($id)
-{
-    $this->authorize('manage_system');
 
-    $hotelInvoice = HotelInvoice::find($id);
-    if (!$hotelInvoice) {
-        return response()->json(['message' => "Hotel Invoice not found."], 404);
-    }
-
-    $oldData = $hotelInvoice->toArray();
-
-    if ($hotelInvoice->paymentStatus === 'pending') {
-        $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
-        return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment is already set to pending');
-    }
-
-    $hotelInvoice->paymentStatus = 'pending';
-    $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hotelInvoice->creationDateHijri = $this->getHijriDate();
-    $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $hotelInvoice->updated_by_type = $this->getUpdatedByType();
-    $hotelInvoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $hotelInvoice->creationDate,
-        'creationDateHijri' => $hotelInvoice->creationDateHijri,
-    ];
-
-    $changedData = $hotelInvoice->getChangedData($oldData, array_merge($hotelInvoice->fresh()->toArray(), $metaForDiffOnly));
-    $hotelInvoice->changed_data = $changedData;
-    $hotelInvoice->save();
-
-    $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
-    return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment set to pending');
-}
-
-public function refund(string $id, Request $request)
-{
-    $this->authorize('manage_system');
-     $validated = $request->validate([
-        'reason' => 'nullable|string', // يمكنك تعديل القواعد حسب احتياجاتك
-    ]);
-
-    $hotelInvoice = HotelInvoice::find($id);
-    if (!$hotelInvoice) {
-        return response()->json(['message' => "Hotel Invoice not found."], 404);
-    }
-
-    $oldData = $hotelInvoice->toArray();
-
-    if ($hotelInvoice->paymentStatus === 'refunded') {
-        $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
-        return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment is already set to refunded');
-    }
-
-    $hotelInvoice->paymentStatus = 'refunded';
-    $hotelInvoice->reason = $validated['reason'] ?? null;
-    $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hotelInvoice->creationDateHijri = $this->getHijriDate();
-    $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $hotelInvoice->updated_by_type = $this->getUpdatedByType();
-    $hotelInvoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $hotelInvoice->creationDate,
-        'creationDateHijri' => $hotelInvoice->creationDateHijri,
-    ];
-
-    $changedData = $hotelInvoice->getChangedData($oldData, array_merge($hotelInvoice->fresh()->toArray(), $metaForDiffOnly));
-    $hotelInvoice->changed_data = $changedData;
-    $hotelInvoice->save();
-
-    $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
-    return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment set to refunded');
-}
-
-public function paid(string $id, Request $request)
-{
-    $this->authorize('manage_system');
-      $validated = $request->validate([
-        'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
-    ]);
-
-
-    $hotelInvoice = HotelInvoice::find($id);
-    if (!$hotelInvoice) {
-        return response()->json(['message' => "Hotel Invoice not found."], 404);
-    }
-
-    $oldData = $hotelInvoice->toArray();
-
-    if ($hotelInvoice->paymentStatus === 'paid') {
-        $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
-        return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment is already set to paid');
-    }
-
-    $hotelInvoice->paymentStatus = 'paid';
-    $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'] ?? null;
-    $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $hotelInvoice->creationDateHijri = $this->getHijriDate();
-    $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $hotelInvoice->updated_by_type = $this->getUpdatedByType();
-    $hotelInvoice->save();
-
-    //  $hotelInvoice->PilgrimsCount();
-    // $hotelInvoice->calculateTotal();
-
-    $metaForDiffOnly = [
-        'creationDate' => $hotelInvoice->creationDate,
-        'creationDateHijri' => $hotelInvoice->creationDateHijri,
-    ];
-
-    $changedData = $hotelInvoice->getChangedData($oldData, array_merge($hotelInvoice->fresh()->toArray(), $metaForDiffOnly));
-    $hotelInvoice->changed_data = $changedData;
-    $hotelInvoice->save();
-
-
-
-    $hotelInvoice->load(['hotel', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims']);
-    return $this->respondWithResource($hotelInvoice, 'Hotel Invoice payment set to paid');
-}
 
 
 

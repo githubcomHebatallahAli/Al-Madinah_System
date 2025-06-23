@@ -20,12 +20,10 @@ Route::controller(BusInvoiceController::class)->prefix('/delegate')->middleware(
    Route::post('/update/incomplete/pilgrims/busInvoice/{busInvoice}', 'updateIncompletePilgrims');
    Route::patch( 'pending/busInvoice/{id}', 'pending');
     Route::patch('approved/busInvoice/{id}', 'approved');
-    Route::patch('rejected/busInvoice/{id}', 'rejected');
-    Route::patch('completed/busInvoice/{id}', 'completed');
-    Route::patch('absence/busInvoice/{id}', 'absence');
-    Route::patch('pending/payment/busInvoice/{id}', 'pendingPayment');
-    Route::patch('paid/busInvoice/{id}', 'paid');
-    Route::patch('refunded/busInvoice/{id}', 'refunded');
+    Route::put('rejected/busInvoice/{id}', 'rejected');
+    Route::put('completed/busInvoice/{id}', 'completed');
+    Route::put('absence/busInvoice/{id}', 'absence');
+
 
 
    });

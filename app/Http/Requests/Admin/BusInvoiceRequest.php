@@ -30,13 +30,12 @@ class BusInvoiceRequest extends FormRequest
         'paidAmount'=>'nullable|numeric|min:0|max:99999.99',
         'reason' =>'nullable|string',
         'invoiceStatus' =>'nullable|in:pending,approved,rejected,completed,absence',
-        'paymentStatus'=>'nullable|in:pending,paid,refunded',
         'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri'=>'nullable|string',
 
 
 'pilgrims' => 'nullable|array',
-'pilgrims.*.idNum' => 'nullable|string',
+'pilgrims.*.idNum' => 'required|string',
 'pilgrims.*.phoNum' => 'nullable|string',
 
 'pilgrims.*.name' => 'required_without:pilgrims.*.idNum|string|max:255',

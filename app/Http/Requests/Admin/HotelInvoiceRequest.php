@@ -16,7 +16,7 @@ class HotelInvoiceRequest extends FormRequest
         return true;
     }
 
- 
+
     public function rules(): array
     {
         return [
@@ -41,13 +41,13 @@ class HotelInvoiceRequest extends FormRequest
         'paidAmount'=>'nullable|numeric|min:0|max:99999.99',
         'reason' =>'nullable|string',
         'invoiceStatus' =>'nullable|in:pending,approved,rejected,completed,absence',
-        'paymentStatus'=>'nullable|in:pending,paid,refunded',
+
         'creationDate' =>'nullable|date_format:Y-m-d H:i:s',
         'creationDateHijri'=>'nullable|string',
 
 
         'pilgrims' => 'nullable|array',
-        'pilgrims.*.idNum' => 'nullable|string',
+        'pilgrims.*.idNum' => 'required|string',
         'pilgrims.*.name' => 'required_if:pilgrims.*.idNum,!=,exists:pilgrims,idNum|nullable|string',
         'pilgrims.*.nationality' => 'required_if:pilgrims.*.idNum,!=,exists:pilgrims,idNum|nullable|string',
         'pilgrims.*.gender' => 'required_if:pilgrims.*.idNum,!=,exists:pilgrims,idNum|nullable|in:male,female,child',

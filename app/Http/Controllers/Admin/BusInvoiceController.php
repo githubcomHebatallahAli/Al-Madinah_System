@@ -48,10 +48,6 @@ class BusInvoiceController extends Controller
         }
 
 
-        if ($request->filled('paymentStatus')) {
-            $query->where('paymentStatus', $request->paymentStatus);
-        }
-
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
@@ -95,14 +91,10 @@ class BusInvoiceController extends Controller
             $query->where('office_id', $request->office_id);
         }
 
-          if ($request->filled('paymentStatus')) {
-            $query->where('paymentStatus', $request->paymentStatus);
-        }
 
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
-
 
 
         $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->get();
@@ -402,6 +394,8 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
         $validated = $request->validate([
          'payment_method_type_id' => 'required|exists:payment_method_types,id',
          'paidAmount'=>'required|numeric|min:0|max:99999.99',
+         'discount'=>'nullable|numeric|min:0|max:99999.99',
+        'tax'=>'nullable|numeric|min:0|max:99999.99',
     ]);
 
     $busInvoice = BusInvoice::find($id);
@@ -419,6 +413,8 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->invoiceStatus = 'completed';
     $busInvoice->reason = $validated['payment_method_type_id'] ?? null;
     $busInvoice->reason = $validated['paidAmount'] ?? null;
+    $busInvoice->reason = $validated['discount'] ?? null;
+    $busInvoice->reason = $validated['tax'] ?? null;
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $busInvoice->creationDateHijri = $this->getHijriDate();
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();

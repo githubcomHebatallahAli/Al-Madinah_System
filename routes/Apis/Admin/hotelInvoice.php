@@ -17,15 +17,15 @@ Route::controller(HotelInvoiceController::class)->prefix('/delegate')->middlewar
    Route::get('/edit/hotelInvoice/{id}','edit');
    Route::post('/update/hotelInvoice/{hotelInvoice}', 'update');
 
-   Route::post('/update/incomplete/pilgrims/hotelInvoice/{hotelInvoice}', 'updateIncompletePilgrims');
+
    Route::patch( 'pending/hotelInvoice/{id}', 'pending');
     Route::patch('approved/hotelInvoice/{id}', 'approved');
     Route::put('rejected/hotelInvoice/{id}', 'rejected');
-    Route::patch('completed/hotelInvoice/{id}', 'completed');
+    Route::put('completed/hotelInvoice/{id}', 'completed');
     Route::put('absence/hotelInvoice/{id}', 'absence');
-    Route::patch('pending/payment/hotelInvoice/{id}', 'pendingPayment');
-    Route::put('paid/hotelInvoice/{id}', 'paid');
-    Route::put('refunded/hotelInvoice/{id}', 'refunded');
+    // Route::patch('pending/payment/hotelInvoice/{id}', 'pendingPayment');
+    // Route::put('paid/hotelInvoice/{id}', 'paid');
+    // Route::put('refunded/hotelInvoice/{id}', 'refunded');
 
 
    });

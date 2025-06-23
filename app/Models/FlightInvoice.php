@@ -24,7 +24,7 @@ class FlightInvoice extends Model
         'pilgrimsCount',
         'invoiceStatus',
         'reason',
-        'paymentStatus',
+        
         'creationDate',
         'creationDateHijri',
         'changed_data',
@@ -33,7 +33,7 @@ class FlightInvoice extends Model
         'updated_by',
         'updated_by_type',
     ];
-    
+
 
         public function pilgrims()
 {
