@@ -30,7 +30,7 @@ class HotelInvoiceRequest extends FormRequest
         'checkOutDate'=>'nullable|date_format:Y-m-d H:i',
         'checkOutDateHijri'=>'nullable|string',
         'bookingSource'=>'nullable|in:MeccaCash,MeccaDelegate,office,otherOffice',
-        'roomNum'=>'nullable|integer',
+        'roomNum'=>'nullable|string',
         'need'=>'nullable|in:family,single',
         'sleep'=>'nullable|in:bed,room',
         'numDay'=>'required|integer',

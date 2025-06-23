@@ -27,7 +27,7 @@ return new class extends Migration
             $table->dateTime('checkOutDate')->nullable();
             $table->string('checkOutDateHijri')->nullable();
             $table->integer('numDay');
-            $table->integer('roomNum')->nullable();
+            $table->string('roomNum')->nullable();
             $table->text('description')->nullable();
 
 
