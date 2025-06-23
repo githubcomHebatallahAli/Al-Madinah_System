@@ -16,6 +16,7 @@ class FlightInvoice extends Model
         'flight_id',
         'payment_method_type_id',
         'main_pilgrim_id',
+        'ticketPrice',
         'subtotal',
         'discount',
         'tax',
@@ -24,7 +25,7 @@ class FlightInvoice extends Model
         'pilgrimsCount',
         'invoiceStatus',
         'reason',
-        
+
         'creationDate',
         'creationDateHijri',
         'changed_data',
@@ -42,6 +43,7 @@ class FlightInvoice extends Model
             'creationDate',
             'creationDateHijri',
             'changed_data',
+            'seatNumber'
         ]);
 }
 

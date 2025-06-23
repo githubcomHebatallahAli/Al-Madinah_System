@@ -86,6 +86,7 @@ class Pilgrim extends Model
             'creationDate',
             'creationDateHijri',
             'changed_data',
+            'seatNumber'
         ]);
 }
 
