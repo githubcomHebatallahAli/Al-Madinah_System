@@ -457,7 +457,7 @@ public function completed($id, Request $request)
             return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
         }
 
-       
+
         $originalData = $busInvoice->getOriginal();
 
 
@@ -488,21 +488,29 @@ public function completed($id, Request $request)
             }
         }
 
-        // إضافة تغيير نوع طريقة الدفع إذا اختلفت
-        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
-            $paymentMethodType = PaymentMethodType::find($validated['payment_method_type_id']);
-            $changedData['payment_method_type'] = [
-                'old' => $busInvoice->paymentMethodType?->name,
-                'new' => $paymentMethodType ? $paymentMethodType->name : null
-            ];
-        }
+    if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+    $paymentMethodType = PaymentMethodType::with('paymentMethod')
+        ->find($validated['payment_method_type_id']);
 
-        // تطبيق التغييرات
+    $changedData['payment_method'] = [
+        'old' => [
+            'type' => $busInvoice->paymentMethodType?->type,
+            'by' => $busInvoice->paymentMethodType?->by,
+            'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
+        ],
+        'new' => $paymentMethodType ? [
+            'type' => $paymentMethodType->type,
+            'by' => $paymentMethodType->by,
+            'method' => $paymentMethodType->paymentMethod?->name
+        ] : null
+    ];
+}
+
         $busInvoice->fill($updateData);
         $busInvoice->changed_data = $changedData;
         $busInvoice->save();
 
-        // تحديث الحسابات
+      
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
