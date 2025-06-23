@@ -597,8 +597,6 @@ public function rejected(string $id, Request $request)
 }
 
 
-
-
 public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
@@ -606,8 +604,6 @@ public function completed($id, Request $request)
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
-        // 'discount' => 'nullable|numeric|min:0|max:99999.99',
-        // 'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
     DB::beginTransaction();
@@ -619,16 +615,6 @@ public function completed($id, Request $request)
             'hotel', 'trip', 'busInvoice','pilgrims'
         ])->findOrFail($id);
 
-
-        // if (round(floatval($validated['paidAmount']), 2) != round(floatval($hotelInvoice->total), 2)) {
-        //     return response()->json([
-        //         'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
-        //         'total_amount' => $hotelInvoice->total,
-        //         'paid_amount' => $validated['paidAmount'],
-        //         'difference' => round(floatval($hotelInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
-        //     ], 422);
-        // }
-
         if ($hotelInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($hotelInvoice);
             DB::commit();
@@ -637,29 +623,27 @@ public function completed($id, Request $request)
 
         $originalData = $hotelInvoice->getOriginal();
 
-        $updateData = [
-            'invoiceStatus' => 'completed',
-            'payment_method_type_id' => $validated['payment_method_type_id'],
-            'paidAmount' => $validated['paidAmount'],
-            // 'discount' => $validated['discount'] ?? 0,
-            // 'tax' => $validated['tax'] ?? 0,
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
-            'updated_by' => $this->getUpdatedByIdOrFail(),
-            'updated_by_type' => $this->getUpdatedByType()
-        ];
+        
+        $hotelInvoice->invoiceStatus = 'completed';
+        $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'];
+        $hotelInvoice->paidAmount = $validated['paidAmount'];
+        $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $hotelInvoice->creationDateHijri = $this->getHijriDate();
+        $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
+        $hotelInvoice->updated_by_type = $this->getUpdatedByType();
+
 
         $changedData = [];
-        foreach ($updateData as $field => $newValue) {
+        foreach ($hotelInvoice->getDirty() as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
-                $oldValue = $originalData[$field];
-                if ($oldValue != $newValue) {
-                    $changedData[$field] = ['old' => $oldValue, 'new' => $newValue];
-                }
+                $changedData[$field] = [
+                    'old' => $originalData[$field],
+                    'new' => $newValue
+                ];
             }
         }
 
-        if ($hotelInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+        if ($hotelInvoice->isDirty('payment_method_type_id')) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
 
@@ -677,16 +661,14 @@ public function completed($id, Request $request)
             ];
         }
 
-        $hotelInvoice->fill($updateData);
         $hotelInvoice->changed_data = $changedData;
         $hotelInvoice->save();
-        $hotelInvoice->refresh();
 
+        // تحديث البيانات المحسوبة
         $hotelInvoice->PilgrimsCount();
         $hotelInvoice->calculateTotal();
 
-        $hotelInvoice->load(['pilgrims']);
-
+        $this->loadCommonRelations($hotelInvoice);
         DB::commit();
 
         return $this->respondWithResource(
