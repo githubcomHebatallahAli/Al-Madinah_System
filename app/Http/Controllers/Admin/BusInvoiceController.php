@@ -434,11 +434,12 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to absence');
 }
 
+
+
 // public function completed($id, Request $request)
 // {
 //     $this->authorize('manage_system');
 
-//     // التحقق من الصلاحيات والبيانات
 //     $validated = $request->validate([
 //         'payment_method_type_id' => 'required|exists:payment_method_types,id',
 //         'paidAmount' => 'required|numeric|min:0|max:99999.99',
@@ -449,9 +450,12 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 //     DB::beginTransaction();
 
 //     try {
-//         $busInvoice = BusInvoice::with(['paymentMethodType.paymentMethod'])->findOrFail($id);
+//         // تحميل العلاقات الأساسية مسبقاً
+//         $busInvoice = BusInvoice::with([
+//             'paymentMethodType.paymentMethod',
+//             'mainPilgrim'
+//         ])->findOrFail($id);
 
-//         // الشرط الجديد: التحقق من أن paidAmount لا يتجاوز total
 //         if (floatval($validated['paidAmount']) > floatval($busInvoice->total)) {
 //             return response()->json([
 //                 'message' => 'المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة',
@@ -460,21 +464,24 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 //             ], 422);
 //         }
 
+
+
 //         if ($busInvoice->invoiceStatus === 'completed') {
 //             $this->loadCommonRelations($busInvoice);
 //             DB::commit();
-//             return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+//             return $this->respondWithResource(
+//                 $busInvoice->load(['pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker']),
+//                 'فاتورة الحافلة مكتملة مسبقاً'
+//             );
 //         }
 
-//         // حفظ البيانات الأصلية
 //         $originalData = $busInvoice->getOriginal();
 
-//         // تحضير بيانات التحديث (تم تصحيح كتابة validated)
 //         $updateData = [
 //             'invoiceStatus' => 'completed',
 //             'payment_method_type_id' => $validated['payment_method_type_id'],
 //             'paidAmount' => $validated['paidAmount'],
-//             'discount' => $validated['discount'] ?? 0, // تصحيح typo من discount إلى discount
+//             'discount' => $validated['discount'] ?? 0,
 //             'tax' => $validated['tax'] ?? 0,
 //             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
 //             'creationDateHijri' => $this->getHijriDate(),
@@ -482,22 +489,16 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 //             'updated_by_type' => $this->getUpdatedByType()
 //         ];
 
-//         // حساب التغييرات
 //         $changedData = [];
 //         foreach ($updateData as $field => $newValue) {
 //             if (array_key_exists($field, $originalData)) {
 //                 $oldValue = $originalData[$field];
-
 //                 if ($oldValue != $newValue) {
-//                     $changedData[$field] = [
-//                         'old' => $oldValue,
-//                         'new' => $newValue
-//                     ];
+//                     $changedData[$field] = ['old' => $oldValue, 'new' => $newValue];
 //                 }
 //             }
 //         }
 
-//         // تتبع تغيير طريقة الدفع
 //         if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
 //             $paymentMethodType = PaymentMethodType::with('paymentMethod')
 //                 ->find($validated['payment_method_type_id']);
@@ -516,34 +517,43 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 //             ];
 //         }
 
-//         // تطبيق التغييرات
 //         $busInvoice->fill($updateData);
 //         $busInvoice->changed_data = $changedData;
 //         $busInvoice->save();
 
-//         // تحديث الحسابات
 //         $busInvoice->PilgrimsCount();
 //         $busInvoice->calculateTotal();
 
-//         $this->loadCommonRelations($busInvoice);
+//         // تحميل جميع العلاقات المطلوبة قبل الإرجاع
+//         $busInvoice->load([
+//             'pilgrims',
+//             'busTrip',
+//             'campaign',
+//             'office',
+//             'group',
+//             'worker',
+//             'paymentMethodType.paymentMethod',
+//             'mainPilgrim'
+//         ]);
+
 //         DB::commit();
 
-//         return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
+//         return $this->respondWithResource(
+//             $busInvoice,
+//             'تم إكمال فاتورة الحافلة بنجاح'
+//         );
 
 //     } catch (\Exception $e) {
 //         DB::rollBack();
-
 //         Log::error('فشل إكمال الفاتورة: ' . $e->getMessage(), [
 //             'invoice_id' => $id,
 //             'error' => $e->getTraceAsString()
 //         ]);
-
 //         return response()->json([
 //             'message' => 'فشل في إكمال الفاتورة: ' . $e->getMessage()
 //         ], 500);
 //     }
 // }
-
 
 public function completed($id, Request $request)
 {
@@ -569,13 +579,13 @@ public function completed($id, Request $request)
             'worker'
         ])->findOrFail($id);
 
-        // الشرط الجديد: التحقق من أن paidAmount يساوي total تماماً
+        // الشرط المعدل مع تصحيح الأقواس
         if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
             return response()->json([
                 'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
                 'total_amount' => $busInvoice->total,
                 'paid_amount' => $validated['paidAmount'],
-                'difference' => round(floatval($busInvoice->total) - round(floatval($validated['paidAmount']), 2)
+                'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
             ], 422);
         }
 
@@ -634,7 +644,6 @@ public function completed($id, Request $request)
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
-        // تحميل كافة العلاقات المطلوبة
         $busInvoice->load(['pilgrims']);
 
         DB::commit();
