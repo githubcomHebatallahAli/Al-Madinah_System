@@ -559,27 +559,30 @@ public function completed($id, Request $request)
     DB::beginTransaction();
 
     try {
-        // تحميل العلاقات الأساسية مسبقاً
         $busInvoice = BusInvoice::with([
             'paymentMethodType.paymentMethod',
-            'mainPilgrim'
+            'mainPilgrim',
+            'busTrip',
+            'campaign',
+            'office',
+            'group',
+            'worker'
         ])->findOrFail($id);
 
-        if (floatval($validated['paidAmount']) > floatval($busInvoice->total)) {
+        // الشرط الجديد: التحقق من أن paidAmount يساوي total تماماً
+        if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
             return response()->json([
-                'message' => 'المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة',
+                'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
                 'total_amount' => $busInvoice->total,
-                'paid_amount' => $validated['paidAmount']
+                'paid_amount' => $validated['paidAmount'],
+                'difference' => round(floatval($busInvoice->total) - round(floatval($validated['paidAmount']), 2)
             ], 422);
         }
 
         if ($busInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($busInvoice);
             DB::commit();
-            return $this->respondWithResource(
-                $busInvoice->load(['pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker']),
-                'فاتورة الحافلة مكتملة مسبقاً'
-            );
+            return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
         }
 
         $originalData = $busInvoice->getOriginal();
@@ -631,17 +634,8 @@ public function completed($id, Request $request)
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
-        // تحميل جميع العلاقات المطلوبة قبل الإرجاع
-        $busInvoice->load([
-            'pilgrims',
-            'busTrip',
-            'campaign',
-            'office',
-            'group',
-            'worker',
-            'paymentMethodType.paymentMethod',
-            'mainPilgrim'
-        ]);
+        // تحميل كافة العلاقات المطلوبة
+        $busInvoice->load(['pilgrims']);
 
         DB::commit();
 
