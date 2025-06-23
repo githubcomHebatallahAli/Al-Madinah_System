@@ -179,7 +179,6 @@ public function updater()
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
-    'paymentStatus' => 'pending'
 ];
 
 }
