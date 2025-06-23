@@ -14,13 +14,15 @@ class BusInvoiceResource extends JsonResource
         return [
             "id" => $this->id,
             'pilgrimsCount'=> $this ->pilgrimsCount,
-            'main_pilgrim' => $this->whenLoaded('mainPilgrim', function () {
-    return [
-        'id' => $this->mainPilgrim->id,
-        'name' => $this->mainPilgrim->name,
-        'phone' => $this->mainPilgrim->phone
-    ];
-}),
+
+                        'main_pilgrim' => $this->whenLoaded('mainPilgrim', function() {
+                return $this->mainPilgrim ? [
+                    'id' => $this->mainPilgrim->id,
+                    'name' => $this->mainPilgrim->name,
+                    'phone' => $this->mainPilgrim->phoNum ?? null,
+                   
+                ] : null;
+            }),
 
             'invoiceNumber' => $this->invoiceNumber,
             'pilgrimsCount'=> $this ->pilgrimsCount,
