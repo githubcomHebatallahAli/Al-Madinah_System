@@ -613,29 +613,29 @@ public function completed($id, Request $request)
     DB::beginTransaction();
 
     try {
-        $busInvoice = HotelInvoice::with([
+        $hotelInvoice = HotelInvoice::with([
             'paymentMethodType.paymentMethod',
             'mainPilgrim',
             'hotel', 'trip', 'busInvoice','pilgrims'
         ])->findOrFail($id);
 
 
-        if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
-            return response()->json([
-                'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
-                'total_amount' => $busInvoice->total,
-                'paid_amount' => $validated['paidAmount'],
-                'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
-            ], 422);
-        }
+        // if (round(floatval($validated['paidAmount']), 2) != round(floatval($hotelInvoice->total), 2)) {
+        //     return response()->json([
+        //         'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
+        //         'total_amount' => $hotelInvoice->total,
+        //         'paid_amount' => $validated['paidAmount'],
+        //         'difference' => round(floatval($hotelInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
+        //     ], 422);
+        // }
 
-        if ($busInvoice->invoiceStatus === 'completed') {
-            $this->loadCommonRelations($busInvoice);
-            DB::commit();
-            return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
-        }
+        // if ($hotelInvoice->invoiceStatus === 'completed') {
+        //     $this->loadCommonRelations($hotelInvoice);
+        //     DB::commit();
+        //     return $this->respondWithResource($hotelInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+        // }
 
-        $originalData = $busInvoice->getOriginal();
+        $originalData = $hotelInvoice->getOriginal();
 
         $updateData = [
             'invoiceStatus' => 'completed',
@@ -659,15 +659,15 @@ public function completed($id, Request $request)
             }
         }
 
-        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+        if ($hotelInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
 
             $changedData['payment_method'] = [
                 'old' => [
-                    'type' => $busInvoice->paymentMethodType?->type,
-                    'by' => $busInvoice->paymentMethodType?->by,
-                    'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
+                    'type' => $hotelInvoice->paymentMethodType?->type,
+                    'by' => $hotelInvoice->paymentMethodType?->by,
+                    'method' => $hotelInvoice->paymentMethodType?->paymentMethod?->name
                 ],
                 'new' => $paymentMethodType ? [
                     'type' => $paymentMethodType->type,
@@ -677,19 +677,19 @@ public function completed($id, Request $request)
             ];
         }
 
-        $busInvoice->fill($updateData);
-        $busInvoice->changed_data = $changedData;
-        $busInvoice->save();
+        $hotelInvoice->fill($updateData);
+        $hotelInvoice->changed_data = $changedData;
+        $hotelInvoice->save();
 
-        $busInvoice->PilgrimsCount();
-        $busInvoice->calculateTotal();
+        $hotelInvoice->PilgrimsCount();
+        $hotelInvoice->calculateTotal();
 
-        $busInvoice->load(['pilgrims']);
+        $hotelInvoice->load(['pilgrims']);
 
         DB::commit();
 
         return $this->respondWithResource(
-            $busInvoice,
+            $hotelInvoice,
             'تم إكمال فاتورة الفندق بنجاح'
         );
 
