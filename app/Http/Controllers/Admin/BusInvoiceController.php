@@ -16,7 +16,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\BusInvoiceRequest;
 use App\Http\Resources\Admin\BusInvoiceResource;
-use App\Http\Requests\Admin\UpdatePilgrimDataRequest;
+
 use App\Http\Resources\Admin\ShowAllBusInvoiceResource;
 
 
@@ -665,11 +665,11 @@ public function update(BusInvoiceRequest $request, $id)
     $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
     $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
-    if (in_array($busInvoice->invoiceStatus, ['approved', 'completed'])) {
-        return response()->json([
-            'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
-        ], 422);
-    }
+    // if (in_array($busInvoice->invoiceStatus, ['approved', 'completed'])) {
+    //     return response()->json([
+    //         'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+    //     ], 422);
+    // }
 
 
     if ($request->has('pilgrims')) {
