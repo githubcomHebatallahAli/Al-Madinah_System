@@ -434,11 +434,121 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to absence');
 }
 
+// public function completed($id, Request $request)
+// {
+//     $this->authorize('manage_system');
+
+//     // التحقق من الصلاحيات والبيانات
+//     $validated = $request->validate([
+//         'payment_method_type_id' => 'required|exists:payment_method_types,id',
+//         'paidAmount' => 'required|numeric|min:0|max:99999.99',
+//         'discount' => 'nullable|numeric|min:0|max:99999.99',
+//         'tax' => 'nullable|numeric|min:0|max:99999.99'
+//     ]);
+
+//     DB::beginTransaction();
+
+//     try {
+//         $busInvoice = BusInvoice::with(['paymentMethodType.paymentMethod'])->findOrFail($id);
+
+//         // الشرط الجديد: التحقق من أن paidAmount لا يتجاوز total
+//         if (floatval($validated['paidAmount']) > floatval($busInvoice->total)) {
+//             return response()->json([
+//                 'message' => 'المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة',
+//                 'total_amount' => $busInvoice->total,
+//                 'paid_amount' => $validated['paidAmount']
+//             ], 422);
+//         }
+
+//         if ($busInvoice->invoiceStatus === 'completed') {
+//             $this->loadCommonRelations($busInvoice);
+//             DB::commit();
+//             return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+//         }
+
+//         // حفظ البيانات الأصلية
+//         $originalData = $busInvoice->getOriginal();
+
+//         // تحضير بيانات التحديث (تم تصحيح كتابة validated)
+//         $updateData = [
+//             'invoiceStatus' => 'completed',
+//             'payment_method_type_id' => $validated['payment_method_type_id'],
+//             'paidAmount' => $validated['paidAmount'],
+//             'discount' => $validated['discount'] ?? 0, // تصحيح typo من discount إلى discount
+//             'tax' => $validated['tax'] ?? 0,
+//             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//             'creationDateHijri' => $this->getHijriDate(),
+//             'updated_by' => $this->getUpdatedByIdOrFail(),
+//             'updated_by_type' => $this->getUpdatedByType()
+//         ];
+
+//         // حساب التغييرات
+//         $changedData = [];
+//         foreach ($updateData as $field => $newValue) {
+//             if (array_key_exists($field, $originalData)) {
+//                 $oldValue = $originalData[$field];
+
+//                 if ($oldValue != $newValue) {
+//                     $changedData[$field] = [
+//                         'old' => $oldValue,
+//                         'new' => $newValue
+//                     ];
+//                 }
+//             }
+//         }
+
+//         // تتبع تغيير طريقة الدفع
+//         if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+//             $paymentMethodType = PaymentMethodType::with('paymentMethod')
+//                 ->find($validated['payment_method_type_id']);
+
+//             $changedData['payment_method'] = [
+//                 'old' => [
+//                     'type' => $busInvoice->paymentMethodType?->type,
+//                     'by' => $busInvoice->paymentMethodType?->by,
+//                     'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
+//                 ],
+//                 'new' => $paymentMethodType ? [
+//                     'type' => $paymentMethodType->type,
+//                     'by' => $paymentMethodType->by,
+//                     'method' => $paymentMethodType->paymentMethod?->name
+//                 ] : null
+//             ];
+//         }
+
+//         // تطبيق التغييرات
+//         $busInvoice->fill($updateData);
+//         $busInvoice->changed_data = $changedData;
+//         $busInvoice->save();
+
+//         // تحديث الحسابات
+//         $busInvoice->PilgrimsCount();
+//         $busInvoice->calculateTotal();
+
+//         $this->loadCommonRelations($busInvoice);
+//         DB::commit();
+
+//         return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
+
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+
+//         Log::error('فشل إكمال الفاتورة: ' . $e->getMessage(), [
+//             'invoice_id' => $id,
+//             'error' => $e->getTraceAsString()
+//         ]);
+
+//         return response()->json([
+//             'message' => 'فشل في إكمال الفاتورة: ' . $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
 
-    // التحقق من الصلاحيات والبيانات
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
@@ -449,9 +559,12 @@ public function completed($id, Request $request)
     DB::beginTransaction();
 
     try {
-        $busInvoice = BusInvoice::with(['paymentMethodType.paymentMethod'])->findOrFail($id);
+        // تحميل العلاقات الأساسية مسبقاً
+        $busInvoice = BusInvoice::with([
+            'paymentMethodType.paymentMethod',
+            'mainPilgrim'
+        ])->findOrFail($id);
 
-        // الشرط الجديد: التحقق من أن paidAmount لا يتجاوز total
         if (floatval($validated['paidAmount']) > floatval($busInvoice->total)) {
             return response()->json([
                 'message' => 'المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة',
@@ -463,18 +576,19 @@ public function completed($id, Request $request)
         if ($busInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($busInvoice);
             DB::commit();
-            return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+            return $this->respondWithResource(
+                $busInvoice->load(['pilgrims', 'busTrip', 'campaign', 'office', 'group', 'worker']),
+                'فاتورة الحافلة مكتملة مسبقاً'
+            );
         }
 
-        // حفظ البيانات الأصلية
         $originalData = $busInvoice->getOriginal();
 
-        // تحضير بيانات التحديث (تم تصحيح كتابة validated)
         $updateData = [
             'invoiceStatus' => 'completed',
             'payment_method_type_id' => $validated['payment_method_type_id'],
             'paidAmount' => $validated['paidAmount'],
-            'discount' => $validated['discount'] ?? 0, // تصحيح typo من discount إلى discount
+            'discount' => $validated['discount'] ?? 0,
             'tax' => $validated['tax'] ?? 0,
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             'creationDateHijri' => $this->getHijriDate(),
@@ -482,22 +596,16 @@ public function completed($id, Request $request)
             'updated_by_type' => $this->getUpdatedByType()
         ];
 
-        // حساب التغييرات
         $changedData = [];
         foreach ($updateData as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
                 $oldValue = $originalData[$field];
-
                 if ($oldValue != $newValue) {
-                    $changedData[$field] = [
-                        'old' => $oldValue,
-                        'new' => $newValue
-                    ];
+                    $changedData[$field] = ['old' => $oldValue, 'new' => $newValue];
                 }
             }
         }
 
-        // تتبع تغيير طريقة الدفع
         if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
@@ -516,28 +624,38 @@ public function completed($id, Request $request)
             ];
         }
 
-        // تطبيق التغييرات
         $busInvoice->fill($updateData);
         $busInvoice->changed_data = $changedData;
         $busInvoice->save();
 
-        // تحديث الحسابات
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
-        $this->loadCommonRelations($busInvoice);
+        // تحميل جميع العلاقات المطلوبة قبل الإرجاع
+        $busInvoice->load([
+            'pilgrims',
+            'busTrip',
+            'campaign',
+            'office',
+            'group',
+            'worker',
+            'paymentMethodType.paymentMethod',
+            'mainPilgrim'
+        ]);
+
         DB::commit();
 
-        return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
+        return $this->respondWithResource(
+            $busInvoice,
+            'تم إكمال فاتورة الحافلة بنجاح'
+        );
 
     } catch (\Exception $e) {
         DB::rollBack();
-
         Log::error('فشل إكمال الفاتورة: ' . $e->getMessage(), [
             'invoice_id' => $id,
             'error' => $e->getTraceAsString()
         ]);
-
         return response()->json([
             'message' => 'فشل في إكمال الفاتورة: ' . $e->getMessage()
         ], 500);
