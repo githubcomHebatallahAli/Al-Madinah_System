@@ -159,7 +159,7 @@ protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
         $this->authorize('manage_system');
 
         $busInvoice =BusInvoice::with([
-        'pilgrims',
+        'pilgrims','mainPilgrim'
     ])->find($id);
 
         if (!$busInvoice) {
