@@ -137,6 +137,6 @@ public function calculateTotal(): void
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
-    'paymentStatus' => 'pending'
+  
 ];
 }
