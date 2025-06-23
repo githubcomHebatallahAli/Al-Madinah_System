@@ -620,14 +620,14 @@ public function completed($id, Request $request)
         ])->findOrFail($id);
 
 
-        if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
-            return response()->json([
-                'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
-                'total_amount' => $busInvoice->total,
-                'paid_amount' => $validated['paidAmount'],
-                'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
-            ], 422);
-        }
+        // if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
+        //     return response()->json([
+        //         'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
+        //         'total_amount' => $busInvoice->total,
+        //         'paid_amount' => $validated['paidAmount'],
+        //         'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
+        //     ], 422);
+        // }
 
         if ($busInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($busInvoice);
@@ -747,10 +747,6 @@ public function absence(string $id, Request $request)
 
     return $this->respondWithResource($hotelInvoice, 'Hotel Invoice set to absence');
 }
-
-
-
-
 
 
         protected function getResourceClass(): string
