@@ -7,9 +7,11 @@ use App\Models\IhramSupply;
 use App\Models\IhramInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
+use App\Models\PaymentMethodType;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Traits\LoadsCreatorRelationsTrait;
 use App\Traits\LoadsUpdaterRelationsTrait;
@@ -614,7 +616,8 @@ public function pending($id)
     $oldData = $invoice->toArray();
 
     if ($invoice->invoiceStatus === 'pending') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
+        $invoice->load(['busInvoice', 'pilgrims', 'ihramSupplies' ,'paymentMethodType.paymentMethod',
+            'mainPilgrim']);
         return $this->respondWithResource($invoice, 'Invoice is already set to pending');
     }
 
@@ -634,7 +637,8 @@ public function pending($id)
     $invoice->changed_data = $changedData;
     $invoice->save();
 
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
+    $invoice->load(['busInvoice', 'pilgrims', 'ihramSupplies' ,'paymentMethodType.paymentMethod',
+            'mainPilgrim']);
     return $this->respondWithResource($invoice, 'Invoice set to pending');
 }
 
@@ -650,7 +654,8 @@ public function approved($id)
     $oldData = $invoice->toArray();
 
     if ($invoice->invoiceStatus === 'approved') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
+        $invoice->load(['busInvoice', 'pilgrims', 'ihramSupplies' ,'paymentMethodType.paymentMethod',
+            'mainPilgrim']);
         return $this->respondWithResource($invoice, 'Invoice is already set to approved');
     }
 
@@ -670,7 +675,8 @@ public function approved($id)
     $invoice->changed_data = $changedData;
     $invoice->save();
 
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
+    $invoice->load(['busInvoice', 'pilgrims', 'ihramSupplies' ,'paymentMethodType.paymentMethod',
+            'mainPilgrim']);
     return $this->respondWithResource($invoice, 'Invoice set to approved');
 }
 
@@ -689,7 +695,8 @@ public function rejected($id, Request $request)
     $oldData = $invoice->toArray();
 
     if ($invoice->invoiceStatus === 'rejected') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
+        $invoice->load(['busInvoice', 'pilgrims', 'ihramSupplies' ,'paymentMethodType.paymentMethod',
+            'mainPilgrim']);
         return $this->respondWithResource($invoice, 'Invoice is already set to rejected');
     }
 
@@ -710,172 +717,121 @@ public function rejected($id, Request $request)
     $invoice->changed_data = $changedData;
     $invoice->save();
 
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
+    $invoice->load(['busInvoice', 'pilgrims', 'ihramSupplies' ,'paymentMethodType.paymentMethod',
+            'mainPilgrim']);
     return $this->respondWithResource($invoice, 'Invoice set to rejected');
 }
+
+
 
 public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
-              $validated = $request->validate([
-         'payment_method_type_id' => 'required|exists:payment_method_types,id',
-         'paidAmount'=>'required|numeric|min:0|max:99999.99',
-          'discount'=>'nullable|numeric|min:0|max:99999.99',
-        'tax'=>'nullable|numeric|min:0|max:99999.99',
-    ]);
 
-    $invoice = IhramInvoice::find($id);
-    if (!$invoice) {
-        return response()->json(['message' => "Invoice not found."], 404);
-    }
-
-    $oldData = $invoice->toArray();
-
-    if ($invoice->invoiceStatus === 'completed') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-        return $this->respondWithResource($invoice, 'Invoice is already set to completed');
-    }
-
-    $invoice->invoiceStatus = 'completed';
-    $invoice->reason = $validated['payment_method_type_id'] ?? null;
-    $invoice->reason = $validated['paidAmount'] ?? null;
-    $invoice->reason = $validated['discount'] ?? null;
-    $invoice->reason = $validated['tax'] ?? null;
-    $invoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $invoice->creationDateHijri = $this->getHijriDate();
-    $invoice->updated_by = $this->getUpdatedByIdOrFail();
-    $invoice->updated_by_type = $this->getUpdatedByType();
-    $invoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $invoice->creationDate,
-        'creationDateHijri' => $invoice->creationDateHijri,
-    ];
-
-    $changedData = $invoice->getChangedData($oldData, array_merge($invoice->fresh()->toArray(), $metaForDiffOnly));
-    $invoice->changed_data = $changedData;
-    $invoice->save();
-
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-    return $this->respondWithResource($invoice, 'Invoice set to completed');
-}
-
-// Payment Status Methods
-public function pendingPayment($id)
-{
-    $this->authorize('manage_system');
-
-    $invoice = IhramInvoice::find($id);
-    if (!$invoice) {
-        return response()->json(['message' => "Invoice not found."], 404);
-    }
-
-    $oldData = $invoice->toArray();
-
-    if ($invoice->paymentStatus === 'pending') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-        return $this->respondWithResource($invoice, 'Invoice payment is already set to pending');
-    }
-
-    $invoice->paymentStatus = 'pending';
-    $invoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $invoice->creationDateHijri = $this->getHijriDate();
-    $invoice->updated_by = $this->getUpdatedByIdOrFail();
-    $invoice->updated_by_type = $this->getUpdatedByType();
-    $invoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $invoice->creationDate,
-        'creationDateHijri' => $invoice->creationDateHijri,
-    ];
-
-    $changedData = $invoice->getChangedData($oldData, array_merge($invoice->fresh()->toArray(), $metaForDiffOnly));
-    $invoice->changed_data = $changedData;
-    $invoice->save();
-
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-    return $this->respondWithResource($invoice, 'Invoice payment set to pending');
-}
-
-public function refund($id, Request $request)
-{
-    $this->authorize('manage_system');
     $validated = $request->validate([
-        'reason' => 'nullable|string',
+        'payment_method_type_id' => 'required|exists:payment_method_types,id',
+        'paidAmount' => 'required|numeric|min:0|max:99999.99',
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
-    $invoice = IhramInvoice::find($id);
-    if (!$invoice) {
-        return response()->json(['message' => "Invoice not found."], 404);
+    DB::beginTransaction();
+
+    try {
+        $busInvoice = IhramInvoice::with([
+            'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+           'busInvoice', 'pilgrims', 'ihramSupplies'
+        ])->findOrFail($id);
+
+
+        if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
+            return response()->json([
+                'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
+                'total_amount' => $busInvoice->total,
+                'paid_amount' => $validated['paidAmount'],
+                'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
+            ], 422);
+        }
+
+        if ($busInvoice->invoiceStatus === 'completed') {
+            $this->loadCommonRelations($busInvoice);
+            DB::commit();
+            return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+        }
+
+        $originalData = $busInvoice->getOriginal();
+
+        $updateData = [
+            'invoiceStatus' => 'completed',
+            'payment_method_type_id' => $validated['payment_method_type_id'],
+            'paidAmount' => $validated['paidAmount'],
+            'discount' => $validated['discount'] ?? 0,
+            'tax' => $validated['tax'] ?? 0,
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
+            'updated_by' => $this->getUpdatedByIdOrFail(),
+            'updated_by_type' => $this->getUpdatedByType()
+        ];
+
+        $changedData = [];
+        foreach ($updateData as $field => $newValue) {
+            if (array_key_exists($field, $originalData)) {
+                $oldValue = $originalData[$field];
+                if ($oldValue != $newValue) {
+                    $changedData[$field] = ['old' => $oldValue, 'new' => $newValue];
+                }
+            }
+        }
+
+        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+            $paymentMethodType = PaymentMethodType::with('paymentMethod')
+                ->find($validated['payment_method_type_id']);
+
+            $changedData['payment_method'] = [
+                'old' => [
+                    'type' => $busInvoice->paymentMethodType?->type,
+                    'by' => $busInvoice->paymentMethodType?->by,
+                    'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
+                ],
+                'new' => $paymentMethodType ? [
+                    'type' => $paymentMethodType->type,
+                    'by' => $paymentMethodType->by,
+                    'method' => $paymentMethodType->paymentMethod?->name
+                ] : null
+            ];
+        }
+
+        $busInvoice->fill($updateData);
+        $busInvoice->changed_data = $changedData;
+        $busInvoice->save();
+
+        $busInvoice->PilgrimsCount();
+        $busInvoice->calculateTotal();
+
+        $busInvoice->load(['pilgrims']);
+
+        DB::commit();
+
+        return $this->respondWithResource(
+            $busInvoice,
+            'تم إكمال فاتورة الحافلة بنجاح'
+        );
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('فشل إكمال الفاتورة: ' . $e->getMessage(), [
+            'invoice_id' => $id,
+            'error' => $e->getTraceAsString()
+        ]);
+        return response()->json([
+            'message' => 'فشل في إكمال الفاتورة: ' . $e->getMessage()
+        ], 500);
     }
-
-    $oldData = $invoice->toArray();
-
-    if ($invoice->paymentStatus === 'refunded') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-        return $this->respondWithResource($invoice, 'Invoice payment is already set to refunded');
-    }
-
-    $invoice->paymentStatus = 'refunded';
-    $invoice->reason = $validated['reason'] ?? null;
-    $invoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $invoice->creationDateHijri = $this->getHijriDate();
-    $invoice->updated_by = $this->getUpdatedByIdOrFail();
-    $invoice->updated_by_type = $this->getUpdatedByType();
-    $invoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $invoice->creationDate,
-        'creationDateHijri' => $invoice->creationDateHijri,
-    ];
-
-    $changedData = $invoice->getChangedData($oldData, array_merge($invoice->fresh()->toArray(), $metaForDiffOnly));
-    $invoice->changed_data = $changedData;
-    $invoice->save();
-
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-    return $this->respondWithResource($invoice, 'Invoice payment set to refunded');
 }
 
-public function paid($id, Request $request)
-{
-    $this->authorize('manage_system');
-    $validated = $request->validate([
-        'payment_method_type_id' => 'nullable|exists:payment_method_types,id',
-    ]);
 
-    $invoice = IhramInvoice::find($id);
-    if (!$invoice) {
-        return response()->json(['message' => "Invoice not found."], 404);
-    }
 
-    $oldData = $invoice->toArray();
-
-    if ($invoice->paymentStatus === 'paid') {
-        $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-        return $this->respondWithResource($invoice, 'Invoice payment is already set to paid');
-    }
-
-    $invoice->paymentStatus = 'paid';
-    $invoice->payment_method_type_id = $validated['payment_method_type_id'] ?? null;
-    $invoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $invoice->creationDateHijri = $this->getHijriDate();
-    $invoice->updated_by = $this->getUpdatedByIdOrFail();
-    $invoice->updated_by_type = $this->getUpdatedByType();
-    $invoice->save();
-
-    $metaForDiffOnly = [
-        'creationDate' => $invoice->creationDate,
-        'creationDateHijri' => $invoice->creationDateHijri,
-    ];
-
-    $changedData = $invoice->getChangedData($oldData, array_merge($invoice->fresh()->toArray(), $metaForDiffOnly));
-    $invoice->changed_data = $changedData;
-    $invoice->save();
-
-    $invoice->load(['supplierIhram', 'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies']);
-    return $this->respondWithResource($invoice, 'Invoice payment set to paid');
-}
 
 
         protected function getResourceClass(): string
