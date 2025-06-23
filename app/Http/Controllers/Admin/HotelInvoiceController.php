@@ -623,16 +623,14 @@ public function completed($id, Request $request)
 
         $originalData = $hotelInvoice->getOriginal();
 
-        
+        // تحديث الحقول الرئيسية
         $hotelInvoice->invoiceStatus = 'completed';
         $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'];
         $hotelInvoice->paidAmount = $validated['paidAmount'];
-        $hotelInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $hotelInvoice->creationDateHijri = $this->getHijriDate();
         $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
         $hotelInvoice->updated_by_type = $this->getUpdatedByType();
 
-
+        // تسجيل التغييرات الأساسية
         $changedData = [];
         foreach ($hotelInvoice->getDirty() as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
@@ -643,6 +641,7 @@ public function completed($id, Request $request)
             }
         }
 
+        // معالجة خاصة لطريقة الدفع
         if ($hotelInvoice->isDirty('payment_method_type_id')) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
@@ -659,6 +658,29 @@ public function completed($id, Request $request)
                     'method' => $paymentMethodType->paymentMethod?->name
                 ] : null
             ];
+        }
+
+        // تطبيق منطق تتبع التواريخ كما في TracksChangesTrait
+        if (!empty($changedData)) {
+            $previousChanged = $hotelInvoice->changed_data ?? [];
+
+            // تحديث التواريخ في البيانات المتغيرة
+            $currentDateTime = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+            $currentHijriDate = $this->getHijriDate();
+
+            $changedData['creationDate'] = [
+                'old' => $previousChanged['creationDate']['new'] ?? $hotelInvoice->creationDate,
+                'new' => $currentDateTime
+            ];
+
+            $changedData['creationDateHijri'] = [
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $hotelInvoice->creationDateHijri,
+                'new' => $currentHijriDate
+            ];
+
+            // تحديث التواريخ في النموذج نفسه
+            $hotelInvoice->creationDate = $currentDateTime;
+            $hotelInvoice->creationDateHijri = $currentHijriDate;
         }
 
         $hotelInvoice->changed_data = $changedData;

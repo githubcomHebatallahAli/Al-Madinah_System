@@ -5,7 +5,7 @@ namespace App\Traits;
 
 trait TracksChangesTrait
 {
-     use \App\Traits\HijriDateTrait;
+     use HijriDateTrait;
     public function getChangedData(array $oldData, array $newData): array
     {
         $alwaysTrack = ['creationDate', 'creationDateHijri'];
