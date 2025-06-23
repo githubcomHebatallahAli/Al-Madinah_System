@@ -22,11 +22,11 @@ return new class extends Migration
             $table->enum('need', ['family','single']);
             $table->enum('sleep', ['bed', 'room']);
             $table->enum('bookingSource', ['MeccaCash','MeccaDelegate','office','otherOffice']);
-            $table->dateTime('checkInDate')->nullable();
+            $table->dateTime('checkInDate');
             $table->string('checkInDateHijri')->nullable();
             $table->dateTime('checkOutDate')->nullable();
             $table->string('checkOutDateHijri')->nullable();
-            $table->integer('numDay')->nullable();
+            $table->integer('numDay');
             $table->integer('roomNum')->nullable();
             $table->text('description')->nullable();
 
@@ -39,7 +39,7 @@ return new class extends Migration
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
-            
+
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

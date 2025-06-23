@@ -25,7 +25,7 @@ class HotelInvoiceRequest extends FormRequest
         'trip_id'=>'nullable|exists:trips,id',
         'hotel_id'=>'required|exists:hotels,id',
         'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
-        'checkInDate'=>'nullable|string',
+        'checkInDate'=>'required|string',
         'checkInDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
         'checkOutDate'=>'nullable|string',
         'checkOutDateHijri'=>'nullable|date_format:Y-m-d H:i:s',
@@ -33,7 +33,7 @@ class HotelInvoiceRequest extends FormRequest
         'roomNum'=>'nullable|integer',
         'need'=>'nullable|in:family,single',
         'sleep'=>'nullable|in:bed,room',
-        'numDay'=>'nullable|integer',
+        'numDay'=>'required|integer',
         'description'=>'nullable|string',
 
         'discount'=>'nullable|numeric|min:0|max:99999.99',
