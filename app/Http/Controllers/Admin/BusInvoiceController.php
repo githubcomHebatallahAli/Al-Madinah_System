@@ -345,7 +345,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    // $this->loadCommonRelations($busInvoice);
+
     return $this->respondWithResource($busInvoice, 'BusInvoice set to approved');
 }
 
@@ -438,7 +438,7 @@ public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
 
-    // التحقق من الصلاحيات والبيانات الأساسية فقط
+    // التحقق من الصلاحيات والبيانات
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
@@ -449,7 +449,16 @@ public function completed($id, Request $request)
     DB::beginTransaction();
 
     try {
-        $busInvoice = BusInvoice::with(['paymentMethodType'])->findOrFail($id);
+        $busInvoice = BusInvoice::with(['paymentMethodType.paymentMethod'])->findOrFail($id);
+
+        // الشرط الجديد: التحقق من أن paidAmount لا يتجاوز total
+        if (floatval($validated['paidAmount']) > floatval($busInvoice->total)) {
+            return response()->json([
+                'message' => 'المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة',
+                'total_amount' => $busInvoice->total,
+                'paid_amount' => $validated['paidAmount']
+            ], 422);
+        }
 
         if ($busInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($busInvoice);
@@ -457,15 +466,15 @@ public function completed($id, Request $request)
             return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
         }
 
-
+        // حفظ البيانات الأصلية
         $originalData = $busInvoice->getOriginal();
 
-
+        // تحضير بيانات التحديث (تم تصحيح كتابة validated)
         $updateData = [
             'invoiceStatus' => 'completed',
             'payment_method_type_id' => $validated['payment_method_type_id'],
             'paidAmount' => $validated['paidAmount'],
-            'discount' => $validated['discount'] ?? 0,
+            'discount' => $validated['discount'] ?? 0, // تصحيح typo من discount إلى discount
             'tax' => $validated['tax'] ?? 0,
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             'creationDateHijri' => $this->getHijriDate(),
@@ -488,29 +497,31 @@ public function completed($id, Request $request)
             }
         }
 
-    if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
-    $paymentMethodType = PaymentMethodType::with('paymentMethod')
-        ->find($validated['payment_method_type_id']);
+        // تتبع تغيير طريقة الدفع
+        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+            $paymentMethodType = PaymentMethodType::with('paymentMethod')
+                ->find($validated['payment_method_type_id']);
 
-    $changedData['payment_method'] = [
-        'old' => [
-            'type' => $busInvoice->paymentMethodType?->type,
-            'by' => $busInvoice->paymentMethodType?->by,
-            'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
-        ],
-        'new' => $paymentMethodType ? [
-            'type' => $paymentMethodType->type,
-            'by' => $paymentMethodType->by,
-            'method' => $paymentMethodType->paymentMethod?->name
-        ] : null
-    ];
-}
+            $changedData['payment_method'] = [
+                'old' => [
+                    'type' => $busInvoice->paymentMethodType?->type,
+                    'by' => $busInvoice->paymentMethodType?->by,
+                    'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
+                ],
+                'new' => $paymentMethodType ? [
+                    'type' => $paymentMethodType->type,
+                    'by' => $paymentMethodType->by,
+                    'method' => $paymentMethodType->paymentMethod?->name
+                ] : null
+            ];
+        }
 
+        // تطبيق التغييرات
         $busInvoice->fill($updateData);
         $busInvoice->changed_data = $changedData;
         $busInvoice->save();
 
-      
+        // تحديث الحسابات
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
@@ -631,9 +642,6 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
 
     return $pilgrim;
 }
-
-
-
 
 
         protected function getResourceClass(): string
