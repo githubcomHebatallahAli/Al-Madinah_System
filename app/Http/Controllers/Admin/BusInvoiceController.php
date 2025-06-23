@@ -411,10 +411,11 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     }
 
     $busInvoice->invoiceStatus = 'completed';
-    $busInvoice->reason = $validated['payment_method_type_id'] ?? null;
-    $busInvoice->reason = $validated['paidAmount'] ?? null;
-    $busInvoice->reason = $validated['discount'] ?? null;
-    $busInvoice->reason = $validated['tax'] ?? null;
+   $busInvoice->payment_method_type_id = $validated['payment_method_type_id'];
+$busInvoice->paidAmount = $validated['paidAmount'];
+$busInvoice->discount = $validated['discount'] ?? 0;
+$busInvoice->tax = $validated['tax'] ?? 0;
+
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $busInvoice->creationDateHijri = $this->getHijriDate();
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
