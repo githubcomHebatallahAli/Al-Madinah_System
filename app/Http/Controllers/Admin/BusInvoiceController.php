@@ -388,51 +388,49 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to rejected');
 }
 
-    public function completed($id, Request $request)
+public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
-        $validated = $request->validate([
-         'payment_method_type_id' => 'required|exists:payment_method_types,id',
-         'paidAmount'=>'required|numeric|min:0|max:99999.99',
-         'discount'=>'nullable|numeric|min:0|max:99999.99',
-        'tax'=>'nullable|numeric|min:0|max:99999.99',
+
+    $validated = $request->validate([
+        'payment_method_type_id' => 'required|exists:payment_method_types,id',
+        'paidAmount' => 'required|numeric|min:0|max:99999.99',
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99',
     ]);
 
     $busInvoice = BusInvoice::find($id);
     if (!$busInvoice) {
-        return response()->json(['message' => "BusInvoice not found."], 404);
+        return response()->json(['message' => "فاتورة الحافلة غير موجودة."], 404);
     }
-
-    $oldData = $busInvoice->toArray();
 
     if ($busInvoice->invoiceStatus === 'completed') {
         $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to completed');
+        return $this->respondWithResource($busInvoice, 'تم تعيين فاتورة الحافلة كمكتملة مسبقاً');
     }
 
-    $busInvoice->invoiceStatus = 'completed';
-   $busInvoice->payment_method_type_id = $validated['payment_method_type_id'];
-$busInvoice->paidAmount = $validated['paidAmount'];
-$busInvoice->discount = $validated['discount'] ?? 0;
-$busInvoice->tax = $validated['tax'] ?? 0;
+    // حفظ البيانات القديمة قبل التغيير
+    $oldData = $busInvoice->getOriginal();
 
+    // تعيين القيم الجديدة
+    $busInvoice->invoiceStatus = 'completed';
+    $busInvoice->payment_method_type_id = $validated['payment_method_type_id'];
+    $busInvoice->paidAmount = $validated['paidAmount'];
+    $busInvoice->discount = $validated['discount'] ?? 0;
+    $busInvoice->tax = $validated['tax'] ?? 0;
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $busInvoice->creationDateHijri = $this->getHijriDate();
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $busInvoice->updated_by_type = $this->getUpdatedByType();
-    $busInvoice->save();
 
-    $metaForDiffOnly = [
-        'creationDate' => $busInvoice->creationDate,
-        'creationDateHijri' => $busInvoice->creationDateHijri,
-    ];
+    // حساب التغييرات قبل الحفظ
+    $changedData = $busInvoice->getChangedData($oldData, $busInvoice->getAttributes());
 
-    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    // تعيين وحفظ جميع التغييرات دفعة واحدة
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    // $this->loadCommonRelations($busInvoice);
-    return $this->respondWithResource($busInvoice, 'BusInvoice set to completed');
+    return $this->respondWithResource($busInvoice, 'تم تعيين فاتورة الحافلة كمكتملة بنجاح');
 }
 
     public function absence($id, Request $request)
