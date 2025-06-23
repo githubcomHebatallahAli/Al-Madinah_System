@@ -731,8 +731,8 @@ public function completed($id, Request $request)
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
-        'discount' => 'nullable|numeric|min:0|max:99999.99',
-        'tax' => 'nullable|numeric|min:0|max:99999.99'
+        // 'discount' => 'nullable|numeric|min:0|max:99999.99',
+        // 'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
     DB::beginTransaction();
@@ -766,8 +766,8 @@ public function completed($id, Request $request)
             'invoiceStatus' => 'completed',
             'payment_method_type_id' => $validated['payment_method_type_id'],
             'paidAmount' => $validated['paidAmount'],
-            'discount' => $validated['discount'] ?? 0,
-            'tax' => $validated['tax'] ?? 0,
+            // 'discount' => $validated['discount'] ?? 0,
+            // 'tax' => $validated['tax'] ?? 0,
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
             'creationDateHijri' => $this->getHijriDate(),
             'updated_by' => $this->getUpdatedByIdOrFail(),
