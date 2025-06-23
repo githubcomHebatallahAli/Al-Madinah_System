@@ -388,53 +388,61 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to rejected');
 }
 
-    public function completed($id, Request $request)
+public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
-        $validated = $request->validate([
-         'payment_method_type_id' => 'required|exists:payment_method_types,id',
-         'paidAmount'=>'required|numeric|min:0|max:99999.99',
-         'discount'=>'nullable|numeric|min:0|max:99999.99',
-        'tax'=>'nullable|numeric|min:0|max:99999.99',
+
+    $validated = $request->validate([
+        'payment_method_type_id' => 'required|exists:payment_method_types,id',
+        'paidAmount' => 'required|numeric|min:0|max:99999.99',
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99',
     ]);
 
-    $busInvoice = BusInvoice::find($id);
-    if (!$busInvoice) {
-        return response()->json(['message' => "BusInvoice not found."], 404);
-    }
-
-    $oldData = $busInvoice->toArray();
+    $busInvoice = BusInvoice::findOrFail($id);
 
     if ($busInvoice->invoiceStatus === 'completed') {
         $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to completed');
+        return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
     }
 
-    $busInvoice->invoiceStatus = 'completed';
-    $busInvoice->reason = $validated['payment_method_type_id'] ?? null;
-    $busInvoice->reason = $validated['paidAmount'] ?? null;
-    $busInvoice->reason = $validated['discount'] ?? null;
-    $busInvoice->reason = $validated['tax'] ?? null;
-    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
-    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $busInvoice->updated_by_type = $this->getUpdatedByType();
-    $busInvoice->save();
-    $busInvoice->PilgrimsCount();
-    $busInvoice->calculateTotal();
-    
+    // حفظ البيانات الأصلية
+    $originalData = $busInvoice->getOriginal();
 
-    $metaForDiffOnly = [
-        'creationDate' => $busInvoice->creationDate,
-        'creationDateHijri' => $busInvoice->creationDateHijri,
+    // تعيين القيم الجديدة
+    $updateData = [
+        'invoiceStatus' => 'completed',
+        'payment_method_type_id' => $validated['payment_method_type_id'],
+        'paidAmount' => $validated['paidAmount'],
+        'discount' => $validated['discount'] ?? 0,
+        'tax' => $validated['tax'] ?? 0,
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+        'updated_by' => $this->getUpdatedByIdOrFail(),
+        'updated_by_type' => $this->getUpdatedByType(),
     ];
 
-    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
+    $busInvoice->fill($updateData);
+
+    // حساب التغييرات يدوياً
+    $changedData = [];
+    foreach ($updateData as $field => $newValue) {
+        if (array_key_exists($field, $originalData) && $originalData[$field] != $newValue) {
+            $changedData[$field] = [
+                'old' => $originalData[$field],
+                'new' => $newValue
+            ];
+        }
+    }
+
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
+    $busInvoice->PilgrimsCount();
+    $busInvoice->calculateTotal();
+
     // $this->loadCommonRelations($busInvoice);
-    return $this->respondWithResource($busInvoice, 'BusInvoice set to completed');
+    return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
 }
 
     public function absence($id, Request $request)
