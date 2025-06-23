@@ -629,11 +629,11 @@ public function completed($id, Request $request)
         //     ], 422);
         // }
 
-        // if ($hotelInvoice->invoiceStatus === 'completed') {
-        //     $this->loadCommonRelations($hotelInvoice);
-        //     DB::commit();
-        //     return $this->respondWithResource($hotelInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
-        // }
+        if ($hotelInvoice->invoiceStatus === 'completed') {
+            $this->loadCommonRelations($hotelInvoice);
+            DB::commit();
+            return $this->respondWithResource($hotelInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+        }
 
         $originalData = $hotelInvoice->getOriginal();
 
@@ -680,6 +680,7 @@ public function completed($id, Request $request)
         $hotelInvoice->fill($updateData);
         $hotelInvoice->changed_data = $changedData;
         $hotelInvoice->save();
+        $hotelInvoice->refresh();
 
         $hotelInvoice->PilgrimsCount();
         $hotelInvoice->calculateTotal();
