@@ -660,27 +660,24 @@ public function completed($id, Request $request)
             ];
         }
 
-        // تطبيق منطق تتبع التواريخ كما في TracksChangesTrait
+        // تطبيق منطق تتبع التواريخ المطلوب
         if (!empty($changedData)) {
             $previousChanged = $hotelInvoice->changed_data ?? [];
 
-            // تحديث التواريخ في البيانات المتغيرة
-            $currentDateTime = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-            $currentHijriDate = $this->getHijriDate();
+            $newCreationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+            $newCreationDateHijri = $this->getHijriDate();
 
             $changedData['creationDate'] = [
-                'old' => $previousChanged['creationDate']['new'] ?? $hotelInvoice->creationDate,
-                'new' => $currentDateTime
+                'old' => $previousChanged['creationDate']['new'] ?? $hotelInvoice->getOriginal('creationDate'),
+                'new' => $newCreationDate
             ];
 
             $changedData['creationDateHijri'] = [
-                'old' => $previousChanged['creationDateHijri']['new'] ?? $hotelInvoice->creationDateHijri,
-                'new' => $currentHijriDate
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $hotelInvoice->getOriginal('creationDateHijri'),
+                'new' => $newCreationDateHijri
             ];
 
-            // تحديث التواريخ في النموذج نفسه
-            $hotelInvoice->creationDate = $currentDateTime;
-            $hotelInvoice->creationDateHijri = $currentHijriDate;
+            // لا نقوم بتحديث creationDate في النموذج ليظل ثابتاً
         }
 
         $hotelInvoice->changed_data = $changedData;
