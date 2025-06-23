@@ -399,38 +399,46 @@ public function completed($id, Request $request)
         'tax' => 'nullable|numeric|min:0|max:99999.99',
     ]);
 
-    $busInvoice = BusInvoice::find($id);
-    if (!$busInvoice) {
-        return response()->json(['message' => "فاتورة الحافلة غير موجودة."], 404);
-    }
+    $busInvoice = BusInvoice::findOrFail($id);
 
+    // إذا كانت مكتملة مسبقاً، نرجع البيانات الحالية
     if ($busInvoice->invoiceStatus === 'completed') {
         $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'تم تعيين فاتورة الحافلة كمكتملة مسبقاً');
+        return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
     }
 
-    // حفظ البيانات القديمة قبل التغيير
-    $oldData = $busInvoice->getOriginal();
+    // حفظ البيانات الأصلية قبل أي تغيير
+    $originalData = $busInvoice->getOriginal();
 
-    // تعيين القيم الجديدة
-    $busInvoice->invoiceStatus = 'completed';
-    $busInvoice->payment_method_type_id = $validated['payment_method_type_id'];
-    $busInvoice->paidAmount = $validated['paidAmount'];
-    $busInvoice->discount = $validated['discount'] ?? 0;
-    $busInvoice->tax = $validated['tax'] ?? 0;
-    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
-    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
-    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    // تطبيق التغييرات
+    $busInvoice->fill([
+        'invoiceStatus' => 'completed',
+        'payment_method_type_id' => $validated['payment_method_type_id'],
+        'paidAmount' => $validated['paidAmount'],
+        'discount' => $validated['discount'] ?? 0,
+        'tax' => $validated['tax'] ?? 0,
+        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+        'creationDateHijri' => $this->getHijriDate(),
+        'updated_by' => $this->getUpdatedByIdOrFail(),
+        'updated_by_type' => $this->getUpdatedByType(),
+    ]);
 
-    // حساب التغييرات قبل الحفظ
-    $changedData = $busInvoice->getChangedData($oldData, $busInvoice->getAttributes());
+    // حساب التغييرات
+    $changedData = $busInvoice->getChangedData($originalData, $busInvoice->getAttributes());
 
-    // تعيين وحفظ جميع التغييرات دفعة واحدة
+    // إذا كان هناك تغيير في السبب، نضيفه للتغييرات
+    if ($request->has('reason') && $busInvoice->isDirty('reason')) {
+        $changedData['reason'] = [
+            'old' => $originalData['reason'],
+            'new' => $request->reason
+        ];
+    }
+
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    return $this->respondWithResource($busInvoice, 'تم تعيين فاتورة الحافلة كمكتملة بنجاح');
+    $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
 }
 
     public function absence($id, Request $request)
