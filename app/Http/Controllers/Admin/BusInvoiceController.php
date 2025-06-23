@@ -16,7 +16,7 @@ use App\Traits\LoadsUpdaterRelationsTrait;
 use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\BusInvoiceRequest;
 use App\Http\Resources\Admin\BusInvoiceResource;
-
+use App\Http\Requests\Admin\UpdatePilgrimDataRequest;
 use App\Http\Resources\Admin\ShowAllBusInvoiceResource;
 
 
@@ -388,57 +388,53 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $this->respondWithResource($busInvoice, 'BusInvoice set to rejected');
 }
 
-public function completed($id, Request $request)
+    public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
-
-    $validated = $request->validate([
-        'payment_method_type_id' => 'required|exists:payment_method_types,id',
-        'paidAmount' => 'required|numeric|min:0|max:99999.99',
-        'discount' => 'nullable|numeric|min:0|max:99999.99',
-        'tax' => 'nullable|numeric|min:0|max:99999.99',
+        $validated = $request->validate([
+         'payment_method_type_id' => 'required|exists:payment_method_types,id',
+         'paidAmount'=>'required|numeric|min:0|max:99999.99',
+         'discount'=>'nullable|numeric|min:0|max:99999.99',
+        'tax'=>'nullable|numeric|min:0|max:99999.99',
     ]);
 
-    $busInvoice = BusInvoice::findOrFail($id);
+    $busInvoice = BusInvoice::find($id);
+    if (!$busInvoice) {
+        return response()->json(['message' => "BusInvoice not found."], 404);
+    }
 
-    // إذا كانت مكتملة مسبقاً، نرجع البيانات الحالية
+    $oldData = $busInvoice->toArray();
+
     if ($busInvoice->invoiceStatus === 'completed') {
         $this->loadCommonRelations($busInvoice);
-        return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+        return $this->respondWithResource($busInvoice, 'BusInvoice is already set to completed');
     }
 
-    // حفظ البيانات الأصلية قبل أي تغيير
-    $originalData = $busInvoice->getOriginal();
+    $busInvoice->invoiceStatus = 'completed';
+    $busInvoice->reason = $validated['payment_method_type_id'] ?? null;
+    $busInvoice->reason = $validated['paidAmount'] ?? null;
+    $busInvoice->reason = $validated['discount'] ?? null;
+    $busInvoice->reason = $validated['tax'] ?? null;
+    $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+    $busInvoice->updated_by_type = $this->getUpdatedByType();
+    $busInvoice->save();
+    $busInvoice->PilgrimsCount();
+    $busInvoice->calculateTotal();
+    
 
-    // تطبيق التغييرات
-    $busInvoice->fill([
-        'invoiceStatus' => 'completed',
-        'payment_method_type_id' => $validated['payment_method_type_id'],
-        'paidAmount' => $validated['paidAmount'],
-        'discount' => $validated['discount'] ?? 0,
-        'tax' => $validated['tax'] ?? 0,
-        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(),
-        'updated_by' => $this->getUpdatedByIdOrFail(),
-        'updated_by_type' => $this->getUpdatedByType(),
-    ]);
+    $metaForDiffOnly = [
+        'creationDate' => $busInvoice->creationDate,
+        'creationDateHijri' => $busInvoice->creationDateHijri,
+    ];
 
-    // حساب التغييرات
-    $changedData = $busInvoice->getChangedData($originalData, $busInvoice->getAttributes());
-
-    // إذا كان هناك تغيير في السبب، نضيفه للتغييرات
-    if ($request->has('reason') && $busInvoice->isDirty('reason')) {
-        $changedData['reason'] = [
-            'old' => $originalData['reason'],
-            'new' => $request->reason
-        ];
-    }
-
+    $changedData = $busInvoice->getChangedData($oldData, array_merge($busInvoice->fresh()->toArray(), $metaForDiffOnly));
     $busInvoice->changed_data = $changedData;
     $busInvoice->save();
 
-    $this->loadCommonRelations($busInvoice);
-    return $this->respondWithResource($busInvoice, 'تم إكمال فاتورة الحافلة بنجاح');
+    // $this->loadCommonRelations($busInvoice);
+    return $this->respondWithResource($busInvoice, 'BusInvoice set to completed');
 }
 
     public function absence($id, Request $request)
@@ -673,11 +669,11 @@ public function update(BusInvoiceRequest $request, $id)
     $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
     $originalSeats = $busInvoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
-    // if (in_array($busInvoice->invoiceStatus, ['approved', 'completed'])) {
-    //     return response()->json([
-    //         'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
-    //     ], 422);
-    // }
+    if (in_array($busInvoice->invoiceStatus, ['approved', 'completed'])) {
+        return response()->json([
+            'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+        ], 422);
+    }
 
 
     if ($request->has('pilgrims')) {
