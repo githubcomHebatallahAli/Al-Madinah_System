@@ -690,7 +690,7 @@ public function completed($id, Request $request)
 
         return $this->respondWithResource(
             $busInvoice,
-            'تم إكمال فاتورة الحافلة بنجاح'
+            'تم إكمال فاتورة الفندق بنجاح'
         );
 
     } catch (\Exception $e) {

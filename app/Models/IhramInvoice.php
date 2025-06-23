@@ -86,7 +86,6 @@ public function ihramSupplies()
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
-    'paymentStatus' => 'pending'
 ];
 
 
