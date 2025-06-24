@@ -31,9 +31,9 @@ class ShipmentInvoice extends Model
 
 
 
-    public function shipmentInvoices()
+    public function shipment()
 {
-    return $this->hasOne(ShipmentInvoice::class);
+    return $this->belongsTo(Shipment::class);
 }
 
         public function paymentMethodType()
