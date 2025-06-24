@@ -16,7 +16,6 @@ class FlightInvoice extends Model
         'flight_id',
         'payment_method_type_id',
         'main_pilgrim_id',
-        'ticketPrice',
         'subtotal',
         'discount',
         'tax',

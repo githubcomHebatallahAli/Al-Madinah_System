@@ -24,6 +24,4 @@ Route::controller(FlightInvoiceController::class)->prefix('/delegate')->middlewa
     Route::put('completed/flightInvoice/{id}', 'completed');
     Route::put('absence/flightInvoice/{id}', 'absence');
 
-
-
    });

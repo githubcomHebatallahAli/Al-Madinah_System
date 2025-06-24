@@ -28,11 +28,10 @@ return new class extends Migration
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
-            $table->decimal('ticketPrice', 10, 2);
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
-            
+
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
