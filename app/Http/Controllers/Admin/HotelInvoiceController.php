@@ -762,7 +762,7 @@ protected function attachBusPilgrims(HotelInvoice $invoice, $hotelInvoiceId)
         return;
     }
 
-    $hotelInvoice = BusInvoice::with('pilgrims')->find($hotelInvoiceId);
+    $hotelInvoice = HotelInvoice::with('pilgrims')->find($hotelInvoiceId);
 
     if (!$hotelInvoice) {
         throw new \Exception('عفواً، فاتورة الباص المحددة غير موجودة!');
