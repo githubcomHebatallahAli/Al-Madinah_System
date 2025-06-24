@@ -286,8 +286,6 @@ protected function ensureNumeric($value)
 }
 
 
-
-
         public function edit(string $id)
     {
         $this->authorize('manage_system');
@@ -762,7 +760,7 @@ protected function attachBusPilgrims(HotelInvoice $invoice, $hotelInvoiceId)
         return;
     }
 
-    $hotelInvoice = HotelInvoice::with('pilgrims')->find($hotelInvoiceId);
+    $hotelInvoice = BusInvoice::with('pilgrims')->find($hotelInvoiceId);
 
     if (!$hotelInvoice) {
         throw new \Exception('عفواً، فاتورة الباص المحددة غير موجودة!');
