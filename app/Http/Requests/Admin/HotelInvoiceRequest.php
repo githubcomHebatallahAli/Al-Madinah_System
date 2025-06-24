@@ -21,7 +21,7 @@ class HotelInvoiceRequest extends FormRequest
     {
         return [
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
-        'bus_invoice_id' => 'nullable|sometimes|exists:bus_trips,id',
+        'bus_invoice_id' => 'nullable|sometimes|exists:bus_invoices,id',
         'trip_id'=>'nullable|exists:trips,id',
         'hotel_id'=>'required|exists:hotels,id',
         'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
