@@ -59,7 +59,7 @@ public function calculateTotal(): void
         $this->PilgrimsCount();
     }
 
-    $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
+    $seatPrice = $this->flight->sellingPrice ?? 0;
 
     $this->subtotal = $seatPrice * $this->pilgrimsCount;
     $this->total = $this->subtotal
@@ -102,6 +102,5 @@ public function updater()
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
-    'paymentStatus' => 'pending'
 ];
 }

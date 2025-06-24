@@ -677,7 +677,6 @@ public function completed($id, Request $request)
                 'new' => $newCreationDateHijri
             ];
 
-            // لا نقوم بتحديث creationDate في النموذج ليظل ثابتاً
         }
 
         $hotelInvoice->changed_data = $changedData;
