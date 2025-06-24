@@ -59,7 +59,7 @@ class HotelInvoice extends Model
 
        public function busInvoice()
     {
-        return $this->belongsTo(BusInvoice::class);
+        return $this->belongsTo(BusInvoice::class, 'bus_invoice_id');
     }
 
         public function paymentMethodType()
@@ -137,6 +137,6 @@ public function calculateTotal(): void
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
-  
+
 ];
 }

@@ -78,7 +78,7 @@ class BusInvoice extends Model
 
            public function hotelInvoices()
     {
-        return $this->hasMany(HotelInvoice::class);
+        return $this->hasMany(HotelInvoice::class, 'bus_invoice_id');
     }
 
 
