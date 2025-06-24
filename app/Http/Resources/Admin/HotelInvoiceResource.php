@@ -55,7 +55,7 @@ class HotelInvoiceResource extends JsonResource
             // 'cancelledSeats' => $this->busTrip->cancelledSeats ?? 0,
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
-            
+
             'creationDateHijri' => $this->creationDateHijri,
             'creationDate' => $this->creationDate,
             'changed_data' => $this->changed_data,
@@ -66,6 +66,10 @@ class HotelInvoiceResource extends JsonResource
                     return [
                         'id' => $pilgrim->id,
                         'name' => $pilgrim->name ?? '-',
+                         'idNum' => $pilgrim->idNum ?? '-',
+                        'phoNum' => $pilgrim->phoNum ?? '-',
+                        'nationality' => $pilgrim->nationality ?? '-',
+                        'gender' => $pilgrim-> gender?? '-',
                         'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->creationDateHijri),
                         'creationDate' => $pilgrim->pivot->creationDate,
 
