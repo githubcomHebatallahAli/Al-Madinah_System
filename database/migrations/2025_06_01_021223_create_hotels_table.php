@@ -23,10 +23,14 @@ return new class extends Migration
             $table->enum('roomType', ['single', 'double','triple','quad','suite']);
             $table->integer('quantity')->default(0);
             $table->decimal('bedPrice', 10, 2)->default(0);
-            $table->decimal('roomPrice', 10, 2)->default(0);
+            // $table->decimal('roomPrice', 10, 2)->default(0);
             $table->decimal('sellingPrice');
             $table->decimal('purchesPrice');
             $table->decimal('profit')->nullable();
+            $table->dateTime('rentalStart')->nullable();
+            $table->dateTime('rentalEnd')->nullable();
+            $table->string('rentalStartHijri')->nullable();
+            $table->string('rentalEndHijri')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

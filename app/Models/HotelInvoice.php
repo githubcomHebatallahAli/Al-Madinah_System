@@ -102,7 +102,7 @@ public function calculateTotal(): void
     }
 
     $bedPrice = $this->hotel->bedPrice ?? 0;
-    $roomPrice = $this->hotel->roomPrice ?? 0;
+    $roomPrice = $this->hotel->sellingPrice ?? 0;
     $numDays = $this->numDay ?? 1;
 
 
