@@ -228,7 +228,7 @@ protected function hasPilgrimsChanges(FlightInvoice $invoice, array $newPilgrims
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
-        $FlightInvoices = $query->with(['Flight', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->paginate(10);
+        $FlightInvoices = $query->with(['Flight', 'trip', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->paginate(10);
         $totalPaidAmount = FlightInvoice::sum('paidAmount');
 
         return response()->json([
@@ -277,7 +277,7 @@ protected function hasPilgrimsChanges(FlightInvoice $invoice, array $newPilgrims
         }
 
 
-        $FlightInvoices = $query->with(['Flight', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->get();
+        $FlightInvoices = $query->with(['Flight', 'trip', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->get();
         $totalPaidAmount = FlightInvoice::sum('paidAmount');
 
         return response()->json([
@@ -322,7 +322,7 @@ public function create(FlightInvoiceRequest $request)
         return $this->respondWithResource(
             new FlightInvoiceResource($invoice->load(['paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip','hotel','busInvoice','pilgrims'])),
+            'Flight', 'trip','hotel','pilgrims'])),
             'تم إنشاء فاتورة الطيران بنجاح'
         );
 
@@ -354,7 +354,7 @@ protected function ensureNumeric($value)
         $FlightInvoice =FlightInvoice::with([
           'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip', 'busInvoice','pilgrims'
+            'flight', 'trip','pilgrims'
     ])->find($id);
 
         if (!$FlightInvoice) {
@@ -414,7 +414,7 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
         if (!$hasChanges) {
             DB::commit();
             return response()->json([
-                'data' => new FlightInvoiceResource($FlightInvoice->load(['Flight', 'trip', 'busInvoice', 'paymentMethodType', 'pilgrims'])),
+                'data' => new FlightInvoiceResource($FlightInvoice->load(['flight', 'trip', 'paymentMethodType', 'pilgrims'])),
                 'message' => 'لا يوجد تغييرات فعلية'
             ]);
         }
@@ -451,7 +451,7 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
         DB::commit();
 
         return response()->json([
-            'data' => new FlightInvoiceResource($FlightInvoice->load(['Flight', 'trip','hotel', 'busInvoice', 'paymentMethodType', 'pilgrims'])),
+            'data' => new FlightInvoiceResource($FlightInvoice->load(['flight', 'trip','hotel', 'paymentMethodType', 'pilgrims'])),
             'message' => 'تم تحديث الفاتورة بنجاح'
         ]);
 
@@ -536,7 +536,7 @@ public function pending($id)
     if ($FlightInvoice->invoiceStatus === 'pending') {
         $FlightInvoice->load([ 'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight','hotel' ,'trip', 'busInvoice','pilgrims']);
+            'flight','hotel' ,'trip','pilgrims']);
         return $this->respondWithResource($FlightInvoice, 'Flight Invoice is already set to pending');
     }
 
@@ -558,7 +558,7 @@ public function pending($id)
 
     $FlightInvoice->load([ 'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip','hotel' ,'busInvoice','pilgrims']);
+            'flight', 'trip','hotel' ,'pilgrims']);
     return $this->respondWithResource($FlightInvoice, 'Flight Invoice set to pending');
 }
 
@@ -576,7 +576,7 @@ public function approved($id)
     if ($FlightInvoice->invoiceStatus === 'approved') {
         $FlightInvoice->load([ 'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip','hotel' ,'busInvoice','pilgrims']);
+            'flight', 'trip','hotel','pilgrims']);
         return $this->respondWithResource($FlightInvoice, 'Flight Invoice is already set to approved');
     }
 
@@ -601,7 +601,7 @@ public function approved($id)
 
     $FlightInvoice->load([ 'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip','hotel','busInvoice','pilgrims']);
+            'flight', 'trip','hotel','pilgrims']);
     return $this->respondWithResource($FlightInvoice, 'Flight Invoice set to approved');
 }
 
@@ -622,7 +622,7 @@ public function rejected(string $id, Request $request)
     if ($FlightInvoice->invoiceStatus === 'rejected') {
         $FlightInvoice->load([ 'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight','hotel', 'trip', 'busInvoice','pilgrims']);
+            'flight','hotel', 'trip','pilgrims']);
         return $this->respondWithResource($FlightInvoice, 'Flight Invoice is already set to rejected');
     }
 
@@ -651,7 +651,7 @@ public function rejected(string $id, Request $request)
 
     $FlightInvoice->load([ 'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip','hotel' ,'busInvoice','pilgrims']);
+            'flight', 'trip','hotel' ,'pilgrims']);
     return $this->respondWithResource($FlightInvoice, 'Flight Invoice set to rejected');
 }
 
@@ -671,7 +671,7 @@ public function completed($id, Request $request)
         $FlightInvoice = FlightInvoice::with([
             'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'Flight', 'trip','hotel', 'busInvoice','pilgrims'
+            'flight', 'trip','hotel','pilgrims'
         ])->findOrFail($id);
 
         if ($FlightInvoice->invoiceStatus === 'completed') {
