@@ -386,7 +386,7 @@ protected function ensureNumeric($value)
 public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoice)
 {
     $this->authorize('manage_system');
-dd($request->all());
+
     // رفض التعديل لو الفاتورة تم اعتمادها أو اكتمالها
     if (in_array($FlightInvoice->invoiceStatus, ['approved', 'completed'])) {
         return response()->json([
@@ -449,7 +449,7 @@ dd($request->all());
 
         // تحديث الحجاج إن وجد تغيير
         if ($pilgrimsChanged) {
-            $this->syncPilgrims($FlightInvoice, $request->pilgrims);
+            $this->syncPilgrims($FlightInvoice->fresh(['flight']), $request->pilgrims);
         }
 
         // إعادة تحميل الفاتورة مع العلاقات (مرة واحدة)
@@ -497,6 +497,7 @@ dd($request->all());
         ], 500);
     }
 }
+
 
 
 protected function hasPilgrimsChanges(FlightInvoice $invoice, array $newPilgrims): bool
