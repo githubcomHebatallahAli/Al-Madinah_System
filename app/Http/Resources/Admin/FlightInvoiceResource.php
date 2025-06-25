@@ -23,7 +23,7 @@ class FlightInvoiceResource extends JsonResource
 }),
 
             // 'invoiceNumber' => $this->invoiceNumber,
-            'bus_invoice_id'=> $this ->busInvoice?->id,
+            
             'flight_id'=> $this ->flight_id,
             'trip_id' => $this->trip?->id,
             'trip_name' => $this->trip?->name,
