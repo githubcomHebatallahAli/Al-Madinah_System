@@ -148,7 +148,7 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
 {
       $flight = Flight::where('id', $invoice->flight_id)->lockForUpdate()->first();
-dd($invoice->flight_id, $invoice->flight);
+
     if (!$flight) {
         throw new \Exception('الرحلة غير موجودة');
     }
