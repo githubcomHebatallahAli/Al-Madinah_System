@@ -55,6 +55,11 @@ class Hotel extends Model
         return $this->hasMany(HotelInvoice::class);
     }
 
+            public function flightInvoices()
+{
+    return $this->hasMany(FlightInvoice::class);
+}
+
 
     public function creator()
 {

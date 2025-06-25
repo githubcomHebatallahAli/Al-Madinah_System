@@ -78,6 +78,21 @@ public function calculateTotal(): void
         return $this->belongsTo(PaymentMethodType::class);
     }
 
+    public function flight()
+{
+    return $this->belongsTo(Flight::class);
+}
+
+public function hotel()
+{
+    return $this->belongsTo(Hotel::class);
+}
+
+public function trip()
+{
+    return $this->belongsTo(Trip::class);
+}
+
 
         public function creator()
 {

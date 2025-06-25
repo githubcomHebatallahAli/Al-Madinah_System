@@ -49,6 +49,13 @@ class Flight extends Model
     return $this->morphMany(ShipmentItem::class, 'item');
 }
 
+        public function flightInvoices()
+{
+    return $this->hasMany(FlightInvoice::class);
+}
+
+
+
 
 
     public function creator()
