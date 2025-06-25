@@ -25,6 +25,8 @@ class FlightInvoiceResource extends JsonResource
             // 'invoiceNumber' => $this->invoiceNumber,
 
             'flight_id'=> $this ->flight_id,
+            'flight_direction' => $this->flight?->direction,
+            'DateTimeTrip'=>$this->flight?->DateTimeTrip,
             'trip_id' => $this->trip?->id,
             'trip_name' => $this->trip?->name,
             'hotel_id' => $this->hotel?->id,
