@@ -115,211 +115,211 @@ if ($request->filled('toDate')) {
     ]);
 }
 
-public function create(ShipmentRequest $request)
-{
-    $this->authorize('manage_system');
+// public function create(ShipmentRequest $request)
+// {
+//     $this->authorize('manage_system');
 
-    try {
-        $shipment = DB::transaction(function () use ($request) {
-            $data = array_merge($request->only([
-                'company_id', 'supplier_id', 'service_id', 'description'
-            ]), $this->prepareCreationMetaData());
+//     try {
+//         $shipment = DB::transaction(function () use ($request) {
+//             $data = array_merge($request->only([
+//                 'company_id', 'supplier_id', 'service_id', 'description'
+//             ]), $this->prepareCreationMetaData());
 
-            $data['status'] = $data['status'] ?? 'active';
-            $data['totalPrice'] = 0;
+//             $data['status'] = $data['status'] ?? 'active';
+//             $data['totalPrice'] = 0;
 
-            $shipment = Shipment::create($data);
-            $total = 0;
+//             $shipment = Shipment::create($data);
+//             $total = 0;
 
-            foreach ($request->items as $item) {
-                $morphClass = $this->getMorphClass($item['item_type']);
+//             foreach ($request->items as $item) {
+//                 $morphClass = $this->getMorphClass($item['item_type']);
 
-                if (!class_exists($morphClass)) {
-                    throw new \Exception("Class {$morphClass} not found");
-                }
+//                 if (!class_exists($morphClass)) {
+//                     throw new \Exception("Class {$morphClass} not found");
+//                 }
 
-                $itemTotal = $item['quantity'] * $item['unitPrice'];
-                $total += $itemTotal;
+//                 $itemTotal = $item['quantity'] * $item['unitPrice'];
+//                 $total += $itemTotal;
 
-                 $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
-    $rentalEndHijri   = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
-    $tripDateHijri    = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
+//                  $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
+//     $rentalEndHijri   = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
+//     $tripDateHijri    = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
 
-        $shipmentItem = ShipmentItem::create([
-          'shipment_id'         => $shipment->id,
-        'item_id'             => $item['item_id'],
-        'item_type'           => $morphClass,
-        'quantity'            => $item['quantity'],
-        'unitPrice'           => $item['unitPrice'],
-        'totalPrice'          => $itemTotal,
-        'rentalStart'         => $item['rentalStart'] ?? null,
-        'rentalEnd'           => $item['rentalEnd'] ?? null,
-        'rentalStartHijri'    => $rentalStartHijri,
-        'rentalEndHijri'      => $rentalEndHijri,
-        'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
-        'DateTimeTripHijri'   => $tripDateHijri,
-        'seatNum'             => $item['seatNum'] ?? null,
-        'class'               => $item['class'] ?? null,
-        'roomType' => $item['roomType'] ?? null,
-        'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri'   => $this->getHijriDate(),
+//         $shipmentItem = ShipmentItem::create([
+//           'shipment_id'         => $shipment->id,
+//         'item_id'             => $item['item_id'],
+//         'item_type'           => $morphClass,
+//         'quantity'            => $item['quantity'],
+//         'unitPrice'           => $item['unitPrice'],
+//         'totalPrice'          => $itemTotal,
+//         'rentalStart'         => $item['rentalStart'] ?? null,
+//         'rentalEnd'           => $item['rentalEnd'] ?? null,
+//         'rentalStartHijri'    => $rentalStartHijri,
+//         'rentalEndHijri'      => $rentalEndHijri,
+//         'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
+//         'DateTimeTripHijri'   => $tripDateHijri,
+//         'seatNum'             => $item['seatNum'] ?? null,
+//         'class'               => $item['class'] ?? null,
+//         'roomType' => $item['roomType'] ?? null,
+//         'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+//         'creationDateHijri'   => $this->getHijriDate(),
 
-                ]);
+//                 ]);
 
-                 $shipment->updateItemsCount();
+//                  $shipment->updateItemsCount();
 
-                $itemModel = $morphClass::find($item['item_id']);
+//                 $itemModel = $morphClass::find($item['item_id']);
 
-                if ($itemModel) {
-                    $itemModel->increment('quantity', $item['quantity']);
+//                 if ($itemModel) {
+//                     $itemModel->increment('quantity', $item['quantity']);
 
-                    Log::info("تم تحديث كمية العنصر", [
-                        'model' => $morphClass,
-                        'id' => $item['item_id'],
-                        'quantity_added' => $item['quantity'],
-                        'new_quantity' => $itemModel->quantity
+//                     Log::info("تم تحديث كمية العنصر", [
+//                         'model' => $morphClass,
+//                         'id' => $item['item_id'],
+//                         'quantity_added' => $item['quantity'],
+//                         'new_quantity' => $itemModel->quantity
+//                     ]);
+//                 }
+//             }
+
+//             $shipment->update(['totalPrice' => $total]);
+//             return $shipment;
+//         });
+
+//         $this->loadCommonRelations($shipment);
+//         $shipment->load('items');
+
+//         return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات بنجاح.");
+
+//     } catch (\Exception $e) {
+//         Log::error('فشل إنشاء الشحنة', [
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//             'request' => $request->all()
+//         ]);
+
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
+//             'error' => $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
+    public function create(ShipmentRequest $request)
+    {
+        $this->authorize('manage_system');
+
+        try {
+            $shipment = DB::transaction(function () use ($request) {
+                $data = array_merge($request->only([
+                    'company_id', 'supplier_id', 'service_id', 'description'
+                ]), $this->prepareCreationMetaData());
+
+                $data['status'] = $data['status'] ?? 'active';
+                $data['totalPrice'] = 0;
+
+                $shipment = Shipment::create($data);
+                $total = 0;
+
+                foreach ($request->items as $item) {
+                    $morphClass = $this->getMorphClass($item['item_type']);
+
+                    if (!class_exists($morphClass)) {
+                        throw new \Exception("Class {$morphClass} not found");
+                    }
+
+                    $itemTotal = $item['quantity'] * $item['unitPrice'];
+                    $total += $itemTotal;
+
+                    $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
+                    $rentalEndHijri = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
+                    $tripDateHijri = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
+
+                    $shipmentItem = ShipmentItem::create([
+                        'shipment_id' => $shipment->id,
+                        'item_id' => $item['item_id'],
+                        'item_type' => $morphClass,
+                        'quantity' => $item['quantity'],
+                        'unitPrice' => $item['unitPrice'],
+                        'totalPrice' => $itemTotal,
+                        'rentalStart' => $item['rentalStart'] ?? null,
+                        'rentalEnd' => $item['rentalEnd'] ?? null,
+                        'rentalStartHijri' => $rentalStartHijri,
+                        'rentalEndHijri' => $rentalEndHijri,
+                        'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
+                        'DateTimeTripHijri' => $tripDateHijri,
+                        'seatNum' => $item['seatNum'] ?? null,
+                        'class' => $item['class'] ?? null,
+                        'roomType' => $item['roomType'] ?? null,
+                        'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+                        'creationDateHijri' => $this->getHijriDate(),
                     ]);
+
+                    $shipment->updateItemsCount();
+
+                    $itemModel = $morphClass::find($item['item_id']);
+
+                    if ($itemModel) {
+                        // تحديث الكمية
+                        $itemModel->increment('quantity', $item['quantity']);
+
+                        // إذا كان العنصر من نوع Flight، نقوم بتحديث الحقول الإضافية
+                        if ($itemModel instanceof Flight) {
+                            $updateData = [
+                                'purchesPrice' => $item['unitPrice'],
+                                'profit' => isset($itemModel->sellingPrice) ?
+                                    $itemModel->sellingPrice - $item['unitPrice'] : null
+                            ];
+
+                            // إضافة الحقول فقط إذا كانت موجودة في الطلب
+                            if (isset($item['class'])) {
+                                $updateData['class'] = $item['class'];
+                            }
+                            if (isset($item['seatNum'])) {
+                                $updateData['seatNum'] = $item['seatNum'];
+                            }
+                            if (isset($item['DateTimeTrip'])) {
+                                $updateData['DateTimeTrip'] = $item['DateTimeTrip'];
+                                $updateData['DateTimeTripHijri'] = $tripDateHijri;
+                            }
+
+                            $itemModel->update($updateData);
+                        }
+
+                        Log::info("تم تحديث العنصر", [
+                            'model' => $morphClass,
+                            'id' => $item['item_id'],
+                            'quantity_added' => $item['quantity'],
+                            'purchesPrice_updated' => $item['unitPrice'],
+                            'new_quantity' => $itemModel->quantity
+                        ]);
+                    }
                 }
-            }
 
-            $shipment->update(['totalPrice' => $total]);
-            return $shipment;
-        });
+                $shipment->update(['totalPrice' => $total]);
+                return $shipment;
+            });
 
-        $this->loadCommonRelations($shipment);
-        $shipment->load('items');
+            $this->loadCommonRelations($shipment);
+            $shipment->load('items');
 
-        return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات بنجاح.");
+            return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات وتحديث البيانات بنجاح.");
 
-    } catch (\Exception $e) {
-        Log::error('فشل إنشاء الشحنة', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'request' => $request->all()
-        ]);
+        } catch (\Exception $e) {
+            Log::error('فشل إنشاء الشحنة', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
 
-        return response()->json([
-            'success' => false,
-            'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
-            'error' => $e->getMessage(),
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
-
-    // public function create(ShipmentRequest $request)
-    // {
-    //     $this->authorize('manage_system');
-
-    //     try {
-    //         $shipment = DB::transaction(function () use ($request) {
-    //             $data = array_merge($request->only([
-    //                 'company_id', 'supplier_id', 'service_id', 'description'
-    //             ]), $this->prepareCreationMetaData());
-
-    //             $data['status'] = $data['status'] ?? 'active';
-    //             $data['totalPrice'] = 0;
-
-    //             $shipment = Shipment::create($data);
-    //             $total = 0;
-
-    //             foreach ($request->items as $item) {
-    //                 $morphClass = $this->getMorphClass($item['item_type']);
-
-    //                 if (!class_exists($morphClass)) {
-    //                     throw new \Exception("Class {$morphClass} not found");
-    //                 }
-
-    //                 $itemTotal = $item['quantity'] * $item['unitPrice'];
-    //                 $total += $itemTotal;
-
-    //                 $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
-    //                 $rentalEndHijri = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
-    //                 $tripDateHijri = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
-
-    //                 $shipmentItem = ShipmentItem::create([
-    //                     'shipment_id' => $shipment->id,
-    //                     'item_id' => $item['item_id'],
-    //                     'item_type' => $morphClass,
-    //                     'quantity' => $item['quantity'],
-    //                     'unitPrice' => $item['unitPrice'],
-    //                     'totalPrice' => $itemTotal,
-    //                     'rentalStart' => $item['rentalStart'] ?? null,
-    //                     'rentalEnd' => $item['rentalEnd'] ?? null,
-    //                     'rentalStartHijri' => $rentalStartHijri,
-    //                     'rentalEndHijri' => $rentalEndHijri,
-    //                     'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
-    //                     'DateTimeTripHijri' => $tripDateHijri,
-    //                     'seatNum' => $item['seatNum'] ?? null,
-    //                     'class' => $item['class'] ?? null,
-    //                     'roomType' => $item['roomType'] ?? null,
-    //                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-    //                     'creationDateHijri' => $this->getHijriDate(),
-    //                 ]);
-
-    //                 $shipment->updateItemsCount();
-
-    //                 $itemModel = $morphClass::find($item['item_id']);
-
-    //                 if ($itemModel) {
-    //                     // تحديث الكمية
-    //                     $itemModel->increment('quantity', $item['quantity']);
-
-    //                     // إذا كان العنصر من نوع Flight، نقوم بتحديث الحقول الإضافية
-    //                     if ($itemModel instanceof Flight) {
-    //                         $updateData = [
-    //                             'purchesPrice' => $item['unitPrice'],
-    //                             'profit' => isset($itemModel->sellingPrice) ?
-    //                                 $itemModel->sellingPrice - $item['unitPrice'] : null
-    //                         ];
-
-    //                         // إضافة الحقول فقط إذا كانت موجودة في الطلب
-    //                         if (isset($item['class'])) {
-    //                             $updateData['class'] = $item['class'];
-    //                         }
-    //                         if (isset($item['seatNum'])) {
-    //                             $updateData['seatNum'] = $item['seatNum'];
-    //                         }
-    //                         if (isset($item['DateTimeTrip'])) {
-    //                             $updateData['DateTimeTrip'] = $item['DateTimeTrip'];
-    //                             $updateData['DateTimeTripHijri'] = $tripDateHijri;
-    //                         }
-
-    //                         $itemModel->update($updateData);
-    //                     }
-
-    //                     Log::info("تم تحديث العنصر", [
-    //                         'model' => $morphClass,
-    //                         'id' => $item['item_id'],
-    //                         'quantity_added' => $item['quantity'],
-    //                         'purchesPrice_updated' => $item['unitPrice'],
-    //                         'new_quantity' => $itemModel->quantity
-    //                     ]);
-    //                 }
-    //             }
-
-    //             $shipment->update(['totalPrice' => $total]);
-    //             return $shipment;
-    //         });
-
-    //         $this->loadCommonRelations($shipment);
-    //         $shipment->load('items');
-
-    //         return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات وتحديث البيانات بنجاح.");
-
-    //     } catch (\Exception $e) {
-    //         Log::error('فشل إنشاء الشحنة', [
-    //             'error' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString(),
-    //             'request' => $request->all()
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
 
 
         public function edit(string $id)

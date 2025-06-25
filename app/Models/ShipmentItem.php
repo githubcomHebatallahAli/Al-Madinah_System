@@ -55,60 +55,60 @@ protected $hidden = ['created_at', 'updated_at'];
 ];
 
 
- protected static function booted()
-    {
-      static::created(function ($item) {
-        $item->shipment->updateItemsCount();
-    });
-
-    static::updated(function ($item) {
-        $item->shipment->updateItemsCount();
-    });
-
-
-    }
-
-//   protected static function booted()
+//  protected static function booted()
 //     {
-//         static::created(function ($item) {
-//             $item->shipment->updateItemsCount();
-//             $item->updateRelatedFlight();
-//         });
+//       static::created(function ($item) {
+//         $item->shipment->updateItemsCount();
+//     });
 
-//         static::updated(function ($item) {
-//             $item->shipment->updateItemsCount();
-//             $item->updateRelatedFlight();
-//         });
+//     static::updated(function ($item) {
+//         $item->shipment->updateItemsCount();
+//     });
+
+
 //     }
 
-    // public function updateRelatedFlight()
-    // {
-    //     if ($this->item_type === \App\Models\Flight::class) {
-    //         $flight = Flight::find($this->item_id);
+  protected static function booted()
+    {
+        static::created(function ($item) {
+            $item->shipment->updateItemsCount();
+            $item->updateRelatedFlight();
+        });
 
-    //         if ($flight) {
-    //             $updateData = [
-    //                 'purchesPrice' => $this->unitPrice,
-    //                 'profit' => isset($flight->sellingPrice) ?
-    //                     $flight->sellingPrice - $this->unitPrice : null
-    //             ];
+        static::updated(function ($item) {
+            $item->shipment->updateItemsCount();
+            $item->updateRelatedFlight();
+        });
+    }
 
-    //             // تحديث الحقول فقط إذا كانت موجودة في ShipmentItem
-    //             if (!is_null($this->class)) {
-    //                 $updateData['class'] = $this->class;
-    //             }
-    //             if (!is_null($this->seatNum)) {
-    //                 $updateData['seatNum'] = $this->seatNum;
-    //             }
-    //             if (!is_null($this->DateTimeTrip)) {
-    //                 $updateData['DateTimeTrip'] = $this->DateTimeTrip;
-    //                 $updateData['DateTimeTripHijri'] = $this->DateTimeTripHijri;
-    //             }
+    public function updateRelatedFlight()
+    {
+        if ($this->item_type === \App\Models\Flight::class) {
+            $flight = Flight::find($this->item_id);
 
-    //             $flight->update($updateData);
-    //         }
-    //     }
-    // }
+            if ($flight) {
+                $updateData = [
+                    'purchesPrice' => $this->unitPrice,
+                    'profit' => isset($flight->sellingPrice) ?
+                        $flight->sellingPrice - $this->unitPrice : null
+                ];
+
+                // تحديث الحقول فقط إذا كانت موجودة في ShipmentItem
+                if (!is_null($this->class)) {
+                    $updateData['class'] = $this->class;
+                }
+                if (!is_null($this->seatNum)) {
+                    $updateData['seatNum'] = $this->seatNum;
+                }
+                if (!is_null($this->DateTimeTrip)) {
+                    $updateData['DateTimeTrip'] = $this->DateTimeTrip;
+                    $updateData['DateTimeTripHijri'] = $this->DateTimeTripHijri;
+                }
+
+                $flight->update($updateData);
+            }
+        }
+    }
 
 
 }
