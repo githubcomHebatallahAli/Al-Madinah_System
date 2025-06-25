@@ -216,7 +216,7 @@ public function create(IhramInvoiceRequest $request)
         $this->authorize('manage_system');
 
         $ihramInvoice =IhramInvoice::with([
-          'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'
+          'busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies','mainPilgrim'
     ])->find($id);
 
         if (!$ihramInvoice) {
