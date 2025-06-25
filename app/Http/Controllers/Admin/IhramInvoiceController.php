@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Pilgrim;
+use App\Models\BusInvoice;
 use App\Models\IhramSupply;
 use App\Models\IhramInvoice;
 use Illuminate\Http\Request;
@@ -838,5 +839,66 @@ public function completed($id, Request $request)
     {
         return IhramInvoiceResource::class;
     }
+
+
+    protected function attachBusPilgrims(IhramInvoice $invoice, $ihramInvoiceId)
+{
+    if (empty($ihramInvoiceId)) {
+        return;
+    }
+
+    $ihramInvoice = BusInvoice::with('pilgrims')->find($ihramInvoiceId);
+
+    if (!$ihramInvoice) {
+        throw new \Exception('عفواً، فاتورة الباص المحددة غير موجودة!');
+    }
+
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    $pilgrimsData = $ihramInvoice->pilgrims->mapWithKeys(function ($pilgrim) use ($currentDate, $hijriDate) {
+        return [
+            $pilgrim->id => [
+                'creationDate' => $currentDate,
+                'creationDateHijri' => $hijriDate,
+                'changed_data' => null
+            ]
+        ];
+    });
+
+    $invoice->pilgrims()->attach($pilgrimsData->toArray());
+}
+
+
+
+protected function preparePilgrimsData(array $pilgrims): array
+{
+    $pilgrimsData = [];
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    foreach ($pilgrims as $pilgrim) {
+        // للأطفال بدون idNum
+        if (empty($pilgrim['idNum'])) {
+            $p = Pilgrim::create([
+                'name' => $pilgrim['name'],
+                'nationality' => $pilgrim['nationality'],
+                'gender' => $pilgrim['gender'],
+                'phoNum' => null,
+                'idNum' => null
+            ]);
+        } else {
+            $p = Pilgrim::where('idNum', $pilgrim['idNum'])->firstOrFail();
+        }
+
+        $pilgrimsData[$p->id] = [
+            'creationDate' => $currentDate,
+            'creationDateHijri' => $hijriDate,
+            'changed_data' => null
+        ];
+    }
+
+    return $pilgrimsData;
+}
 
 }
