@@ -146,10 +146,15 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 
 protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
 {
-    // 🔒 تأمين الرحلة أثناء التعديل
-    $flight = $invoice->flight()->lockForUpdate()->first();
+       $flight = $invoice->flight()->lockForUpdate()->first();
+
+    if (!$flight) {
+        throw new \Exception('الرحلة غير موجودة');
+    }
+
+    // تعيين قيم افتراضية إذا كانت فارغة
     $availableSeats = $flight->seatNum ?? [];
-    $remainingQuantity = $flight->quantity;
+    $remainingQuantity = $flight->quantity ?? 0;
 
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
@@ -326,9 +331,7 @@ public function create(FlightInvoiceRequest $request)
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-        // if ($request->filled('bus_invoice_id')) {
-        //     $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
-        // }
+
 
         $invoice->PilgrimsCount();
         $invoice->calculateTotal();
@@ -382,6 +385,7 @@ protected function ensureNumeric($value)
 public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoice)
 {
     $this->authorize('manage_system');
+    $FlightInvoice->load('flight');
 
 
     if (in_array($FlightInvoice->invoiceStatus, ['approved', 'completed'])) {
