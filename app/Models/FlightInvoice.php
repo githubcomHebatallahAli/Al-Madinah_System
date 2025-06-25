@@ -83,7 +83,7 @@ $this->save();
 
     public function flight()
 {
-    return $this->belongsTo(Flight::class);
+    return $this->belongsTo(Flight::class, 'flight_id');
 }
 
 public function hotel()
