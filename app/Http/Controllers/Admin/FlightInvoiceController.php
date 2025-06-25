@@ -383,121 +383,7 @@ protected function ensureNumeric($value)
         return $this->respondWithResource($FlightInvoice, "Flight Invoice retrieved for editing.");
     }
 
-public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoice)
-{
-    $this->authorize('manage_system');
 
-    // رفض التعديل لو الفاتورة تم اعتمادها أو اكتمالها
-    if (in_array($FlightInvoice->invoiceStatus, ['approved', 'completed'])) {
-        return response()->json([
-            'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
-        ], 422);
-    }
-
-    // الاحتفاظ بالبيانات القديمة للمقارنة لاحقاً
-    $oldData = $FlightInvoice->toArray();
-
-    // حفظ بيانات الحجاج القديمة
-    $oldPilgrimsData = $FlightInvoice->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
-        return [
-            $pilgrim->id => [
-                'creationDate' => $pilgrim->pivot->creationDate,
-                'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-            ]
-        ];
-    })->toArray();
-
-    DB::beginTransaction();
-
-    try {
-        // تجهيز بيانات التحديث
-        $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount')),
-            'tax' => $this->ensureNumeric($request->input('tax')),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
-        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
-
-        // تحديد ما إذا كان هناك تغيير في بيانات الفاتورة
-        $hasChanges = false;
-        foreach ($data as $key => $value) {
-            if ($FlightInvoice->$key != $value) {
-                $hasChanges = true;
-                break;
-            }
-        }
-
-        // فحص التغيير في الحجاج
-        $pilgrimsChanged = false;
-        if ($request->has('pilgrims')) {
-            $pilgrimsChanged = $this->hasPilgrimsChanges($FlightInvoice, $request->pilgrims);
-            $hasChanges = $hasChanges || $pilgrimsChanged;
-        }
-
-        // إن لم يكن هناك تغييرات فعلية، نخرج مباشرة
-        if (!$hasChanges) {
-            DB::commit();
-            return response()->json([
-                'data' => new FlightInvoiceResource(
-                    $FlightInvoice->load(['flight', 'trip', 'hotel', 'paymentMethodType', 'pilgrims'])
-                ),
-                'message' => 'لا يوجد تغييرات فعلية'
-            ]);
-        }
-
-        // تحديث بيانات الفاتورة
-        $FlightInvoice->update($data);
-
-        // تحديث الحجاج إن وجد تغيير
-        if ($pilgrimsChanged) {
-            $FlightInvoice->load('flight'); // التحميل الآمن قبل استدعاء syncPilgrims
-            $this->syncPilgrims($FlightInvoice, $request->pilgrims);
-        }
-
-        // إعادة تحميل الفاتورة مع العلاقات (مرة واحدة)
-        $FlightInvoice = $FlightInvoice->fresh(['flight', 'trip', 'hotel', 'paymentMethodType', 'pilgrims']);
-
-        // تحديث بيانات الحجاج الجديدة
-        $newPilgrimsData = $FlightInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
-            return [
-                $pilgrim->id => [
-                    'creationDate' => $pilgrim->pivot->creationDate,
-                    'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-                ]
-            ];
-        })->toArray();
-
-        // تحديث العدد والإجمالي
-        $FlightInvoice->PilgrimsCount();
-        $FlightInvoice->calculateTotal();
-
-        // استخراج التغييرات
-        $changedData = $FlightInvoice->getChangedData($oldData, $FlightInvoice->toArray());
-
-        // إضافة تغييرات الحجاج إن وُجدت
-        if ($pilgrimsChanged) {
-            $changedData['pilgrims'] = $this->getPivotChanges($oldPilgrimsData, $newPilgrimsData);
-        }
-
-        // حفظ بيانات التغييرات إن وُجدت
-        if (!empty($changedData)) {
-            $FlightInvoice->changed_data = $changedData;
-            $FlightInvoice->save();
-        }
-
-        DB::commit();
-
-        return response()->json([
-            'data' => new FlightInvoiceResource($FlightInvoice),
-            'message' => 'تم تحديث الفاتورة بنجاح'
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()
-        ], 500);
-    }
-}
 
 
 
@@ -931,4 +817,113 @@ protected function preparePilgrimsData(array $pilgrims): array
 
     return $pilgrimsData;
 }
+
+public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoice)
+{
+    $this->authorize('manage_system');
+
+    if (in_array($FlightInvoice->invoiceStatus, ['approved', 'completed'])) {
+        return response()->json([
+            'message' => 'لا يمكن تعديل فاتورة معتمدة أو مكتملة'
+        ], 422);
+    }
+
+    $oldData = $FlightInvoice->toArray();
+
+    $oldPilgrimsData = $FlightInvoice->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
+        return [
+            $pilgrim->id => [
+                'creationDate' => $pilgrim->pivot->creationDate,
+                'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+            ]
+        ];
+    })->toArray();
+
+    DB::beginTransaction();
+
+    try {
+        $data = array_merge([
+            'discount' => $this->ensureNumeric($request->input('discount')),
+            'tax' => $this->ensureNumeric($request->input('tax')),
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
+
+        $hasChanges = false;
+        foreach ($data as $key => $value) {
+            if ($FlightInvoice->$key != $value) {
+                $hasChanges = true;
+                break;
+            }
+        }
+
+        $pilgrimsChanged = false;
+        if ($request->has('pilgrims')) {
+            $pilgrimsChanged = $this->hasPilgrimsChanges($FlightInvoice, $request->pilgrims);
+            $hasChanges = $hasChanges || $pilgrimsChanged;
+        }
+
+        if (!$hasChanges) {
+            DB::commit();
+            return response()->json([
+                'data' => new FlightInvoiceResource(
+                    $FlightInvoice->load(['flight', 'trip', 'hotel', 'paymentMethodType', 'pilgrims'])
+                ),
+                'message' => 'لا يوجد تغييرات فعلية'
+            ]);
+        }
+
+        // ✅ تحديث الفاتورة
+        $FlightInvoice->update($data);
+
+        // ✅ تحميل العلاقة flight مباشرة بعد التحديث
+        $FlightInvoice->load('flight');
+
+        // ✅ تحديث الحجاج إن تم تغييرهم
+        if ($pilgrimsChanged) {
+            $this->syncPilgrims($FlightInvoice, $request->pilgrims);
+        }
+
+        // ✅ إعادة تحميل العلاقات بعد التزامن
+        $FlightInvoice = $FlightInvoice->fresh(['flight', 'trip', 'hotel', 'paymentMethodType', 'pilgrims']);
+
+        $newPilgrimsData = $FlightInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
+            return [
+                $pilgrim->id => [
+                    'creationDate' => $pilgrim->pivot->creationDate,
+                    'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+                ]
+            ];
+        })->toArray();
+
+        // ✅ تحديث عدد الحجاج والمجموع
+        $FlightInvoice->PilgrimsCount();
+        $FlightInvoice->calculateTotal();
+
+        // ✅ استخراج التغييرات
+        $changedData = $FlightInvoice->getChangedData($oldData, $FlightInvoice->toArray());
+
+        if ($pilgrimsChanged) {
+            $changedData['pilgrims'] = $this->getPivotChanges($oldPilgrimsData, $newPilgrimsData);
+        }
+
+        if (!empty($changedData)) {
+            $FlightInvoice->changed_data = $changedData;
+            $FlightInvoice->save();
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'data' => new FlightInvoiceResource($FlightInvoice),
+            'message' => 'تم تحديث الفاتورة بنجاح'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }
