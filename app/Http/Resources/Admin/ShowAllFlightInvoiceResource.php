@@ -15,7 +15,7 @@ class ShowAllFlightInvoiceResource extends JsonResource
             'pilgrimsCount'=> $this ->pilgrimsCount,
 
             'flight_id' => $this->id,
-            'flight_direction' => $this->direction,
+            'flight_direction' => $this->flight?->direction,
             'trip_id' => $this->trip?->id,
             'trip_name' => $this->trip?->name,
             'hotel_id' => $this->hotel?->id,
@@ -24,7 +24,7 @@ class ShowAllFlightInvoiceResource extends JsonResource
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
 
-            
+
             'total' => $this->total,
             'paidAmount' => $this->paidAmount,
             'invoiceStatus' => $this->invoiceStatus,
