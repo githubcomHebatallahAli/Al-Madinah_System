@@ -682,32 +682,28 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
 {
     $this->authorize('manage_system');
 
-    // تحميل العلاقات مع قفل التحديث
-    $FlightInvoice->load([
-        'flight' => function($q) { $q->lockForUpdate(); },
-        'pilgrims'
-    ]);
-
-    // بداية المعاملة
     DB::beginTransaction();
     try {
-      $actualFlightId = DB::table('flight_invoices')
-                  ->where('id', $FlightInvoice->id)
-                  ->value('flight_id');
+        // تحميل العلاقات مع قفل التحديث
+        $FlightInvoice->load([
+            'flight' => function($q) { $q->lockForUpdate(); },
+            'pilgrims'
+        ]);
 
-$flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
-                              ->lockForUpdate()
-                              ->exists();
+        // التحقق من وجود الرحلة
+        $actualFlightId = DB::table('flight_invoices')
+            ->where('id', $FlightInvoice->id)
+            ->value('flight_id');
+
+        $flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
+            ->lockForUpdate()
+            ->exists();
 
         if (!$flightExists) {
             DB::rollBack();
             return response()->json([
                 'message' => 'الرحلة غير موجودة في قاعدة البيانات',
                 'flight_id' => $FlightInvoice->flight_id,
-                'debug' => [
-                    'flight_in_db' => Flight::find($FlightInvoice->flight_id),
-                    'invoice_data' => $FlightInvoice->toArray()
-                ]
             ], 422);
         }
 
@@ -720,21 +716,24 @@ $flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
         }
 
         $oldData = $FlightInvoice->toArray();
-        $oldPilgrimsData = $FlightInvoice->pilgrims()->get()->mapWithKeys(function ($pilgrim) {
-            return [
-                $pilgrim->id => [
-                    'creationDate' => $pilgrim->pivot->creationDate,
-                    'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-                ]
-            ];
-        })->toArray();
+        $oldPilgrimsData = $FlightInvoice->pilgrims()->withPivot('seatNumber')->get()
+            ->mapWithKeys(function ($pilgrim) {
+                return [
+                    $pilgrim->id => [
+                        'seatNumber' => $pilgrim->pivot->seatNumber,
+                        'creationDate' => $pilgrim->pivot->creationDate,
+                        'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+                    ]
+                ];
+            })->toArray();
 
         $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount')),
-            'tax' => $this->ensureNumeric($request->input('tax')),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')),
+            'discount' => $this->ensureNumeric($request->input('discount', 0)),
+            'tax' => $this->ensureNumeric($request->input('tax', 0)),
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
 
+        // التحقق من وجود تغييرات
         $hasChanges = false;
         foreach ($data as $key => $value) {
             if ($FlightInvoice->$key != $value) {
@@ -759,29 +758,128 @@ $flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
             ]);
         }
 
+        // تطبيق التحديثات
         $FlightInvoice->update($data);
 
-        if ($pilgrimsChanged) {
+        if ($pilgrimsChanged && $request->has('pilgrims')) {
             $this->syncPilgrims($FlightInvoice, $request->pilgrims);
         }
 
+        // تحديث عدد الحجاج والمبالغ
         $FlightInvoice->PilgrimsCount();
         $FlightInvoice->calculateTotal();
 
-        $newPilgrimsData = $FlightInvoice->pilgrims->mapWithKeys(function ($pilgrim) {
-            return [
-                $pilgrim->id => [
-                    'creationDate' => $pilgrim->pivot->creationDate,
-                    'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-                ]
-            ];
-        })->toArray();
+        // تجهيز بيانات التغييرات
+        $changedData = [];
+        $newData = $FlightInvoice->fresh()->toArray();
 
-        $changedData = $FlightInvoice->getChangedData($oldData, $FlightInvoice->toArray());
-        if ($pilgrimsChanged) {
-            $changedData['pilgrims'] = $this->getPivotChanges($oldPilgrimsData, $newPilgrimsData);
+        // تتبع تغييرات الحقول الأساسية
+        foreach ($data as $key => $value) {
+            if (array_key_exists($key, $oldData)) {
+                $oldValue = $oldData[$key];
+                $newValue = $newData[$key] ?? $value;
+
+                if ($oldValue != $newValue) {
+                    $changedData[$key] = [
+                        'old' => $oldValue,
+                        'new' => $newValue
+                    ];
+                }
+            }
         }
 
+        // تتبع تغييرات الحجاج
+        if ($pilgrimsChanged) {
+            $newPilgrimsData = $FlightInvoice->pilgrims()->withPivot('seatNumber')->get()
+                ->mapWithKeys(function ($pilgrim) {
+                    return [
+                        $pilgrim->id => [
+                            'seatNumber' => $pilgrim->pivot->seatNumber,
+                            'creationDate' => $pilgrim->pivot->creationDate,
+                            'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+                        ]
+                    ];
+                })->toArray();
+
+            $pilgrimChanges = [];
+
+            // الحجاج الذين تم تعديلهم أو حذفهم
+            foreach ($oldPilgrimsData as $pilgrimId => $oldPivot) {
+                if (!isset($newPilgrimsData[$pilgrimId])) {
+                    $pilgrimChanges[$pilgrimId] = [
+                        'old' => $oldPivot,
+                        'new' => null
+                    ];
+                    continue;
+                }
+
+                $newPivot = $newPilgrimsData[$pilgrimId];
+                $changes = [];
+
+                foreach ($oldPivot as $key => $oldValue) {
+                    if ($newPivot[$key] != $oldValue) {
+                        $changes[$key] = [
+                            'old' => $oldValue,
+                            'new' => $newPivot[$key]
+                        ];
+                    }
+                }
+
+                if (!empty($changes)) {
+                    $pilgrimChanges[$pilgrimId] = $changes;
+                }
+            }
+
+            // الحجاج الجدد
+            foreach ($newPilgrimsData as $pilgrimId => $newPivot) {
+                if (!isset($oldPilgrimsData[$pilgrimId])) {
+                    $pilgrimChanges[$pilgrimId] = [
+                        'old' => null,
+                        'new' => $newPivot
+                    ];
+                }
+            }
+
+            if (!empty($pilgrimChanges)) {
+                $changedData['pilgrims'] = $pilgrimChanges;
+            }
+        }
+
+        // تتبع تغييرات الرحلة
+        if ($FlightInvoice->isDirty('flight_id')) {
+            $oldFlight = Flight::find($oldData['flight_id']);
+            $newFlight = $FlightInvoice->flight;
+
+            $changedData['flight'] = [
+                'old' => $oldFlight ? [
+                    'id' => $oldFlight->id,
+                    'direction' => $oldFlight->direction,
+                    'quantity' => $oldFlight->quantity,
+                    'seatNum' => $oldFlight->seatNum,
+                    'class' => $oldFlight->class
+                ] : null,
+                'new' => $newFlight ? [
+                    'id' => $newFlight->id,
+                    'direction' => $newFlight->direction,
+                    'quantity' => $newFlight->quantity,
+                    'seatNum' => $newFlight->seatNum,
+                    'class' => $newFlight->class
+                ] : null
+            ];
+        }
+
+        // تحديث تواريخ الإنشاء
+        $changedData['creationDate'] = [
+            'old' => $oldData['creationDate'],
+            'new' => $newData['creationDate']
+        ];
+
+        $changedData['creationDateHijri'] = [
+            'old' => $oldData['creationDateHijri'],
+            'new' => $newData['creationDateHijri']
+        ];
+
+        // حفظ التغييرات
         if (!empty($changedData)) {
             $FlightInvoice->changed_data = $changedData;
             $FlightInvoice->save();
@@ -791,11 +889,7 @@ $flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
 
         return response()->json([
             'data' => new FlightInvoiceResource($FlightInvoice->fresh([
-                'flight',
-                'trip',
-                'hotel',
-                'paymentMethodType',
-                'pilgrims'
+                'flight', 'trip', 'hotel', 'paymentMethodType', 'pilgrims'
             ])),
             'message' => 'تم تحديث الفاتورة بنجاح'
         ]);
@@ -810,11 +904,7 @@ $flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
         ]);
 
         return response()->json([
-            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
-            'debug' => [
-                'flight_id' => $FlightInvoice->flight_id,
-                'flight_exists' => Flight::where('id', $FlightInvoice->flight_id)->exists()
-            ]
+            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage()
         ], 500);
     }
 }
@@ -826,12 +916,6 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
     }]);
 
     if (!$invoice->flight) {
-        Log::error('Flight missing for invoice', [
-            'invoice_id' => $invoice->id,
-            'flight_id' => $invoice->flight_id,
-            'existing_flight' => Flight::find($invoice->flight_id)
-        ]);
-
         throw new \Exception('الرحلة المحددة غير موجودة في النظام. رقم الرحلة: ' . $invoice->flight_id);
     }
 
@@ -839,10 +923,7 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
     $availableSeats = $flight->seatNum ?? [];
     $remainingQuantity = $flight->quantity ?? 0;
 
-    $hijriDate = $this->getHijriDate();
-    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $pilgrimsData = [];
-
+    // تحرير المقاعد القديمة
     $oldPilgrims = $invoice->pilgrims()->withPivot('seatNumber')->get();
     foreach ($oldPilgrims as $oldPilgrim) {
         $oldSeats = explode(',', $oldPilgrim->pivot->seatNumber);
@@ -851,13 +932,21 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
     }
     $availableSeats = array_values(array_unique($availableSeats));
 
+    // إعداد بيانات الحجاج الجدد
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $pilgrimsData = [];
+
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
         $seatsRequested = $pilgrim['seatNumber'] ?? [];
 
-        if (!is_array($seatsRequested) || count($seatsRequested) == 0) {
-            throw new \Exception("يجب تحديد المقاعد المخصصة للحاج {$p->name} كمصفوفة.");
+        // التحقق من صحة المقاعد
+        if (!is_array($seatsRequested) || empty($seatsRequested)) {
+            throw new \Exception("يجب تحديد المقاعد المخصصة للحاج {$p->name} كمصفوفة غير فارغة.");
         }
+
+        // التحقق من توفر المقاعد
         foreach ($seatsRequested as $seat) {
             if (!in_array($seat, $availableSeats)) {
                 throw new \Exception("المقعد $seat غير متاح حالياً.");
@@ -867,9 +956,12 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
         if (count($seatsRequested) > count($availableSeats)) {
             throw new \Exception("عدد المقاعد المطلوبة للحاج {$p->name} غير متاح.");
         }
+
+        // حجز المقاعد
         $availableSeats = array_values(array_diff($availableSeats, $seatsRequested));
         $remainingQuantity -= count($seatsRequested);
 
+        // التحقق مما إذا كان الحاج موجوداً سابقاً
         $existingPivot = $oldPilgrims->firstWhere('id', $p->id);
         $pilgrimsData[$p->id] = [
             'creationDate' => $existingPivot?->pivot?->creationDate ?? $currentDate,
@@ -878,10 +970,18 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
             'seatNumber' => implode(',', $seatsRequested),
         ];
     }
+
+    // تحديث بيانات الرحلة
     $flight->seatNum = array_values($availableSeats);
     $flight->quantity = $remainingQuantity;
     $flight->save();
+
+    // مزامنة الحجاج مع الفاتورة
     $invoice->pilgrims()->sync($pilgrimsData);
+
+    // تحديث عدد الحجاج والمبالغ
+    $invoice->PilgrimsCount();
+    $invoice->calculateTotal();
 }
 
 }
