@@ -31,7 +31,8 @@ class ShipmentItem extends Model
         'DateTimeTripHijri',
         'DateTimeTrip',
         'seatNum',
-        'class'
+        'class',
+        'roomType'
 
 
     ];

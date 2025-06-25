@@ -22,6 +22,7 @@ class ShipmentItemResource extends JsonResource
         'rentalEnd'=> $this -> rentalEnd,
         'rentalStartHijri'=> $this ->rentalStartHijri,
         'rentalEndHijri'=> $this ->rentalEndHijri,
+        'roomType'=> $this -> roomType,
         'creationDate'=> $this ->creationDate,
         'creationDateHijri'=> $this ->creationDateHijri,
         'class' => $this->class ,

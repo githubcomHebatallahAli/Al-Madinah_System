@@ -160,6 +160,7 @@ public function create(ShipmentRequest $request)
         'DateTimeTripHijri'   => $tripDateHijri,
         'seatNum'             => $item['seatNum'] ?? null,
         'class'               => $item['class'] ?? null,
+        'roomType' => $item['roomType'] ?? null,
         'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
         'creationDateHijri'   => $this->getHijriDate(),
 
@@ -250,6 +251,7 @@ public function create(ShipmentRequest $request)
     //                     'DateTimeTripHijri' => $tripDateHijri,
     //                     'seatNum' => $item['seatNum'] ?? null,
     //                     'class' => $item['class'] ?? null,
+    //                     'roomType' => $item['roomType'] ?? null,
     //                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
     //                     'creationDateHijri' => $this->getHijriDate(),
     //                 ]);
@@ -384,22 +386,7 @@ public function create(ShipmentRequest $request)
                 $tripDateHijri    = $item['DateTimeTrip']? $this->getHijriDate($item['DateTimeTrip']) : null;
 
         ShipmentItem::create([
-        // 'shipment_id' => $shipment->id,
-        // 'item_id'     => $item['item_id'],
-        // 'item_type'   => $this->getMorphClass($item['item_type']),
-        // 'quantity'    => $item['quantity'],
-        // 'unitPrice'   => $item['unitPrice'],
-        // 'totalPrice'  => $itemTotal,
-        // 'rentalStart'     => $item['rentalStart'] ?? null,
-        // 'rentalEnd'       => $item['rentalEnd'] ?? null,
-        // 'rentalStartHijri'=> $item['rentalStartHijri'] ?? null,
-        // 'rentalEndHijri'  => $item['rentalEndHijri'] ?? null,
-        // 'DateTimeTripHijri'=> $item['DateTimeTripHijri'] ?? null,
-        // 'DateTimeTrip'=>$item['DateTimeTrip'] ?? null,
-        // 'seatNum'=>$item['seatNum'] ?? null,
-        // 'class'=>$item['class'] ?? null,
-        // 'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        // 'creationDateHijri' => $this->getHijriDate(),
+
 
                 'shipment_id'         => $shipment->id,
                     'item_id'             => $item['item_id'],
@@ -415,6 +402,7 @@ public function create(ShipmentRequest $request)
                     'DateTimeTripHijri'   => $tripDateHijri,
                     'seatNum'             => $item['seatNum'] ?? null,
                     'class'               => $item['class'] ?? null,
+                    'roomType' => $item['roomType'] ?? null,
                     'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                     'creationDateHijri'   => $this->getHijriDate(),
                 ]);
@@ -455,6 +443,7 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
             'DateTimeTrip'         => $item->DateTimeTrip,
             'seatNum'              => $item->seatNum,
             'class'                => $item->class,
+            'roomType'                => $item->roomType,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
     $newItemsNormalized = collect($newItems)->map(function ($item) {
@@ -471,6 +460,7 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
         'DateTimeTrip'         => $item['DateTimeTrip'] ?? null,
         'seatNum'              => $item['seatNum'] ?? null,
         'class'                => $item['class'] ?? null,
+        'roomType'                => $item['roomType'] ?? null,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
 
