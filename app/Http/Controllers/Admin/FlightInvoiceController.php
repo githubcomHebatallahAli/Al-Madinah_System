@@ -386,7 +386,7 @@ protected function ensureNumeric($value)
 public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoice)
 {
     $this->authorize('manage_system');
-
+dd($request->all());
     // رفض التعديل لو الفاتورة تم اعتمادها أو اكتمالها
     if (in_array($FlightInvoice->invoiceStatus, ['approved', 'completed'])) {
         return response()->json([
