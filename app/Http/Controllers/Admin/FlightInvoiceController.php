@@ -478,6 +478,50 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
     }
 }
 
+protected function hasPilgrimsChanges(FlightInvoice $invoice, array $newPilgrims): bool
+{
+    $currentPilgrims = $invoice->pilgrims()->get()->keyBy('id');
+
+    // Check if number of pilgrims has changed
+    if (count($currentPilgrims) !== count($newPilgrims)) {
+        return true;
+    }
+
+    foreach ($newPilgrims as $newPilgrim) {
+        // For new pilgrims without ID (will be created)
+        if (empty($newPilgrim['idNum'])) {
+            return true;
+        }
+
+        $pilgrimId = $newPilgrim['id'] ?? null;
+
+        // If pilgrim doesn't exist in current invoice
+        if (!$pilgrimId || !$currentPilgrims->has($pilgrimId)) {
+            return true;
+        }
+
+        $currentPilgrim = $currentPilgrims->get($pilgrimId);
+
+        // Check if basic info has changed
+        if ($currentPilgrim->name !== $newPilgrim['name'] ||
+            $currentPilgrim->nationality !== $newPilgrim['nationality'] ||
+            $currentPilgrim->gender !== $newPilgrim['gender'] ||
+            $currentPilgrim->phoNum !== ($newPilgrim['phoNum'] ?? null)) {
+            return true;
+        }
+
+        // Check if seat numbers have changed
+        $currentSeats = explode(',', $currentPilgrim->pivot->seatNumber);
+        $newSeats = $newPilgrim['seatNumber'] ?? [];
+
+        if (array_diff($currentSeats, $newSeats) || array_diff($newSeats, $currentSeats)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 protected function prepareUpdateMetaData(): array
 {
     $updatedBy = $this->getUpdatedByIdOrFail();
