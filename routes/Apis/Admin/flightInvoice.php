@@ -15,7 +15,7 @@ Route::controller(FlightInvoiceController::class)->prefix('/delegate')->middlewa
    Route::post('/create/flightInvoice', 'create');
     Route::put('/updatePaid/flightInvoice/{id}','updatePaidAmount');
    Route::get('/edit/flightInvoice/{id}','edit');
-   Route::post('/update/flightInvoice/{flightInvoice}', 'update');
+   Route::post('/update/flightInvoice/{FlightInvoice}', 'update');
 
 
    Route::patch( 'pending/flightInvoice/{id}', 'pending');
