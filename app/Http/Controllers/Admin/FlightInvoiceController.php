@@ -691,11 +691,13 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
     // بداية المعاملة
     DB::beginTransaction();
     try {
-        // التحقق من وجود الرحلة
-        $flightExists = DB::table('flights')
-                        ->where('id', $FlightInvoice->flight_id)
-                        ->lockForUpdate()
-                        ->exists();
+      $actualFlightId = DB::table('flight_invoices')
+                  ->where('id', $FlightInvoice->id)
+                  ->value('flight_id');
+
+$flightExists = $actualFlightId && Flight::where('id', $actualFlightId)
+                              ->lockForUpdate()
+                              ->exists();
 
         if (!$flightExists) {
             DB::rollBack();
