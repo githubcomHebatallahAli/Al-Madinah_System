@@ -208,7 +208,7 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
-        $FlightInvoices = $query->with(['Flight', 'trip', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->paginate(10);
+        $FlightInvoices = $query->with(['flight', 'trip', 'paymentMethodType', 'pilgrims'])->orderBy('created_at', 'desc')->paginate(10);
         $totalPaidAmount = FlightInvoice::sum('paidAmount');
 
         return response()->json([
