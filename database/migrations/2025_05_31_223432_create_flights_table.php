@@ -21,6 +21,10 @@ return new class extends Migration
             $table->decimal('sellingPrice');
             $table->decimal('purchesPrice');
             $table->decimal('profit')->nullable();
+            $table->dateTime('DateTimeTrip')->nullable();
+            $table->string('DateTimeTripHijri')->nullable();
+            $table->json('seatNum')->nullable();
+            $table->string('class')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->string('added_by_type')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

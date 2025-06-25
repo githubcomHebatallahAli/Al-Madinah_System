@@ -19,12 +19,12 @@ class Flight extends Model
         'company_id',
         'class',
         'seatNum',
-        'direction',
-        'description',
         'DateTimeTrip',
         'DateTimeTripHijri',
+        'direction',
+        'description',
+
         'quantity',
-        'ticketPrice',
         'sellingPrice',
         'purchesPrice',
         'profit',
@@ -63,5 +63,6 @@ public function updater()
 
      protected $casts = [
     'changed_data' => 'array',
+    'seatNum'=> 'array'
 ];
 }
