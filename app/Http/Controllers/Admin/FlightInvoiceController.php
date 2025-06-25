@@ -137,9 +137,7 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 
         $query = FlightInvoice::query();
 
-             if ($request->filled('bus_invoice_id')) {
-            $query->where('bus_invoice_id', $request->bus_invoice_id);
-        }
+       
         if ($request->filled('trip_id')) {
             $query->where('trip_id', $request->trip_id);
         }
@@ -182,9 +180,7 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
         $this->authorize('manage_system');
 
         $query = FlightInvoice::query();
-        if ($request->filled('bus_invoice_id')) {
-            $query->where('bus_invoice_id', $request->bus_invoice_id);
-        }
+
 
         if ($request->filled('trip_id')) {
             $query->where('trip_id', $request->trip_id);
@@ -684,13 +680,11 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
 
     DB::beginTransaction();
     try {
-        // تحميل العلاقات مع قفل التحديث
         $FlightInvoice->load([
             'flight' => function($q) { $q->lockForUpdate(); },
             'pilgrims'
         ]);
 
-        // التحقق من وجود الرحلة
         $actualFlightId = DB::table('flight_invoices')
             ->where('id', $FlightInvoice->id)
             ->value('flight_id');
@@ -707,7 +701,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             ], 422);
         }
 
-        // التحقق من حالة الفاتورة
         if (in_array($FlightInvoice->invoiceStatus, ['approved', 'completed'])) {
             DB::rollBack();
             return response()->json([
@@ -733,7 +726,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareUpdateMetaData());
 
-        // التحقق من وجود تغييرات
         $hasChanges = false;
         foreach ($data as $key => $value) {
             if ($FlightInvoice->$key != $value) {
@@ -758,22 +750,18 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             ]);
         }
 
-        // تطبيق التحديثات
         $FlightInvoice->update($data);
 
         if ($pilgrimsChanged && $request->has('pilgrims')) {
             $this->syncPilgrims($FlightInvoice, $request->pilgrims);
         }
 
-        // تحديث عدد الحجاج والمبالغ
         $FlightInvoice->PilgrimsCount();
         $FlightInvoice->calculateTotal();
 
-        // تجهيز بيانات التغييرات
         $changedData = [];
         $newData = $FlightInvoice->fresh()->toArray();
 
-        // تتبع تغييرات الحقول الأساسية
         foreach ($data as $key => $value) {
             if (array_key_exists($key, $oldData)) {
                 $oldValue = $oldData[$key];
@@ -788,7 +776,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             }
         }
 
-        // تتبع تغييرات الحجاج
         if ($pilgrimsChanged) {
             $newPilgrimsData = $FlightInvoice->pilgrims()->withPivot('seatNumber')->get()
                 ->mapWithKeys(function ($pilgrim) {
@@ -803,7 +790,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
 
             $pilgrimChanges = [];
 
-            // الحجاج الذين تم تعديلهم أو حذفهم
             foreach ($oldPilgrimsData as $pilgrimId => $oldPivot) {
                 if (!isset($newPilgrimsData[$pilgrimId])) {
                     $pilgrimChanges[$pilgrimId] = [
@@ -830,7 +816,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
                 }
             }
 
-            // الحجاج الجدد
             foreach ($newPilgrimsData as $pilgrimId => $newPivot) {
                 if (!isset($oldPilgrimsData[$pilgrimId])) {
                     $pilgrimChanges[$pilgrimId] = [
@@ -845,7 +830,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             }
         }
 
-        // تتبع تغييرات الرحلة
         if ($FlightInvoice->isDirty('flight_id')) {
             $oldFlight = Flight::find($oldData['flight_id']);
             $newFlight = $FlightInvoice->flight;
@@ -868,7 +852,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             ];
         }
 
-        // تحديث تواريخ الإنشاء
         $changedData['creationDate'] = [
             'old' => $oldData['creationDate'],
             'new' => $newData['creationDate']
@@ -879,7 +862,6 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
             'new' => $newData['creationDateHijri']
         ];
 
-        // حفظ التغييرات
         if (!empty($changedData)) {
             $FlightInvoice->changed_data = $changedData;
             $FlightInvoice->save();
@@ -923,7 +905,6 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
     $availableSeats = $flight->seatNum ?? [];
     $remainingQuantity = $flight->quantity ?? 0;
 
-    // تحرير المقاعد القديمة
     $oldPilgrims = $invoice->pilgrims()->withPivot('seatNumber')->get();
     foreach ($oldPilgrims as $oldPilgrim) {
         $oldSeats = explode(',', $oldPilgrim->pivot->seatNumber);
@@ -932,7 +913,6 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
     }
     $availableSeats = array_values(array_unique($availableSeats));
 
-    // إعداد بيانات الحجاج الجدد
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
@@ -941,12 +921,10 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
         $seatsRequested = $pilgrim['seatNumber'] ?? [];
 
-        // التحقق من صحة المقاعد
         if (!is_array($seatsRequested) || empty($seatsRequested)) {
             throw new \Exception("يجب تحديد المقاعد المخصصة للحاج {$p->name} كمصفوفة غير فارغة.");
         }
 
-        // التحقق من توفر المقاعد
         foreach ($seatsRequested as $seat) {
             if (!in_array($seat, $availableSeats)) {
                 throw new \Exception("المقعد $seat غير متاح حالياً.");
@@ -957,11 +935,9 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
             throw new \Exception("عدد المقاعد المطلوبة للحاج {$p->name} غير متاح.");
         }
 
-        // حجز المقاعد
         $availableSeats = array_values(array_diff($availableSeats, $seatsRequested));
         $remainingQuantity -= count($seatsRequested);
 
-        // التحقق مما إذا كان الحاج موجوداً سابقاً
         $existingPivot = $oldPilgrims->firstWhere('id', $p->id);
         $pilgrimsData[$p->id] = [
             'creationDate' => $existingPivot?->pivot?->creationDate ?? $currentDate,
@@ -971,15 +947,12 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
         ];
     }
 
-    // تحديث بيانات الرحلة
     $flight->seatNum = array_values($availableSeats);
     $flight->quantity = $remainingQuantity;
     $flight->save();
 
-    // مزامنة الحجاج مع الفاتورة
     $invoice->pilgrims()->sync($pilgrimsData);
 
-    // تحديث عدد الحجاج والمبالغ
     $invoice->PilgrimsCount();
     $invoice->calculateTotal();
 }
