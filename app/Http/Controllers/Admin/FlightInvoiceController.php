@@ -89,8 +89,31 @@ class FlightInvoiceController extends Controller
     return $pilgrim;
 }
 
+// protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
+// {
+//     $pilgrimsData = [];
+//     $hijriDate = $this->getHijriDate();
+//     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+//     foreach ($pilgrims as $pilgrim) {
+//         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+
+//         $pilgrimsData[$p->id] = [
+//             'creationDate' => $currentDate,
+//             'creationDateHijri' => $hijriDate,
+//             'changed_data' => null
+//         ];
+//     }
+
+//     $invoice->pilgrims()->attach($pilgrimsData);
+// }
+
 protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 {
+    $flight = $invoice->flight()->lockForUpdate()->first(); // 🔒 تأمين المقاعد أثناء الحجز
+    $availableSeats = $flight->seatNum ?? [];
+    $remainingQuantity = $flight->quantity;
+
     $pilgrimsData = [];
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
@@ -98,15 +121,45 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
 
+        $seatsRequested = $pilgrim['seatNumber'] ?? [];
+
+        if (!is_array($seatsRequested) || count($seatsRequested) == 0) {
+            throw new \Exception("يجب تحديد المقاعد المخصصة للحاج {$p->name} كمصفوفة.");
+        }
+
+        // تأكد أن جميع المقاعد المطلوبة متاحة
+        foreach ($seatsRequested as $seat) {
+            if (!in_array($seat, $availableSeats)) {
+                throw new \Exception("المقعد $seat غير متاح حالياً.");
+            }
+        }
+
+        if (count($seatsRequested) > count($availableSeats)) {
+            throw new \Exception("عدد المقاعد المطلوبة للحاج {$p->name} غير متاح.");
+        }
+
+        // إزالة المقاعد المطلوبة من المقاعد المتاحة
+        $availableSeats = array_values(array_diff($availableSeats, $seatsRequested));
+        $remainingQuantity -= count($seatsRequested);
+
         $pilgrimsData[$p->id] = [
             'creationDate' => $currentDate,
             'creationDateHijri' => $hijriDate,
-            'changed_data' => null
+            'changed_data' => null,
+            'seatNumber' => implode(',', $seatsRequested),
         ];
     }
 
+    // تحديث بيانات الرحلة
+    $flight->seatNum = array_values($availableSeats); // إعادة ترتيب المقاعد
+    $flight->quantity = $remainingQuantity;
+    $flight->save();
+
+    // ربط الحجاج بالفاتورة
     $invoice->pilgrims()->attach($pilgrimsData);
 }
+
+
 
 protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
 {
