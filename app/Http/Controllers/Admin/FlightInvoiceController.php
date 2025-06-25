@@ -449,7 +449,8 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
 
         // تحديث الحجاج إن وجد تغيير
         if ($pilgrimsChanged) {
-            $this->syncPilgrims($FlightInvoice->fresh(['flight']), $request->pilgrims);
+            $FlightInvoice->load('flight'); // التحميل الآمن قبل استدعاء syncPilgrims
+            $this->syncPilgrims($FlightInvoice, $request->pilgrims);
         }
 
         // إعادة تحميل الفاتورة مع العلاقات (مرة واحدة)
@@ -497,6 +498,7 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
         ], 500);
     }
 }
+
 
 
 
