@@ -703,7 +703,7 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
                 'message' => 'الرحلة غير موجودة في قاعدة البيانات',
                 'flight_id' => $FlightInvoice->flight_id,
                 'debug' => [
-                    'flight_in_db' => Flight::withTrashed()->find($FlightInvoice->flight_id),
+                    'flight_in_db' => Flight::find($FlightInvoice->flight_id),
                     'invoice_data' => $FlightInvoice->toArray()
                 ]
             ], 422);
