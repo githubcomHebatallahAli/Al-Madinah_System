@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Flight;
 use App\Models\Pilgrim;
 use Illuminate\Http\Request;
 use App\Models\FlightInvoice;
@@ -146,13 +147,11 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 
 protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
 {
-       $flight = $invoice->flight()->lockForUpdate()->first();
+      $flight = Flight::where('id', $invoice->flight_id)->lockForUpdate()->first();
 
     if (!$flight) {
         throw new \Exception('الرحلة غير موجودة');
     }
-
-    // تعيين قيم افتراضية إذا كانت فارغة
     $availableSeats = $flight->seatNum ?? [];
     $remainingQuantity = $flight->quantity ?? 0;
 
@@ -214,6 +213,8 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
 
     $invoice->pilgrims()->sync($pilgrimsData);
 }
+
+
 
 
 
