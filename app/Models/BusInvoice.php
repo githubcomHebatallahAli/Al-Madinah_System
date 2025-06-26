@@ -120,25 +120,22 @@ public function PilgrimsCount(): void
 
 public function calculateTotal(): void
 {
-   
+
     if (!isset($this->pilgrimsCount)) {
         $this->PilgrimsCount();
     }
 
-    // سعر المقعد
+
     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
 
-    // الإجمالي الأساسي
+
     $this->subtotal = $seatPrice * $this->pilgrimsCount;
 
-    // الخصم (قيمة فقط)
     $discount = $this->discount ?? 0;
 
-    // الضريبة (نسبة مئوية)
     $taxRate = $this->tax ?? 0;
     $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
 
-    // الحساب النهائي
     $this->total = $this->subtotal - $discount + $taxAmount;
 
 
