@@ -453,7 +453,7 @@ public function completed($id, Request $request)
         $busInvoice = BusInvoice::with([
             'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'hotel', 'trip', 'busInvoice','pilgrims'
+             'trip','pilgrims'
         ])->findOrFail($id);
 
         if ($busInvoice->invoiceStatus === 'completed') {
