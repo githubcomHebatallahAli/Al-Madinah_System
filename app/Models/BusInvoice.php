@@ -120,7 +120,7 @@ public function PilgrimsCount(): void
 
 public function calculateTotal(): void
 {
-    // تأكد من حساب عدد الحجاج لو مش متحسب
+   
     if (!isset($this->pilgrimsCount)) {
         $this->PilgrimsCount();
     }
@@ -141,18 +141,13 @@ public function calculateTotal(): void
     // الحساب النهائي
     $this->total = $this->subtotal - $discount + $taxAmount;
 
-    
+
 }
-
-
-
       protected static function booted()
     {
         static::creating(function ($invoice) {
             $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
         });
-
-
     }
 
     public function generateInvoiceNumber()
