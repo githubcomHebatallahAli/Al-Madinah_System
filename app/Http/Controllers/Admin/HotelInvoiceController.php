@@ -602,6 +602,8 @@ public function completed($id, Request $request)
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
     DB::beginTransaction();
@@ -625,6 +627,8 @@ public function completed($id, Request $request)
         $hotelInvoice->invoiceStatus = 'completed';
         $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'];
         $hotelInvoice->paidAmount = $validated['paidAmount'];
+        $hotelInvoice->discount = $validated['discount'] ?? 0;
+        $hotelInvoice->tax = $validated['tax'] ?? 0;
         $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
         $hotelInvoice->updated_by_type = $this->getUpdatedByType();
 

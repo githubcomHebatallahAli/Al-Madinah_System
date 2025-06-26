@@ -115,97 +115,6 @@ if ($request->filled('toDate')) {
     ]);
 }
 
-// public function create(ShipmentRequest $request)
-// {
-//     $this->authorize('manage_system');
-
-//     try {
-//         $shipment = DB::transaction(function () use ($request) {
-//             $data = array_merge($request->only([
-//                 'company_id', 'supplier_id', 'service_id', 'description'
-//             ]), $this->prepareCreationMetaData());
-
-//             $data['status'] = $data['status'] ?? 'active';
-//             $data['totalPrice'] = 0;
-
-//             $shipment = Shipment::create($data);
-//             $total = 0;
-
-//             foreach ($request->items as $item) {
-//                 $morphClass = $this->getMorphClass($item['item_type']);
-
-//                 if (!class_exists($morphClass)) {
-//                     throw new \Exception("Class {$morphClass} not found");
-//                 }
-
-//                 $itemTotal = $item['quantity'] * $item['unitPrice'];
-//                 $total += $itemTotal;
-
-//                  $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
-//     $rentalEndHijri   = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
-//     $tripDateHijri    = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
-
-//         $shipmentItem = ShipmentItem::create([
-//           'shipment_id'         => $shipment->id,
-//         'item_id'             => $item['item_id'],
-//         'item_type'           => $morphClass,
-//         'quantity'            => $item['quantity'],
-//         'unitPrice'           => $item['unitPrice'],
-//         'totalPrice'          => $itemTotal,
-//         'rentalStart'         => $item['rentalStart'] ?? null,
-//         'rentalEnd'           => $item['rentalEnd'] ?? null,
-//         'rentalStartHijri'    => $rentalStartHijri,
-//         'rentalEndHijri'      => $rentalEndHijri,
-//         'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
-//         'DateTimeTripHijri'   => $tripDateHijri,
-//         'seatNum'             => $item['seatNum'] ?? null,
-//         'class'               => $item['class'] ?? null,
-//         'roomType' => $item['roomType'] ?? null,
-//         'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-//         'creationDateHijri'   => $this->getHijriDate(),
-
-//                 ]);
-
-//                  $shipment->updateItemsCount();
-
-//                 $itemModel = $morphClass::find($item['item_id']);
-
-//                 if ($itemModel) {
-//                     $itemModel->increment('quantity', $item['quantity']);
-
-//                     Log::info("تم تحديث كمية العنصر", [
-//                         'model' => $morphClass,
-//                         'id' => $item['item_id'],
-//                         'quantity_added' => $item['quantity'],
-//                         'new_quantity' => $itemModel->quantity
-//                     ]);
-//                 }
-//             }
-
-//             $shipment->update(['totalPrice' => $total]);
-//             return $shipment;
-//         });
-
-//         $this->loadCommonRelations($shipment);
-//         $shipment->load('items');
-
-//         return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات بنجاح.");
-
-//     } catch (\Exception $e) {
-//         Log::error('فشل إنشاء الشحنة', [
-//             'error' => $e->getMessage(),
-//             'trace' => $e->getTraceAsString(),
-//             'request' => $request->all()
-//         ]);
-
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
-//             'error' => $e->getMessage(),
-//         ], 500);
-//     }
-// }
-
     public function create(ShipmentRequest $request)
     {
         $this->authorize('manage_system');
@@ -249,10 +158,6 @@ if ($request->filled('toDate')) {
                         'rentalEndHijri' => $rentalEndHijri,
                         'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
                         'DateTimeTripHijri' => $tripDateHijri,
-                        'busSeatNum' => $item['busSeatNum'] ?? null,
-                        'plateNum' => $item['plateNum'] ?? null,
-                        'busNum' => $item['busNum'] ?? null,
-                        'busModel' => $item['busModel'] ?? null,
                         'seatNum' => $item['seatNum'] ?? null,
                         'class' => $item['class'] ?? null,
                         'roomType' => $item['roomType'] ?? null,
@@ -338,6 +243,7 @@ if ($request->filled('toDate')) {
     return $this->respondWithResource($Shipment, "Shipment retrieved for editing.");
         }
 
+
         public function update(ShipmentRequest $request, string $id)
 {
     $this->authorize('manage_system');
@@ -388,8 +294,6 @@ if ($request->filled('toDate')) {
                 $tripDateHijri    = $item['DateTimeTrip']? $this->getHijriDate($item['DateTimeTrip']) : null;
 
         ShipmentItem::create([
-
-
                 'shipment_id'         => $shipment->id,
                     'item_id'             => $item['item_id'],
                     'item_type'           => $this->getMorphClass($item['item_type']),
@@ -402,10 +306,6 @@ if ($request->filled('toDate')) {
                     'rentalEndHijri'      => $rentalEndHijri,
                     'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
                     'DateTimeTripHijri'   => $tripDateHijri,
-                    'busSeatNum' => $item['busSeatNum'] ?? null,
-                    'plateNum' => $item['plateNum'] ?? null,
-                    'busNum' => $item['busNum'] ?? null,
-                    'busModel' => $item['busModel'] ?? null,
                     'seatNum'             => $item['seatNum'] ?? null,
                     'class'               => $item['class'] ?? null,
                     'roomType' => $item['roomType'] ?? null,
@@ -419,7 +319,6 @@ if ($request->filled('toDate')) {
     });
 
     $shipment->refresh();
-
     $changedData = $shipment->getChangedData($oldData, $shipment->toArray());
 
     $shipment->changed_data = $changedData;
@@ -447,10 +346,6 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
             'rentalEndHijri'       => $item->rentalEndHijri,
             'DateTimeTripHijri'    => $item->DateTimeTripHijri,
             'DateTimeTrip'         => $item->DateTimeTrip,
-            'busSeatNum' => $item -> busSeatNum,
-            'plateNum' => $item-> plateNum,
-            'busNum' => $item->busNum,
-            'busModel' => $item-> busModel,
             'seatNum'              => $item->seatNum,
             'class'                => $item->class,
             'roomType'                => $item->roomType,
@@ -468,10 +363,6 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
         'rentalEndHijri'       => $item['rentalEndHijri'] ?? null,
         'DateTimeTripHijri'    => $item['DateTimeTripHijri'] ?? null,
         'DateTimeTrip'         => $item['DateTimeTrip'] ?? null,
-        'busSeatNum' => $item['busSeatNum'] ?? null,
-        'plateNum' => $item['plateNum'] ?? null,
-        'busNum' => $item['busNum'] ?? null,
-        'busModel' => $item['busModel'] ?? null,
         'seatNum'              => $item['seatNum'] ?? null,
         'class'                => $item['class'] ?? null,
         'roomType'                => $item['roomType'] ?? null,
@@ -480,10 +371,6 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
 
     return $oldItems === $newItemsNormalized;
 }
-
-
-
-
 
     public function active(string $id)
     {

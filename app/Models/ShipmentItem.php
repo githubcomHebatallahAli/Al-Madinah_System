@@ -11,10 +11,6 @@ class ShipmentItem extends Model
 {
     use HasFactory, TracksChangesTrait,HijriDateTrait;
     protected $fillable = [
-        // 'added_by',
-        // 'added_by_type',
-        // 'updated_by',
-        // 'updated_by_type',
         'shipment_id',
         'item_id',
         'item_type',
@@ -33,8 +29,6 @@ class ShipmentItem extends Model
         'seatNum',
         'class',
         'roomType'
-
-
     ];
 
     public function shipment()
@@ -55,19 +49,6 @@ protected $hidden = ['created_at', 'updated_at'];
 ];
 
 
-//  protected static function booted()
-//     {
-//       static::created(function ($item) {
-//         $item->shipment->updateItemsCount();
-//     });
-
-//     static::updated(function ($item) {
-//         $item->shipment->updateItemsCount();
-//     });
-
-
-//     }
-
   protected static function booted()
     {
         static::created(function ($item) {
@@ -83,7 +64,7 @@ protected $hidden = ['created_at', 'updated_at'];
 
     public function updateRelatedFlight()
     {
-        if ($this->item_type === \App\Models\Flight::class) {
+        if ($this->item_type === Flight::class) {
             $flight = Flight::find($this->item_id);
 
             if ($flight) {
@@ -93,7 +74,6 @@ protected $hidden = ['created_at', 'updated_at'];
                         $flight->sellingPrice - $this->unitPrice : null
                 ];
 
-                // تحديث الحقول فقط إذا كانت موجودة في ShipmentItem
                 if (!is_null($this->class)) {
                     $updateData['class'] = $this->class;
                 }
@@ -104,11 +84,9 @@ protected $hidden = ['created_at', 'updated_at'];
                     $updateData['DateTimeTrip'] = $this->DateTimeTrip;
                     $updateData['DateTimeTripHijri'] = $this->DateTimeTripHijri;
                 }
-
                 $flight->update($updateData);
             }
         }
     }
-
 
 }

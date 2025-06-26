@@ -443,8 +443,8 @@ public function completed($id, Request $request)
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
-        // 'discount' => 'nullable|numeric|min:0|max:99999.99',
-        // 'tax' => 'nullable|numeric|min:0|max:99999.99'
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
     DB::beginTransaction();
@@ -453,22 +453,8 @@ public function completed($id, Request $request)
         $busInvoice = BusInvoice::with([
             'paymentMethodType.paymentMethod',
             'mainPilgrim',
-            'busTrip',
-            'campaign',
-            'office',
-            'group',
-            'worker'
+            'hotel', 'trip', 'busInvoice','pilgrims'
         ])->findOrFail($id);
-
-
-        // if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
-        //     return response()->json([
-        //         'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
-        //         'total_amount' => $busInvoice->total,
-        //         'paid_amount' => $validated['paidAmount'],
-        //         'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
-        //     ], 422);
-        // }
 
         if ($busInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($busInvoice);
@@ -478,29 +464,26 @@ public function completed($id, Request $request)
 
         $originalData = $busInvoice->getOriginal();
 
-        $updateData = [
-            'invoiceStatus' => 'completed',
-            'payment_method_type_id' => $validated['payment_method_type_id'],
-            'paidAmount' => $validated['paidAmount'],
-            // 'discount' => $validated['discount'] ?? 0,
-            // 'tax' => $validated['tax'] ?? 0,
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
-            'updated_by' => $this->getUpdatedByIdOrFail(),
-            'updated_by_type' => $this->getUpdatedByType()
-        ];
+
+        $busInvoice->invoiceStatus = 'completed';
+        $busInvoice->payment_method_type_id = $validated['payment_method_type_id'];
+        $busInvoice->paidAmount = $validated['paidAmount'];
+        $busInvoice->discount = $validated['discount'] ?? 0;
+        $busInvoice->tax = $validated['tax'] ?? 0;
+        $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
+        $busInvoice->updated_by_type = $this->getUpdatedByType();
 
         $changedData = [];
-        foreach ($updateData as $field => $newValue) {
+        foreach ($busInvoice->getDirty() as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
-                $oldValue = $originalData[$field];
-                if ($oldValue != $newValue) {
-                    $changedData[$field] = ['old' => $oldValue, 'new' => $newValue];
-                }
+                $changedData[$field] = [
+                    'old' => $originalData[$field],
+                    'new' => $newValue
+                ];
             }
         }
 
-        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+        if ($busInvoice->isDirty('payment_method_type_id')) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
 
@@ -518,20 +501,39 @@ public function completed($id, Request $request)
             ];
         }
 
-        $busInvoice->fill($updateData);
-        $busInvoice->changed_data = $changedData;
-        $busInvoice->save();
+        if (!empty($changedData)) {
+            $previousChanged = $busInvoice->changed_data ?? [];
 
+            $newCreationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+            $newCreationDateHijri = $this->getHijriDate();
+
+            $changedData['creationDate'] = [
+                'old' => $previousChanged['creationDate']['new'] ?? $busInvoice->getOriginal('creationDate'),
+                'new' => $newCreationDate
+            ];
+
+            $changedData['creationDateHijri'] = [
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $busInvoice->getOriginal('creationDateHijri'),
+                'new' => $newCreationDateHijri
+            ];
+
+        }
+
+          // تحديث البيانات المحسوبة
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();
 
-        $busInvoice->load(['pilgrims']);
+        $busInvoice->changed_data = $changedData;
+        $busInvoice->save();
 
+
+
+        $this->loadCommonRelations($busInvoice);
         DB::commit();
 
         return $this->respondWithResource(
             $busInvoice,
-            'تم إكمال فاتورة الحافلة بنجاح'
+            'تم إكمال فاتورة الفندق بنجاح'
         );
 
     } catch (\Exception $e) {

@@ -24,7 +24,6 @@ class FlightInvoice extends Model
         'pilgrimsCount',
         'invoiceStatus',
         'reason',
-
         'creationDate',
         'creationDateHijri',
         'changed_data',
@@ -33,7 +32,6 @@ class FlightInvoice extends Model
         'updated_by',
         'updated_by_type',
     ];
-
 
         public function pilgrims()
 {
@@ -56,7 +54,6 @@ public function calculateTotal(): void
 {
   $seatPrice = $this->flight->sellingPrice ?? 0;
 
-// حساب عدد المقاعد فعلياً من الـ pivot
 $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
     $seats = explode(',', $pilgrim->pivot->seatNumber);
     return count($seats);
