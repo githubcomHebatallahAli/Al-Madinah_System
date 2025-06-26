@@ -87,20 +87,6 @@ public function showAllWithoutPaginate(Request $request)
 
 
 
-
-    // public function create(BusRequest $request)
-    // {
-    //     $this->authorize('manage_system');
-    //    $data = array_merge($request->only([
-    //         'service_id', 'busNum', 'busModel','plateNum'
-    //         ,'seatNum','quantity','sellingPrice','purchesPrice'
-    //     ]), $this->prepareCreationMetaData());
-
-    //     $Bus = Bus::create($data);
-
-    //      return $this->respondWithResource($Bus, "Bus created successfully.");
-    //     }
-
         public function create(BusRequest $request)
     {
         $this->authorize('manage_system');
@@ -108,7 +94,7 @@ public function showAllWithoutPaginate(Request $request)
         $data = array_merge($request->only([
             'service_id','company_id', 'busNum', 'busModel', 'plateNum',
             'seatNum','seatPrice', 'quantity', 'sellingPrice', 'purchesPrice',
-            'seatMap'
+            'seatMap','rentalStart','rentalEnd','rentalStartHijri','rentalEndHijri',
         ]), $this->prepareCreationMetaData());
 
          if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
@@ -150,7 +136,7 @@ public function showAllWithoutPaginate(Request $request)
         $updateData = $request->only([
             'status', 'service_id','company_id', 'busNum', 'busModel', 'plateNum',
             'seatNum','seatPrice', 'quantity', 'sellingPrice', 'purchesPrice',
-            'seatMap'
+            'seatMap','rentalStart','rentalEnd','rentalStartHijri','rentalEndHijri',
         ]);
 
             if (isset($updateData['sellingPrice']) || isset($updateData['purchesPrice'])) {

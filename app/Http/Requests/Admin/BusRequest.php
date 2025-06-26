@@ -77,6 +77,10 @@ class BusRequest extends FormRequest
         'quantity' => 'required|string',
         'sellingPrice' => 'required|numeric|min:0|max:99999.99',
         'purchesPrice' => 'required|numeric|min:0|max:99999.99',
+        'rentalStart'=>'nullable|date_format:Y-m-d H:i',
+        'rentalStartHijri'=>'nullable|string',
+        'rentalEnd'=>'nullable|date_format:Y-m-d H:i',
+        'rentalEndHijri'=>'nullable|string',
     ];
     }
 
