@@ -101,20 +101,47 @@ public function PilgrimsCount(): void
     $this->save();
 }
 
+// public function calculateTotal(): void
+// {
+//     if (!isset($this->pilgrimsCount)) {
+//         $this->PilgrimsCount();
+//     }
+
+//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
+
+//     $this->subtotal = $seatPrice * $this->pilgrimsCount;
+//     $this->total = $this->subtotal
+//                   - ($this->discount ?? 0)
+//                   + ($this->tax ?? 0);
+
+//     // $this->save();
+// }
+
+
 public function calculateTotal(): void
 {
+    // تأكد من حساب عدد الحجاج لو مش متحسب
     if (!isset($this->pilgrimsCount)) {
         $this->PilgrimsCount();
     }
 
+    // سعر المقعد
     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
 
+    // الإجمالي الأساسي
     $this->subtotal = $seatPrice * $this->pilgrimsCount;
-    $this->total = $this->subtotal
-                  - ($this->discount ?? 0)
-                  + ($this->tax ?? 0);
 
-    // $this->save();
+    // الخصم (قيمة فقط)
+    $discount = $this->discount ?? 0;
+
+    // الضريبة (نسبة مئوية)
+    $taxRate = $this->tax ?? 0;
+    $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
+
+    // الحساب النهائي
+    $this->total = $this->subtotal - $discount + $taxAmount;
+
+    
 }
 
 
