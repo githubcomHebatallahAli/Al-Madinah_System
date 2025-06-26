@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
-            $table->string('busNum');
-            $table->string('busModel');
-            $table->string('plateNum');
-            $table->integer('seatNum');
+            $table->string('busNum')->nullable();
+            $table->string('busModel')->nullable();
+            $table->string('plateNum')->nullable();
+            $table->integer('seatNum')->nullable();
             $table->json('seatMap')->nullable();
             $table->integer('quantity')->default(0);
             $table->decimal('sellingPrice');

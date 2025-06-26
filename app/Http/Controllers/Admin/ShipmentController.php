@@ -249,6 +249,10 @@ if ($request->filled('toDate')) {
                         'rentalEndHijri' => $rentalEndHijri,
                         'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
                         'DateTimeTripHijri' => $tripDateHijri,
+                        'busSeatNum' => $item['busSeatNum'] ?? null,
+                        'plateNum' => $item['plateNum'] ?? null,
+                        'busNum' => $item['busNum'] ?? null,
+                        'busModel' => $item['busModel'] ?? null,
                         'seatNum' => $item['seatNum'] ?? null,
                         'class' => $item['class'] ?? null,
                         'roomType' => $item['roomType'] ?? null,
@@ -261,10 +265,9 @@ if ($request->filled('toDate')) {
                     $itemModel = $morphClass::find($item['item_id']);
 
                     if ($itemModel) {
-                        // تحديث الكمية
+
                         $itemModel->increment('quantity', $item['quantity']);
 
-                        // إذا كان العنصر من نوع Flight، نقوم بتحديث الحقول الإضافية
                         if ($itemModel instanceof Flight) {
                             $updateData = [
                                 'purchesPrice' => $item['unitPrice'],
@@ -272,7 +275,6 @@ if ($request->filled('toDate')) {
                                     $itemModel->sellingPrice - $item['unitPrice'] : null
                             ];
 
-                            // إضافة الحقول فقط إذا كانت موجودة في الطلب
                             if (isset($item['class'])) {
                                 $updateData['class'] = $item['class'];
                             }
@@ -400,6 +402,10 @@ if ($request->filled('toDate')) {
                     'rentalEndHijri'      => $rentalEndHijri,
                     'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
                     'DateTimeTripHijri'   => $tripDateHijri,
+                    'busSeatNum' => $item['busSeatNum'] ?? null,
+                    'plateNum' => $item['plateNum'] ?? null,
+                    'busNum' => $item['busNum'] ?? null,
+                    'busModel' => $item['busModel'] ?? null,
                     'seatNum'             => $item['seatNum'] ?? null,
                     'class'               => $item['class'] ?? null,
                     'roomType' => $item['roomType'] ?? null,
@@ -441,6 +447,10 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
             'rentalEndHijri'       => $item->rentalEndHijri,
             'DateTimeTripHijri'    => $item->DateTimeTripHijri,
             'DateTimeTrip'         => $item->DateTimeTrip,
+            'busSeatNum' => $item -> busSeatNum,
+            'plateNum' => $item-> plateNum,
+            'busNum' => $item->busNum,
+            'busModel' => $item-> busModel,
             'seatNum'              => $item->seatNum,
             'class'                => $item->class,
             'roomType'                => $item->roomType,
@@ -448,16 +458,20 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
     $newItemsNormalized = collect($newItems)->map(function ($item) {
         return [
-            'item_id'   => (int) $item['item_id'],
-            'item_type' => $this->getMorphClass($item['item_type']),
-            'quantity'  => (float) $item['quantity'],
-            'unitPrice' => (float) $item['unitPrice'],
-             'rentalStart'          => $item['rentalStart'] ?? null,
+        'item_id'   => (int) $item['item_id'],
+        'item_type' => $this->getMorphClass($item['item_type']),
+        'quantity'  => (float) $item['quantity'],
+        'unitPrice' => (float) $item['unitPrice'],
+        'rentalStart'          => $item['rentalStart'] ?? null,
         'rentalEnd'            => $item['rentalEnd'] ?? null,
         'rentalStartHijri'     => $item['rentalStartHijri'] ?? null,
         'rentalEndHijri'       => $item['rentalEndHijri'] ?? null,
         'DateTimeTripHijri'    => $item['DateTimeTripHijri'] ?? null,
         'DateTimeTrip'         => $item['DateTimeTrip'] ?? null,
+        'busSeatNum' => $item['busSeatNum'] ?? null,
+        'plateNum' => $item['plateNum'] ?? null,
+        'busNum' => $item['busNum'] ?? null,
+        'busModel' => $item['busModel'] ?? null,
         'seatNum'              => $item['seatNum'] ?? null,
         'class'                => $item['class'] ?? null,
         'roomType'                => $item['roomType'] ?? null,

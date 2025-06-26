@@ -24,6 +24,10 @@ return new class extends Migration
             $table->string('rentalEndHijri')->nullable();
             $table->dateTime('DateTimeTrip')->nullable();
             $table->string('DateTimeTripHijri')->nullable();
+            $table->string('busNum')->nullable();
+            $table->string('busModel')->nullable();
+            $table->string('plateNum')->nullable();
+            $table->integer('busSeatNum')->nullable();
             $table->json('seatNum')->nullable();
             $table->string('class')->nullable();
             $table->dateTime('creationDate')->nullable();
