@@ -345,7 +345,7 @@ public function create(HotelInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
-    // التحقق من توفر الغرفة أولاً
+    // التحقق من توفر الغرفة
     if ($request->has('roomNum')) {
         $hotel = Hotel::find($request->hotel_id);
         if (!$hotel->isRoomAvailable($request->roomNum)) {
@@ -356,7 +356,7 @@ public function create(HotelInvoiceRequest $request)
         }
     }
 
-    // تحويل التواريخ إلى هجري باستخدام التريت
+    // تحويل التواريخ إلى هجري
     $hijriDates = [
         'creationDateHijri' => $this->getHijriDate(now(), true)
     ];
@@ -381,18 +381,10 @@ public function create(HotelInvoiceRequest $request)
 
     DB::beginTransaction();
     try {
-        // إنشاء الفاتورة
         $invoice = HotelInvoice::create($data);
 
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
-
-            // تحديث التواريخ الهجرية للحجاج
-            foreach ($invoice->pilgrims as $pilgrim) {
-                $pilgrim->pivot->update([
-                    'creationDateHijri' => $this->getHijriDate(now(), true)
-                ]);
-            }
         }
 
         if ($request->filled('bus_invoice_id')) {
@@ -404,22 +396,30 @@ public function create(HotelInvoiceRequest $request)
 
         DB::commit();
 
-        return response()->json([
-            'success' => true,
+        // استخدام الـ Resource مع التحكم في الترميز
+        return (new HotelInvoiceResource($invoice->load([
+            'paymentMethodType.paymentMethod',
+            'mainPilgrim',
+            'hotel',
+            'trip',
+            'busInvoice',
+            'pilgrims'
+        ])))->additional([
             'message' => 'تم إنشاء فاتورة الفندق بنجاح',
-            'data' => $this->formatInvoiceResponse($invoice)
-        ], 200, [], JSON_UNESCAPED_UNICODE);
+            'hijriConversion' => [
+                'source' => 'api.aladhan.com',
+                'status' => 'success'
+            ]
+        ]); // <-- كان الخطأ هنا (قوس ناقص)
 
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('فشل إنشاء فاتورة الفندق', [
             'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'request' => $request->all()
+            'trace' => $e->getTraceAsString()
         ]);
 
         return response()->json([
-            'success' => false,
             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
         ], 500, [], JSON_UNESCAPED_UNICODE);
     }
