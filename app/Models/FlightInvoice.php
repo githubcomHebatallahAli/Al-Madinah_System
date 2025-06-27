@@ -53,8 +53,6 @@ class FlightInvoice extends Model
 public function calculateTotal(): void
 {
     $seatPrice = $this->flight->sellingPrice ?? 0;
-
-    // حساب عدد المقاعد المحجوزة (حتى لو حاجز أكتر من مقعد)
     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
         $seats = explode(',', $pilgrim->pivot->seatNumber);
         return count($seats);

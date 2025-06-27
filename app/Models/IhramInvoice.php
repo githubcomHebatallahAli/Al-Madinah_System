@@ -111,6 +111,19 @@ public function calculateTotalPrice()
     return $total;
 }
 
+public function calculateTotals(): void
+{
+    $this->subtotal = $this->calculateTotalPrice();
+    $discount = $this->discount ?? 0;
+    $taxRate = $this->tax ?? 0;
+
+    $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
+    $this->total = $this->subtotal - $discount + $taxAmount;
+
+    // $this->save();
+}
+
+
 public function updateIhramSuppliesCount()
 {
     $this->ihramSuppliesCount = $this->ihramSupplies()->count();

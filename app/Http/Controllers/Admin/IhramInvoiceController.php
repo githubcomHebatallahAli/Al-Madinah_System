@@ -173,30 +173,42 @@ public function create(IhramInvoiceRequest $request)
         }
 
 
-        $subtotal = $totalPrice;
-        $discount = $invoice->discount;
-        $tax = $invoice->tax;
-        $total = $subtotal - $discount + $tax;
+        // $subtotal = $totalPrice;
+        // $discount = $invoice->discount;
+        // $tax = $invoice->tax;
+        // $total = $subtotal - $discount + $tax;
 
 
-        $invoice->update([
-            'subtotal'      => $subtotal,
-            'total'         => $total,
+        // $invoice->update([
+        //     'subtotal'      => $subtotal,
+        //     'total'         => $total,
 
-        ]);
+        // ]);
+
+        $invoice->calculateTotals();
 
         $invoice->updateIhramSuppliesCount();
 
         DB::commit();
 
-        $response = [
-            'data'      => new IhramInvoiceResource($invoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
-            'message'   => 'تم إنشاء فاتورة مستلزمات الإحرام بنجاح',
-            'subtotal'  => $subtotal,
-            'discount'  => $discount,
-            'tax'       => $tax,
-            'total'     => $total,
-            'paidAmount'=> $invoice->paidAmount,
+        // $response = [
+        //     'data'      => new IhramInvoiceResource($invoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
+        //     'message'   => 'تم إنشاء فاتورة مستلزمات الإحرام بنجاح',
+        //     'subtotal'  => $subtotal,
+        //     'discount'  => $discount,
+        //     'tax'       => $tax,
+        //     'total'     => $total,
+        //     'paidAmount'=> $invoice->paidAmount,
+        // ];
+
+           $response = [
+            'data'        => new IhramInvoiceResource($invoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
+            'message'     => 'تم إنشاء فاتورة مستلزمات الإحرام بنجاح',
+            'subtotal'    => $invoice->subtotal,
+            'discount'    => $invoice->discount,
+            'tax'         => $invoice->tax,
+            'total'       => $invoice->total,
+            'paidAmount'  => $invoice->paidAmount,
         ];
 
         if (!empty($outOfStockSupplies)) {
