@@ -95,9 +95,9 @@ public function showAllWithoutPaginate(Request $request)
             ,'quantity','sellingPrice','purchesPrice','DateTimeTrip','DateTimeTripHijri'
         ]), $this->prepareCreationMetaData());
 
-              if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
-        $data['profit'] = $data['sellingPrice'] - $data['purchesPrice'];
-    }
+    //           if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
+    //     $data['profit'] = $data['sellingPrice'] - $data['purchesPrice'];
+    // }
 
         $Flight = Flight::create($data);
 
