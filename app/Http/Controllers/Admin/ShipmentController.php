@@ -158,13 +158,13 @@ public function create(ShipmentRequest $request)
                     'rentalStart' => $item['rentalStart'] ?? null,
                     'rentalEnd' => $item['rentalEnd'] ?? null,
                     'rentalStartHijri' => $rentalStartHijri,
-
                     'rentalEndHijri' => $rentalEndHijri,
                     'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
                     'DateTimeTripHijri' => $tripDateHijri,
                     'seatNum' => $item['seatNum'] ?? null,
                     'class' => $item['class'] ?? null,
                     'roomType' => $item['roomType'] ?? null,
+                    'roomNum' => $item['roomNum'] ?? null,
                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                     'creationDateHijri' => $this->getHijriDate(null, true),
                 ]);
@@ -182,7 +182,6 @@ public function create(ShipmentRequest $request)
                             $itemModel->sellingPrice - $item['unitPrice'] : null
                     ];
 
-                    // تحديث البيانات حسب نوع العنصر
                     if ($itemModel instanceof Flight) {
                         if (isset($item['class'])) {
                             $updateData['class'] = $item['class'];
@@ -204,7 +203,7 @@ public function create(ShipmentRequest $request)
                             $updateData['rentalEnd'] = $item['rentalEnd'];
                             $updateData['rentalEndHijri'] = $rentalEndHijri;
                         }
-                    } // كان ينقص إغلاق هذا القوس في الكود الأصلي
+                    }
 
                     $itemModel->update($updateData);
 
@@ -241,118 +240,6 @@ public function create(ShipmentRequest $request)
         ], 500);
     }
 }
-    // public function create(ShipmentRequest $request)
-    // {
-    //     $this->authorize('manage_system');
-
-    //     try {
-    //         $shipment = DB::transaction(function () use ($request) {
-    //             $data = array_merge($request->only([
-    //                 'company_id', 'supplier_id', 'service_id', 'description'
-    //             ]), $this->prepareCreationMetaData());
-
-    //             $data['status'] = $data['status'] ?? 'active';
-    //             $data['totalPrice'] = 0;
-
-    //             $shipment = Shipment::create($data);
-    //             $total = 0;
-
-    //             foreach ($request->items as $item) {
-    //                 $morphClass = $this->getMorphClass($item['item_type']);
-
-    //                 if (!class_exists($morphClass)) {
-    //                     throw new \Exception("Class {$morphClass} not found");
-    //                 }
-
-    //                 $itemTotal = $item['quantity'] * $item['unitPrice'];
-    //                 $total += $itemTotal;
-
-    //                 $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
-    //                 $rentalEndHijri = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
-    //                 $tripDateHijri = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
-
-    //                 $shipmentItem = ShipmentItem::create([
-    //                     'shipment_id' => $shipment->id,
-    //                     'item_id' => $item['item_id'],
-    //                     'item_type' => $morphClass,
-    //                     'quantity' => $item['quantity'],
-    //                     'unitPrice' => $item['unitPrice'],
-    //                     'totalPrice' => $itemTotal,
-    //                     'rentalStart' => $item['rentalStart'] ?? null,
-    //                     'rentalEnd' => $item['rentalEnd'] ?? null,
-    //                     'rentalStartHijri' => $rentalStartHijri,
-    //                     'rentalEndHijri' => $rentalEndHijri,
-    //                     'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
-    //                     'DateTimeTripHijri' => $tripDateHijri,
-    //                     'seatNum' => $item['seatNum'] ?? null,
-    //                     'class' => $item['class'] ?? null,
-    //                     'roomType' => $item['roomType'] ?? null,
-    //                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-    //                     'creationDateHijri' => $this->getHijriDate(),
-    //                 ]);
-
-    //                 $shipment->updateItemsCount();
-
-    //                 $itemModel = $morphClass::find($item['item_id']);
-
-    //                 if ($itemModel) {
-
-    //                     $itemModel->increment('quantity', $item['quantity']);
-
-    //                     if ($itemModel instanceof Flight) {
-    //                         $updateData = [
-    //                             'purchesPrice' => $item['unitPrice'],
-    //                             'profit' => isset($itemModel->sellingPrice) ?
-    //                                 $itemModel->sellingPrice - $item['unitPrice'] : null
-    //                         ];
-
-    //                         if (isset($item['class'])) {
-    //                             $updateData['class'] = $item['class'];
-    //                         }
-    //                         if (isset($item['seatNum'])) {
-    //                             $updateData['seatNum'] = $item['seatNum'];
-    //                         }
-    //                         if (isset($item['DateTimeTrip'])) {
-    //                             $updateData['DateTimeTrip'] = $item['DateTimeTrip'];
-    //                             $updateData['DateTimeTripHijri'] = $tripDateHijri;
-    //                         }
-
-    //                         $itemModel->update($updateData);
-    //                     }
-
-    //                     Log::info("تم تحديث العنصر", [
-    //                         'model' => $morphClass,
-    //                         'id' => $item['item_id'],
-    //                         'quantity_added' => $item['quantity'],
-    //                         'purchesPrice_updated' => $item['unitPrice'],
-    //                         'new_quantity' => $itemModel->quantity
-    //                     ]);
-    //                 }
-    //             }
-
-    //             $shipment->update(['totalPrice' => $total]);
-    //             return $shipment;
-    //         });
-
-    //         $this->loadCommonRelations($shipment);
-    //         $shipment->load('items');
-
-    //         return $this->respondWithResource($shipment, "تم إنشاء الشحنة وزيادة الكميات وتحديث البيانات بنجاح.");
-
-    //     } catch (\Exception $e) {
-    //         Log::error('فشل إنشاء الشحنة', [
-    //             'error' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString(),
-    //             'request' => $request->all()
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'حدث خطأ أثناء إنشاء الشحنة: ' . $e->getMessage(),
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
 
 
         public function edit(string $id)
@@ -448,6 +335,7 @@ public function create(ShipmentRequest $request)
                     'seatNum' => $item['seatNum'] ?? null,
                     'class' => $item['class'] ?? null,
                     'roomType' => $item['roomType'] ?? null,
+                    'roomNum' => $item['roomNum'] ?? null,
                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
                     'creationDateHijri' => $this->getHijriDate(null, true),
                 ]);
@@ -522,6 +410,7 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
             'seatNum' => $item->seatNum,
             'class' => $item->class,
             'roomType' => $item->roomType,
+            'roomNum' => $item->roomNum,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
 
@@ -541,140 +430,13 @@ protected function itemsEqual(Shipment $shipment, array $newItems): bool
             'seatNum' => $item['seatNum'] ?? null,
             'class' => $item['class'] ?? null,
             'roomType' => $item['roomType'] ?? null,
+            'roomNum' => $item['roomNum'] ?? null,
         ];
     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
 
     return $oldItems === $newItemsNormalized;
 }
 
-
-//         public function update(ShipmentRequest $request, string $id)
-// {
-//     $this->authorize('manage_system');
-
-//     $shipment = Shipment::with('items')->findOrFail($id);
-//     $oldData = $shipment->toArray();
-
-//     $updateData = $request->only([
-//         'company_id', 'supplier_id', 'service_id', 'description', 'status'
-//     ]);
-
-//     $updateData = array_merge(
-//         $updateData,
-//         $this->prepareUpdateMeta($request, $shipment->status)
-//     );
-
-//     $hasChanges = false;
-
-//     foreach ($updateData as $key => $value) {
-//         if ($shipment->$key != $value) {
-//             $hasChanges = true;
-//             break;
-//         }
-//     }
-
-//     $itemsChanged = !$this->itemsEqual($shipment, $request->items ?? []);
-
-//     if (!$hasChanges && !$itemsChanged) {
-//         $this->loadCommonRelations($shipment);
-//         $shipment->load('items');
-//         return $this->respondWithResource($shipment, "لا يوجد تغييرات فعلية.");
-//     }
-
-//     DB::transaction(function () use ($shipment, $updateData, $request) {
-
-//         $shipment->update($updateData);
-
-//         if (!$this->itemsEqual($shipment, $request->items ?? [])) {
-//             ShipmentItem::where('shipment_id', $shipment->id)->delete();
-
-//             $total = 0;
-//             foreach ($request->items as $item) {
-//                 $itemTotal = $item['quantity'] * $item['unitPrice'];
-//                 $total += $itemTotal;
-
-//                 $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
-//                 $rentalEndHijri   = $item['rentalEnd']   ? $this->getHijriDate($item['rentalEnd'])   : null;
-//                 $tripDateHijri    = $item['DateTimeTrip']? $this->getHijriDate($item['DateTimeTrip']) : null;
-
-//         ShipmentItem::create([
-//                 'shipment_id'         => $shipment->id,
-//                     'item_id'             => $item['item_id'],
-//                     'item_type'           => $this->getMorphClass($item['item_type']),
-//                     'quantity'            => $item['quantity'],
-//                     'unitPrice'           => $item['unitPrice'],
-//                     'totalPrice'          => $itemTotal,
-//                     'rentalStart'         => $item['rentalStart'] ?? null,
-//                     'rentalEnd'           => $item['rentalEnd'] ?? null,
-//                     'rentalStartHijri'    => $rentalStartHijri,
-//                     'rentalEndHijri'      => $rentalEndHijri,
-//                     'DateTimeTrip'        => $item['DateTimeTrip'] ?? null,
-//                     'DateTimeTripHijri'   => $tripDateHijri,
-//                     'seatNum'             => $item['seatNum'] ?? null,
-//                     'class'               => $item['class'] ?? null,
-//                     'roomType' => $item['roomType'] ?? null,
-//                     'creationDate'        => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-//                     'creationDateHijri'   => $this->getHijriDate(),
-//                 ]);
-//             }
-
-//             $shipment->update(['totalPrice' => $total]);
-//         }
-//     });
-
-//     $shipment->refresh();
-//     $changedData = $shipment->getChangedData($oldData, $shipment->toArray());
-
-//     $shipment->changed_data = $changedData;
-//     $shipment->save();
-
-//     $this->loadCommonRelations($shipment);
-//     $shipment->load('items');
-
-//     return $this->respondWithResource($shipment, "تم تحديث الشحنة بنجاح.");
-// }
-
-
-
-// protected function itemsEqual(Shipment $shipment, array $newItems): bool
-// {
-//     $oldItems = $shipment->items->map(function ($item) {
-//         return [
-//             'item_id'   => (int) $item->item_id,
-//             'item_type' => $item->item_type,
-//             'quantity'  => (float) $item->quantity,
-//             'unitPrice' => (float) $item->unitPrice,
-//             'rentalStart'          => $item->rentalStart,
-//             'rentalEnd'            => $item->rentalEnd,
-//             'rentalStartHijri'     => $item->rentalStartHijri,
-//             'rentalEndHijri'       => $item->rentalEndHijri,
-//             'DateTimeTripHijri'    => $item->DateTimeTripHijri,
-//             'DateTimeTrip'         => $item->DateTimeTrip,
-//             'seatNum'              => $item->seatNum,
-//             'class'                => $item->class,
-//             'roomType'                => $item->roomType,
-//         ];
-//     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
-//     $newItemsNormalized = collect($newItems)->map(function ($item) {
-//         return [
-//         'item_id'   => (int) $item['item_id'],
-//         'item_type' => $this->getMorphClass($item['item_type']),
-//         'quantity'  => (float) $item['quantity'],
-//         'unitPrice' => (float) $item['unitPrice'],
-//         'rentalStart'          => $item['rentalStart'] ?? null,
-//         'rentalEnd'            => $item['rentalEnd'] ?? null,
-//         'rentalStartHijri'     => $item['rentalStartHijri'] ?? null,
-//         'rentalEndHijri'       => $item['rentalEndHijri'] ?? null,
-//         'DateTimeTripHijri'    => $item['DateTimeTripHijri'] ?? null,
-//         'DateTimeTrip'         => $item['DateTimeTrip'] ?? null,
-//         'seatNum'              => $item['seatNum'] ?? null,
-//         'class'                => $item['class'] ?? null,
-//         'roomType'                => $item['roomType'] ?? null,
-//         ];
-//     })->sortBy(fn($item) => $item['item_id'] . $item['item_type'])->values()->toArray();
-
-//     return $oldItems === $newItemsNormalized;
-// }
 
     public function active(string $id)
     {

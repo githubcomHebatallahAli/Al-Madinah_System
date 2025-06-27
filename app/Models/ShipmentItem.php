@@ -28,7 +28,8 @@ class ShipmentItem extends Model
         'DateTimeTrip',
         'seatNum',
         'class',
-        'roomType'
+        'roomType',
+        'roomNum'
     ];
 
     public function shipment()
@@ -46,6 +47,7 @@ protected $hidden = ['created_at', 'updated_at'];
      protected $casts = [
     'changed_data' => 'array',
     'seatNum' => 'array',
+    'roomNum'=>'array'
 ];
 
 

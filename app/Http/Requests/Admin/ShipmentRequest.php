@@ -46,8 +46,10 @@ class ShipmentRequest extends FormRequest
 
         'items.*.roomType' => 'nullable|string|in:single,double,triple,quad,suite',
         'items.*.class'=>'nullable|string',
-        'items.*.seatNum' => 'nullable|array', // تأكد أن seatNum هي مصفوفة
-        'items.*.seatNum.*' => 'integer',
+        'items.*.seatNum' => 'nullable|array',
+        'items.*.seatNum.*' => 'string',
+        'items.*.roomNum' => 'nullable|array',
+        'items.*.roomNum.*' => 'string',
         'items.*.DateTimeTrip' =>'nullable|date_format:Y-m-d H:i',
         'items.*.DateTimeTripHijri'=>'nullable|string',
     ];
