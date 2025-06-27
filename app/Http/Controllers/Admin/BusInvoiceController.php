@@ -143,7 +143,6 @@ protected function ensureNumeric($value)
 
 protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
 {
-    // $requestedSeats = collect($pilgrims)->pluck('seatNumber');
     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
     $availableSeats = collect($busTrip->seatMap)
         ->where('status', 'available')
@@ -179,7 +178,7 @@ protected function prepareUpdateMetaData(): array
         'updated_by' => $updatedBy,
         'updated_by_type' => $this->getUpdatedByType(),
         'updated_at' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'updated_at_hijri' => $this->getHijriDate(),
+        'updated_at_hijri' => $this->getHijriDate(null, true),
     ];
 }
 
@@ -223,7 +222,7 @@ protected function preparePilgrimsData($pilgrims, $seatMapArray): array
             'type' => $seatInfo['type'] ?? null,
             'position' => $seatInfo['position'] ?? null,
             'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
+            'creationDateHijri' => $this->getHijriDate(null, true),
         ];
     }
 
@@ -295,7 +294,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 
     $busInvoice->invoiceStatus = 'pending';
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->creationDateHijri = $this->getHijriDate(null, true);
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $busInvoice->updated_by_type = $this->getUpdatedByType();
     $busInvoice->save();
@@ -331,7 +330,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 
     $busInvoice->invoiceStatus = 'approved';
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->creationDateHijri = $this->getHijriDate(null, true);
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $busInvoice->updated_by_type = $this->getUpdatedByType();
     $busInvoice->save();
@@ -372,7 +371,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->invoiceStatus = 'rejected';
     $busInvoice->reason = $validated['reason'] ?? null;
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->creationDateHijri = $this->getHijriDate(null, true);
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $busInvoice->updated_by_type = $this->getUpdatedByType();
     $busInvoice->save();
@@ -416,7 +415,7 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     $busInvoice->invoiceStatus = 'absence';
      $busInvoice->reason = $validated['reason'] ?? null;
     $busInvoice->creationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $busInvoice->creationDateHijri = $this->getHijriDate();
+    $busInvoice->creationDateHijri = $this->getHijriDate(null, true);
     $busInvoice->updated_by = $this->getUpdatedByIdOrFail();
     $busInvoice->updated_by_type = $this->getUpdatedByType();
     $busInvoice->save();
@@ -505,7 +504,7 @@ public function completed($id, Request $request)
             $previousChanged = $busInvoice->changed_data ?? [];
 
             $newCreationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-            $newCreationDateHijri = $this->getHijriDate();
+            $newCreationDateHijri = $this->getHijriDate(null, true);
 
             $changedData['creationDate'] = [
                 'old' => $previousChanged['creationDate']['new'] ?? $busInvoice->getOriginal('creationDate'),
@@ -553,7 +552,7 @@ public function completed($id, Request $request)
 protected function attachPilgrims(BusInvoice $invoice, array $pilgrims, array $seatMapArray = [], ?BusTrip $busTrip = null): void
 {
     $pilgrimsData = [];
-    $hijriDate = $this->getHijriDate();
+    $hijriDate = $this->getHijriDate(null, true);
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
     foreach ($pilgrims as $pilgrim) {
@@ -763,11 +762,9 @@ public function update(BusInvoiceRequest $request, $id)
 
         $busInvoice->update($data);
 
-
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($busInvoice, $request->pilgrims, $seatMapArray, $busTrip);
         }
-
 
         $busInvoice->PilgrimsCount();
         $busInvoice->calculateTotal();

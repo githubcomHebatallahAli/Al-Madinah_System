@@ -27,10 +27,6 @@ class BusDriverController extends Controller
 public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
-
-    // $searchTerm = $request->input('search', '');
-
-    // $query = BusDriver::where('name', 'like', '%' . $searchTerm . '%');
     $query = BusDriver::query();
 
         if ($request->filled('search')) {
@@ -66,10 +62,6 @@ public function showAllWithoutPaginate(Request $request)
 {
     $this->authorize('manage_system');
      $query = BusDriver::query();
-
-    // $searchTerm = $request->input('search', '');
-
-    // $query = BusDriver::where('name', 'like', '%' . $searchTerm . '%');
 
         if ($request->filled('search')) {
     $query->where('name', 'like', '%' . $request->search . '%');
@@ -137,8 +129,6 @@ public function update(BusDriverRequest $request, string $id)
     $changedData = $BusDriver->getChangedData($oldData, $BusDriver->fresh()->toArray());
     $BusDriver->changed_data = $changedData;
     $BusDriver->save();
-
-
 
     $this->loadCommonRelations($BusDriver);
     return $this->respondWithResource($BusDriver, "تم تحديث سائق الباص بنجاح");

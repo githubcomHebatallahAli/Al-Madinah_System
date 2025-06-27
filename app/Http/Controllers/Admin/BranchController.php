@@ -41,8 +41,6 @@ public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-
-
     $query = Branch::query();
 
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
@@ -80,7 +78,6 @@ public function showAllWithoutPaginate(Request $request)
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
         $query->where('status', $request->status);
     }
-
 
         if ($request->filled('search')) {
     $query->where('name', 'like', '%' . $request->search . '%');

@@ -124,9 +124,6 @@ public function showAllWithoutPaginate(Request $request)
     return $this->respondWithResource($Bus, "Bus retrieved for editing.");
         }
 
-
-
-
     public function update(BusRequest $request, string $id)
     {
         $this->authorize('manage_system');
