@@ -33,7 +33,7 @@ protected function respondWithCollection(Collection $collection, ?string $messag
 
     protected function prepareCreationMetaData(): array
     {
-        $hijriDate = $this->getHijriDate(null, true);
+        $hijriDate = $this->getHijriDate();
         $gregorianDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $addedById = $this->getAddedByIdOrFail();
         $addedByType = $this->getAddedByType();
@@ -145,7 +145,7 @@ protected function mergeWithOld($request, $model, array $fields): array
 
     $metaForDiffOnly = [
         'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-        'creationDateHijri' => $this->getHijriDate(null, true),
+        'creationDateHijri' => $this->getHijriDate(),
     ];
 
     $changedData = $model->getChangedData($oldData, array_merge($model->fresh()->toArray(), $metaForDiffOnly));

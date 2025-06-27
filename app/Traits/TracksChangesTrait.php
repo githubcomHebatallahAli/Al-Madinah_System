@@ -73,7 +73,7 @@ trait TracksChangesTrait
 
             $changed['creationDateHijri'] = [
                 'old' => $previousChanged['creationDateHijri']['new'] ?? $this->creationDateHijri,
-                'new' => $this->getHijriDate(null, true),
+                'new' => $this->getHijriDate(),
             ];
         }
 
