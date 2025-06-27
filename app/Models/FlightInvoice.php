@@ -44,7 +44,7 @@ class FlightInvoice extends Model
         ]);
 }
 
-    public function PilgrimsCount(): void
+ public function PilgrimsCount(): void
 {
     $this->pilgrimsCount = $this->pilgrims()->count();
     $this->save();
@@ -52,21 +52,25 @@ class FlightInvoice extends Model
 
 public function calculateTotal(): void
 {
-  $seatPrice = $this->flight->sellingPrice ?? 0;
+    $seatPrice = $this->flight->sellingPrice ?? 0;
 
-$totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-    $seats = explode(',', $pilgrim->pivot->seatNumber);
-    return count($seats);
-});
+    // حساب عدد المقاعد المحجوزة (حتى لو حاجز أكتر من مقعد)
+    $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
+        $seats = explode(',', $pilgrim->pivot->seatNumber);
+        return count($seats);
+    });
 
-$this->subtotal = $seatPrice * $totalSeats;
-$this->total = $this->subtotal
-              - ($this->discount ?? 0)
-              + ($this->tax ?? 0);
+    $this->subtotal = $seatPrice * $totalSeats;
 
-$this->save();
+    $discount = $this->discount ?? 0;
+    $taxRate = $this->tax ?? 0;
+
+    $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
+
+    $this->total = $this->subtotal - $discount + $taxAmount;
 
 }
+
 
     public function mainPilgrim()
 {
