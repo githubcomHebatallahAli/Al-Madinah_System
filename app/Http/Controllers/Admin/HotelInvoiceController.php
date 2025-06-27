@@ -232,49 +232,49 @@ protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims)
         ]);
     }
 
-public function create(HotelInvoiceRequest $request)
-{
-    $this->authorize('manage_system');
+// public function create(HotelInvoiceRequest $request)
+// {
+//     $this->authorize('manage_system');
 
-    $data = array_merge([
-        'discount' => $this->ensureNumeric($request->input('discount', 0)),
-        'tax' => $this->ensureNumeric($request->input('tax', 0)),
-        'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
-        'subtotal' => 0,
-        'total' => 0,
-    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
+//     $data = array_merge([
+//         'discount' => $this->ensureNumeric($request->input('discount', 0)),
+//         'tax' => $this->ensureNumeric($request->input('tax', 0)),
+//         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+//         'subtotal' => 0,
+//         'total' => 0,
+//     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 
-    DB::beginTransaction();
-    try {
-        $invoice = HotelInvoice::create($data);
+//     DB::beginTransaction();
+//     try {
+//         $invoice = HotelInvoice::create($data);
 
 
-        if ($request->has('pilgrims')) {
-            $this->attachPilgrims($invoice, $request->pilgrims);
-        }
+//         if ($request->has('pilgrims')) {
+//             $this->attachPilgrims($invoice, $request->pilgrims);
+//         }
 
-        if ($request->filled('bus_invoice_id')) {
-            $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
-        }
+//         if ($request->filled('bus_invoice_id')) {
+//             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
+//         }
 
-        $invoice->PilgrimsCount();
-        $invoice->calculateTotal();
-        DB::commit();
+//         $invoice->PilgrimsCount();
+//         $invoice->calculateTotal();
+//         DB::commit();
 
-        return $this->respondWithResource(
-            new HotelInvoiceResource($invoice->load([ 'paymentMethodType.paymentMethod',
-            'mainPilgrim',
-            'hotel', 'trip', 'busInvoice','pilgrims'])),
-            'تم إنشاء فاتورة الفندق بنجاح'
-        );
+//         return $this->respondWithResource(
+//             new HotelInvoiceResource($invoice->load([ 'paymentMethodType.paymentMethod',
+//             'mainPilgrim',
+//             'hotel', 'trip', 'busInvoice','pilgrims'])),
+//             'تم إنشاء فاتورة الفندق بنجاح'
+//         );
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
-        ], 500);
-    }
-}
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return response()->json([
+//             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
+//         ], 500);
+//     }
+// }
 
 public function create(HotelInvoiceRequest $request)
 {
