@@ -367,15 +367,10 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         if ($hasChanges || $request->has('ihramSupplies') || ($request->has('pilgrims') && isset($pilgrimsChanged) && $pilgrimsChanged)) {
             $ihramInvoice->update($data);
 
-            $subtotal = $totalPrice;
-            $discount = $ihramInvoice->discount;
-            $tax = $ihramInvoice->tax;
-            $total = $subtotal - $discount + $tax;
+    $ihramInvoice->load('ihramSupplies');
 
-            $ihramInvoice->update([
-                'subtotal' => $subtotal,
-                'total' => $total
-            ]);
+
+    $ihramInvoice->calculateTotals();
 
             $ihramInvoice->updateIhramSuppliesCount();
 
@@ -390,10 +385,14 @@ public function update(IhramInvoiceRequest $request, IhramInvoice $ihramInvoice)
         $response = [
             'data'       => new IhramInvoiceResource($ihramInvoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
             'message'    => 'تم تحديث فاتورة مستلزمات الإحرام بنجاح',
-            'subtotal'   => $subtotal ?? $ihramInvoice->subtotal,
-            'discount'   => $discount ?? $ihramInvoice->discount,
-            'tax'        => $tax ?? $ihramInvoice->tax,
-            'total'      => $total ?? $ihramInvoice->total,
+            // 'subtotal'   => $subtotal ?? $ihramInvoice->subtotal,
+            // 'discount'   => $discount ?? $ihramInvoice->discount,
+            // 'tax'        => $tax ?? $ihramInvoice->tax,
+            // 'total'      => $total ?? $ihramInvoice->total,
+            'subtotal'   => $ihramInvoice->subtotal,
+            'discount'   => $ihramInvoice->discount,
+            'tax'        => $ihramInvoice->tax,
+            'total'      => $ihramInvoice->total,
             'paidAmount' => $ihramInvoice->paidAmount,
         ];
 

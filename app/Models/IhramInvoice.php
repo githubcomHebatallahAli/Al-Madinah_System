@@ -113,7 +113,7 @@ public function calculateTotalPrice()
 
 public function calculateTotals(): void
 {
-    // $this->loadMissing('ihramSupplies');
+  
     $this->subtotal = $this->calculateTotalPrice();
     $discount = $this->discount ?? 0;
     $taxRate = $this->tax ?? 0;
