@@ -358,34 +358,7 @@ public function create(HotelInvoiceRequest $request)
 
     DB::beginTransaction();
     try {
-        // تحويل التواريخ إلى هجري
-        $creationDateHijri = $this->getHijriDate(now(), true);
-        if (!is_array($creationDateHijri)) {
-            throw new \Exception('Invalid Hijri date format returned');
-        }
-
-        $hijriDates = [
-            'creationDateHijri' => $creationDateHijri['arabic']
-        ];
-
-        if ($request->has('checkInDate')) {
-            $checkInHijri = $this->getHijriDate($request->checkInDate);
-            if (!is_array($checkInHijri)) {
-                throw new \Exception('Invalid check-in Hijri date format');
-            }
-            $hijriDates['checkInDateHijri'] = $checkInHijri['arabic'];
-            $request->merge(['checkInDateHijriCarbon' => $checkInHijri['carbon']]);
-        }
-
-        if ($request->has('checkOutDate')) {
-            $checkOutHijri = $this->getHijriDate($request->checkOutDate);
-            if (!is_array($checkOutHijri)) {
-                throw new \Exception('Invalid check-out Hijri date format');
-            }
-            $hijriDates['checkOutDateHijri'] = $checkOutHijri['arabic'];
-            $request->merge(['checkOutDateHijriCarbon' => $checkOutHijri['carbon']]);
-        }
-
+        // تحضير البيانات الأساسية
         $data = array_merge([
             'discount' => $this->ensureNumeric($request->input('discount', 0)),
             'tax' => $this->ensureNumeric($request->input('tax', 0)),
@@ -393,21 +366,34 @@ public function create(HotelInvoiceRequest $request)
             'subtotal' => 0,
             'total' => 0,
         ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
-        $hijriDates,
         $this->prepareCreationMetaData());
 
+        // تحويل التواريخ إلى هجري - نفس طريقة Shipment
+        if ($request->has('checkInDate')) {
+            $data['checkInDateHijri'] = $this->getHijriDate($request->checkInDate, false);
+        }
+
+        if ($request->has('checkOutDate')) {
+            $data['checkOutDateHijri'] = $this->getHijriDate($request->checkOutDate, false);
+        }
+
+        $data['creationDateHijri'] = $this->getHijriDate(null, true);
+
+        // إنشاء الفاتورة
         $invoice = HotelInvoice::create($data);
 
+        // إرفاق الحجاج بنفس طريقة Shipment
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
 
             foreach ($invoice->pilgrims as $pilgrim) {
                 $pilgrim->pivot->update([
-                    'creationDateHijri' => $creationDateHijri['arabic']
+                    'creationDateHijri' => $data['creationDateHijri']
                 ]);
             }
         }
 
+        // إرفاق فاتورة الباص إذا وجدت
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
@@ -417,20 +403,18 @@ public function create(HotelInvoiceRequest $request)
 
         DB::commit();
 
-        return (new HotelInvoiceResource($invoice->load([
-            'paymentMethodType.paymentMethod',
-            'mainPilgrim',
-            'hotel',
-            'trip',
-            'busInvoice',
-            'pilgrims'
-        ])))->additional([
-            'message' => 'تم إنشاء فاتورة الفندق بنجاح',
-            'hijriConversion' => [
-                'source' => 'api.aladhan.com',
-                'status' => 'success'
-            ]
-        ]);
+        // استخدام الـ Resource بنفس طريقة BusTrip
+        return $this->respondWithResource(
+            new HotelInvoiceResource($invoice->load([
+                'paymentMethodType.paymentMethod',
+                'mainPilgrim',
+                'hotel',
+                'trip',
+                'busInvoice',
+                'pilgrims'
+            ])),
+            'تم إنشاء فاتورة الفندق بنجاح'
+        );
 
     } catch (\Exception $e) {
         DB::rollBack();
@@ -442,7 +426,7 @@ public function create(HotelInvoiceRequest $request)
 
         return response()->json([
             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
-        ], 500, [], JSON_UNESCAPED_UNICODE);
+        ], 500);
     }
 }
 
