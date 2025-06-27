@@ -356,17 +356,17 @@ public function create(HotelInvoiceRequest $request)
         }
     }
 
-    // تحويل التواريخ إلى هجري
+    // تحويل التواريخ إلى هجري باستخدام التريت
     $hijriDates = [
         'creationDateHijri' => $this->getHijriDate(now(), true)
     ];
 
     if ($request->has('checkInDate')) {
-        $hijriDates['checkInDateHijri'] = $this->getHijriDate($request->checkInDate, false);
+        $hijriDates['checkInDateHijri'] = $this->getHijriDate($request->checkInDate);
     }
 
     if ($request->has('checkOutDate')) {
-        $hijriDates['checkOutDateHijri'] = $this->getHijriDate($request->checkOutDate, false);
+        $hijriDates['checkOutDateHijri'] = $this->getHijriDate($request->checkOutDate);
     }
 
     $data = array_merge([
@@ -384,9 +384,6 @@ public function create(HotelInvoiceRequest $request)
         // إنشاء الفاتورة
         $invoice = HotelInvoice::create($data);
 
-        // حجز الغرفة يتم تلقائياً عبر event في الموديل
-
-        // إرفاق الحجاج إذا وجدوا
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
 
@@ -398,46 +395,20 @@ public function create(HotelInvoiceRequest $request)
             }
         }
 
-        // إرفاق فاتورة الباص إذا وجدت
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
 
-        // حساب عدد الحجاج والمبلغ الإجمالي
         $invoice->PilgrimsCount();
         $invoice->calculateTotal();
 
-        // تحديث الفندق بالتواريخ الهجرية إذا لزم الأمر
-        if ($request->has('checkInDate') || $request->has('checkOutDate')) {
-            $hotel = $invoice->hotel;
-            $updateData = [];
-
-            if ($request->has('checkInDate')) {
-                $updateData['rentalStart'] = $request->checkInDate;
-                $updateData['rentalStartHijri'] = $hijriDates['checkInDateHijri'];
-            }
-
-            if ($request->has('checkOutDate')) {
-                $updateData['rentalEnd'] = $request->checkOutDate;
-                $updateData['rentalEndHijri'] = $hijriDates['checkOutDateHijri'];
-            }
-
-            $hotel->update($updateData);
-        }
-
         DB::commit();
 
-        return $this->respondWithResource(
-            new HotelInvoiceResource($invoice->load([
-                'paymentMethodType.paymentMethod',
-                'mainPilgrim',
-                'hotel',
-                'trip',
-                'busInvoice',
-                'pilgrims'
-            ])),
-            'تم إنشاء فاتورة الفندق بنجاح'
-        );
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إنشاء فاتورة الفندق بنجاح',
+            'data' => $this->formatInvoiceResponse($invoice)
+        ], 200, [], JSON_UNESCAPED_UNICODE);
 
     } catch (\Exception $e) {
         DB::rollBack();
@@ -448,9 +419,37 @@ public function create(HotelInvoiceRequest $request)
         ]);
 
         return response()->json([
+            'success' => false,
             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
-        ], 500);
+        ], 500, [], JSON_UNESCAPED_UNICODE);
     }
+}
+
+protected function formatInvoiceResponse($invoice)
+{
+    $data = $invoice->load([
+        'paymentMethodType.paymentMethod',
+        'mainPilgrim',
+        'hotel',
+        'trip',
+        'busInvoice',
+        'pilgrims'
+    ])->toArray();
+
+    // معالجة التواريخ للتأكد من صحة الترميز
+    $dateFields = [
+        'checkInDate', 'checkOutDate',
+        'checkInDateHijri', 'checkOutDateHijri',
+        'creationDate', 'creationDateHijri'
+    ];
+
+    foreach ($dateFields as $field) {
+        if (isset($data[$field])) {
+            $data[$field] = mb_convert_encoding($data[$field], 'UTF-8', 'UTF-8');
+        }
+    }
+
+    return $data;
 }
 
 

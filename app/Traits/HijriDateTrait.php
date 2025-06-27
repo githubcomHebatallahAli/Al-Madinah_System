@@ -102,8 +102,4 @@ trait HijriDateTrait
     }
 }
 
-
-
-
-
 }
