@@ -368,7 +368,7 @@ public function create(HotelInvoiceRequest $request)
         ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
         $this->prepareCreationMetaData());
 
-        // تحويل التواريخ إلى هجري - نفس طريقة Shipment
+        // تحويل التواريخ إلى هجري
         if ($request->has('checkInDate')) {
             $data['checkInDateHijri'] = $this->getHijriDate($request->checkInDate, false);
         }
@@ -382,7 +382,20 @@ public function create(HotelInvoiceRequest $request)
         // إنشاء الفاتورة
         $invoice = HotelInvoice::create($data);
 
-        // إرفاق الحجاج بنفس طريقة Shipment
+        // تحديث غرف الفندق مباشرة بعد الإنشاء
+        if ($request->has('roomNum')) {
+            $hotel = $invoice->hotel;
+            $currentRooms = $hotel->roomNum ?? [];
+
+            // إزالة الغرفة المحجوزة من القائمة
+            if (($key = array_search($request->roomNum, $currentRooms)) !== false) {
+                unset($currentRooms[$key]);
+                $hotel->roomNum = array_values($currentRooms);
+                $hotel->save();
+            }
+        }
+
+        // إرفاق الحجاج
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
 
@@ -403,7 +416,6 @@ public function create(HotelInvoiceRequest $request)
 
         DB::commit();
 
-        // استخدام الـ Resource بنفس طريقة BusTrip
         return $this->respondWithResource(
             new HotelInvoiceResource($invoice->load([
                 'paymentMethodType.paymentMethod',
