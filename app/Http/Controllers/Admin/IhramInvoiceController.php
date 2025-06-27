@@ -847,11 +847,6 @@ public function completed($id, Request $request)
 }
 
 
-
-
-
-
-
         protected function getResourceClass(): string
     {
         return IhramInvoiceResource::class;
