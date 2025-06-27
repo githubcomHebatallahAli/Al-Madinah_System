@@ -126,7 +126,7 @@ public function update(BusTripRequest $request, string $id)
      if ($request->filled('travelDate')) {
         $updateData['travelDateHijri'] = $this->getHijriDate($request->travelDate);
     }
-    
+
     $updateData = array_merge(
         $updateData,
         $this->prepareUpdateMeta($request, $BusTrip->status)

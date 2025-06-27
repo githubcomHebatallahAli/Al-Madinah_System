@@ -276,6 +276,71 @@ protected function hasPilgrimsChanges(HotelInvoice $invoice, array $newPilgrims)
 //     }
 // }
 
+// public function create(HotelInvoiceRequest $request)
+// {
+//     $this->authorize('manage_system');
+
+//     // التحقق من توفر الغرفة أولاً
+//     if ($request->has('roomNum')) {
+//         $hotel = Hotel::find($request->hotel_id);
+//         if (!$hotel->isRoomAvailable($request->roomNum)) {
+//             return response()->json([
+//                 'message' => 'الغرفة غير متاحة للحجز'
+//             ], 400);
+//         }
+//     }
+
+//     $data = array_merge([
+//         'discount' => $this->ensureNumeric($request->input('discount', 0)),
+//         'tax' => $this->ensureNumeric($request->input('tax', 0)),
+//         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+//         'subtotal' => 0,
+//         'total' => 0,
+//     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
+//     $this->prepareCreationMetaData());
+
+//     DB::beginTransaction();
+//     try {
+//         // إنشاء الفاتورة
+//         $invoice = HotelInvoice::create($data);
+
+
+//         if ($request->has('pilgrims')) {
+//             $this->attachPilgrims($invoice, $request->pilgrims);
+//         }
+
+
+//         if ($request->filled('bus_invoice_id')) {
+//             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
+//         }
+
+
+//         $invoice->PilgrimsCount();
+//         $invoice->calculateTotal();
+
+//         DB::commit();
+
+//         return $this->respondWithResource(
+//             new HotelInvoiceResource($invoice->load([
+//                 'paymentMethodType.paymentMethod',
+//                 'mainPilgrim',
+//                 'hotel',
+//                 'trip',
+//                 'busInvoice',
+//                 'pilgrims'
+//             ])),
+//             'تم إنشاء فاتورة الفندق بنجاح'
+//         );
+
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return response()->json([
+//             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function create(HotelInvoiceRequest $request)
 {
     $this->authorize('manage_system');
@@ -290,13 +355,25 @@ public function create(HotelInvoiceRequest $request)
         }
     }
 
+    // تحويل التواريخ إلى هجري
+    $hijriDates = [];
+    if ($request->has('checkInDate')) {
+        $hijriDates['checkInDateHijri'] = $this->getHijriDate($request->checkInDate);
+    }
+    if ($request->has('checkOutDate')) {
+        $hijriDates['checkOutDateHijri'] = $this->getHijriDate($request->checkOutDate);
+    }
+
     $data = array_merge([
         'discount' => $this->ensureNumeric($request->input('discount', 0)),
         'tax' => $this->ensureNumeric($request->input('tax', 0)),
         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         'subtotal' => 0,
         'total' => 0,
-    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
+        'creationDateHijri' => $this->getHijriDate(now()), // تاريخ الإنشاء الهجري
+    ],
+    $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
+    $hijriDates,
     $this->prepareCreationMetaData());
 
     DB::beginTransaction();
@@ -304,19 +381,14 @@ public function create(HotelInvoiceRequest $request)
         // إنشاء الفاتورة
         $invoice = HotelInvoice::create($data);
 
-        // حجز الغرفة يتم تلقائياً عبر event 'created' في الموديل
-
-        // إرفاق الحجاج إذا وجدوا
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-        // إرفاق فاتورة الباص إذا وجدت
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
 
-        // حساب عدد الحجاج والمبلغ الإجمالي
         $invoice->PilgrimsCount();
         $invoice->calculateTotal();
 
