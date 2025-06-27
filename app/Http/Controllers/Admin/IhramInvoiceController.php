@@ -819,8 +819,9 @@ public function completed($id, Request $request)
 
         }
 
-        $ihramInvoice->PilgrimsCount();
-        $ihramInvoice->calculateTotal();
+        //    $ihramInvoice->load('ihramSupplies');
+        $ihramInvoice->calculateTotals();
+        $ihramInvoice->updateIhramSuppliesCount();
 
         $ihramInvoice->changed_data = $changedData;
         $ihramInvoice->save();
