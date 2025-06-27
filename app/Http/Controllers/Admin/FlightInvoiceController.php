@@ -137,7 +137,7 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 
         $query = FlightInvoice::query();
 
-       
+
         if ($request->filled('trip_id')) {
             $query->where('trip_id', $request->trip_id);
         }
@@ -504,32 +504,38 @@ public function completed($id, Request $request)
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
     DB::beginTransaction();
 
     try {
-        $FlightInvoice = FlightInvoice::with([
-            'paymentMethodType.paymentMethod',
+        $hotelInvoice = FlightInvoice::with([
+             'paymentMethodType.paymentMethod',
             'mainPilgrim',
             'flight', 'trip','hotel','pilgrims'
         ])->findOrFail($id);
 
-        if ($FlightInvoice->invoiceStatus === 'completed') {
-            $this->loadCommonRelations($FlightInvoice);
+        if ($hotelInvoice->invoiceStatus === 'completed') {
+            $this->loadCommonRelations($hotelInvoice);
             DB::commit();
-            return $this->respondWithResource($FlightInvoice, 'فاتورة الطائره مكتملة مسبقاً');
+            return $this->respondWithResource($hotelInvoice, 'فاتورة الطيران مكتملة مسبقاً');
         }
 
-        $originalData = $FlightInvoice->getOriginal();
-        $FlightInvoice->invoiceStatus = 'completed';
-        $FlightInvoice->payment_method_type_id = $validated['payment_method_type_id'];
-        $FlightInvoice->paidAmount = $validated['paidAmount'];
-        $FlightInvoice->updated_by = $this->getUpdatedByIdOrFail();
-        $FlightInvoice->updated_by_type = $this->getUpdatedByType();
+        $originalData = $hotelInvoice->getOriginal();
+
+        $hotelInvoice->invoiceStatus = 'completed';
+        $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'];
+        $hotelInvoice->paidAmount = $validated['paidAmount'];
+        $hotelInvoice->discount = $validated['discount'] ?? 0;
+        $hotelInvoice->tax = $validated['tax'] ?? 0;
+        $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
+        $hotelInvoice->updated_by_type = $this->getUpdatedByType();
+
 
         $changedData = [];
-        foreach ($FlightInvoice->getDirty() as $field => $newValue) {
+        foreach ($hotelInvoice->getDirty() as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
                 $changedData[$field] = [
                     'old' => $originalData[$field],
@@ -538,15 +544,15 @@ public function completed($id, Request $request)
             }
         }
 
-        if ($FlightInvoice->isDirty('payment_method_type_id')) {
+        if ($hotelInvoice->isDirty('payment_method_type_id')) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
 
             $changedData['payment_method'] = [
                 'old' => [
-                    'type' => $FlightInvoice->paymentMethodType?->type,
-                    'by' => $FlightInvoice->paymentMethodType?->by,
-                    'method' => $FlightInvoice->paymentMethodType?->paymentMethod?->name
+                    'type' => $hotelInvoice->paymentMethodType?->type,
+                    'by' => $hotelInvoice->paymentMethodType?->by,
+                    'method' => $hotelInvoice->paymentMethodType?->paymentMethod?->name
                 ],
                 'new' => $paymentMethodType ? [
                     'type' => $paymentMethodType->type,
@@ -557,33 +563,34 @@ public function completed($id, Request $request)
         }
 
         if (!empty($changedData)) {
-            $previousChanged = $FlightInvoice->changed_data ?? [];
+            $previousChanged = $hotelInvoice->changed_data ?? [];
 
             $newCreationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
             $newCreationDateHijri = $this->getHijriDate();
 
             $changedData['creationDate'] = [
-                'old' => $previousChanged['creationDate']['new'] ?? $FlightInvoice->getOriginal('creationDate'),
+                'old' => $previousChanged['creationDate']['new'] ?? $hotelInvoice->getOriginal('creationDate'),
                 'new' => $newCreationDate
             ];
 
             $changedData['creationDateHijri'] = [
-                'old' => $previousChanged['creationDateHijri']['new'] ?? $FlightInvoice->getOriginal('creationDateHijri'),
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $hotelInvoice->getOriginal('creationDateHijri'),
                 'new' => $newCreationDateHijri
             ];
 
         }
 
-        $FlightInvoice->changed_data = $changedData;
-        $FlightInvoice->save();
-        $FlightInvoice->PilgrimsCount();
-        $FlightInvoice->calculateTotal();
+        $hotelInvoice->PilgrimsCount();
+        $hotelInvoice->calculateTotal();
 
-        $this->loadCommonRelations($FlightInvoice);
+        $hotelInvoice->changed_data = $changedData;
+        $hotelInvoice->save();
+
+        $this->loadCommonRelations($hotelInvoice);
         DB::commit();
 
         return $this->respondWithResource(
-            $FlightInvoice,
+            $hotelInvoice,
             'تم إكمال فاتورة الطائره بنجاح'
         );
 

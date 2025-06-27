@@ -618,7 +618,7 @@ public function completed($id, Request $request)
         if ($hotelInvoice->invoiceStatus === 'completed') {
             $this->loadCommonRelations($hotelInvoice);
             DB::commit();
-            return $this->respondWithResource($hotelInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+            return $this->respondWithResource($hotelInvoice, 'فاتورة الفندق مكتملة مسبقاً');
         }
 
         $originalData = $hotelInvoice->getOriginal();
@@ -662,7 +662,6 @@ public function completed($id, Request $request)
             ];
         }
 
-        // تطبيق منطق تتبع التواريخ المطلوب
         if (!empty($changedData)) {
             $previousChanged = $hotelInvoice->changed_data ?? [];
 
@@ -681,12 +680,11 @@ public function completed($id, Request $request)
 
         }
 
-        $hotelInvoice->changed_data = $changedData;
-        $hotelInvoice->save();
-
-        // تحديث البيانات المحسوبة
         $hotelInvoice->PilgrimsCount();
         $hotelInvoice->calculateTotal();
+
+        $hotelInvoice->changed_data = $changedData;
+        $hotelInvoice->save();
 
         $this->loadCommonRelations($hotelInvoice);
         DB::commit();

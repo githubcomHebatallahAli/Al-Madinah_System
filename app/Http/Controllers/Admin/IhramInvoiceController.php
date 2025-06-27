@@ -723,8 +723,6 @@ public function rejected($id, Request $request)
     return $this->respondWithResource($invoice, 'Invoice set to rejected');
 }
 
-
-
 public function completed($id, Request $request)
 {
     $this->authorize('manage_system');
@@ -732,68 +730,54 @@ public function completed($id, Request $request)
     $validated = $request->validate([
         'payment_method_type_id' => 'required|exists:payment_method_types,id',
         'paidAmount' => 'required|numeric|min:0|max:99999.99',
-        // 'discount' => 'nullable|numeric|min:0|max:99999.99',
-        // 'tax' => 'nullable|numeric|min:0|max:99999.99'
+        'discount' => 'nullable|numeric|min:0|max:99999.99',
+        'tax' => 'nullable|numeric|min:0|max:99999.99'
     ]);
 
     DB::beginTransaction();
 
     try {
-        $busInvoice = IhramInvoice::with([
-            'paymentMethodType.paymentMethod',
+        $ihramInvoice = IhramInvoice::with([
+              'paymentMethodType.paymentMethod',
             'mainPilgrim',
            'busInvoice', 'pilgrims', 'ihramSupplies'
         ])->findOrFail($id);
 
-
-        if (round(floatval($validated['paidAmount']), 2) != round(floatval($busInvoice->total), 2)) {
-            return response()->json([
-                'message' => 'يجب أن يكون المبلغ المدفوع مساوياً تماماً لإجمالي الفاتورة',
-                'total_amount' => $busInvoice->total,
-                'paid_amount' => $validated['paidAmount'],
-                'difference' => round(floatval($busInvoice->total), 2) - round(floatval($validated['paidAmount']), 2)
-            ], 422);
-        }
-
-        if ($busInvoice->invoiceStatus === 'completed') {
-            $this->loadCommonRelations($busInvoice);
+        if ($ihramInvoice->invoiceStatus === 'completed') {
+            $this->loadCommonRelations($ihramInvoice);
             DB::commit();
-            return $this->respondWithResource($busInvoice, 'فاتورة الحافلة مكتملة مسبقاً');
+            return $this->respondWithResource($ihramInvoice, 'فاتورة مستلزمات الاحرام مكتملة مسبقاً');
         }
 
-        $originalData = $busInvoice->getOriginal();
+        $originalData = $ihramInvoice->getOriginal();
 
-        $updateData = [
-            'invoiceStatus' => 'completed',
-            'payment_method_type_id' => $validated['payment_method_type_id'],
-            'paidAmount' => $validated['paidAmount'],
-            // 'discount' => $validated['discount'] ?? 0,
-            // 'tax' => $validated['tax'] ?? 0,
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
-            'updated_by' => $this->getUpdatedByIdOrFail(),
-            'updated_by_type' => $this->getUpdatedByType()
-        ];
+        $ihramInvoice->invoiceStatus = 'completed';
+        $ihramInvoice->payment_method_type_id = $validated['payment_method_type_id'];
+        $ihramInvoice->paidAmount = $validated['paidAmount'];
+        $ihramInvoice->discount = $validated['discount'] ?? 0;
+        $ihramInvoice->tax = $validated['tax'] ?? 0;
+        $ihramInvoice->updated_by = $this->getUpdatedByIdOrFail();
+        $ihramInvoice->updated_by_type = $this->getUpdatedByType();
 
         $changedData = [];
-        foreach ($updateData as $field => $newValue) {
+        foreach ($ihramInvoice->getDirty() as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
-                $oldValue = $originalData[$field];
-                if ($oldValue != $newValue) {
-                    $changedData[$field] = ['old' => $oldValue, 'new' => $newValue];
-                }
+                $changedData[$field] = [
+                    'old' => $originalData[$field],
+                    'new' => $newValue
+                ];
             }
         }
 
-        if ($busInvoice->payment_method_type_id != $validated['payment_method_type_id']) {
+        if ($ihramInvoice->isDirty('payment_method_type_id')) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
 
             $changedData['payment_method'] = [
                 'old' => [
-                    'type' => $busInvoice->paymentMethodType?->type,
-                    'by' => $busInvoice->paymentMethodType?->by,
-                    'method' => $busInvoice->paymentMethodType?->paymentMethod?->name
+                    'type' => $ihramInvoice->paymentMethodType?->type,
+                    'by' => $ihramInvoice->paymentMethodType?->by,
+                    'method' => $ihramInvoice->paymentMethodType?->paymentMethod?->name
                 ],
                 'new' => $paymentMethodType ? [
                     'type' => $paymentMethodType->type,
@@ -803,20 +787,37 @@ public function completed($id, Request $request)
             ];
         }
 
-        $busInvoice->fill($updateData);
-        $busInvoice->changed_data = $changedData;
-        $busInvoice->save();
 
-        $busInvoice->PilgrimsCount();
-        $busInvoice->calculateTotal();
+        if (!empty($changedData)) {
+            $previousChanged = $ihramInvoice->changed_data ?? [];
 
-        $busInvoice->load(['pilgrims']);
+            $newCreationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+            $newCreationDateHijri = $this->getHijriDate();
 
+            $changedData['creationDate'] = [
+                'old' => $previousChanged['creationDate']['new'] ?? $ihramInvoice->getOriginal('creationDate'),
+                'new' => $newCreationDate
+            ];
+
+            $changedData['creationDateHijri'] = [
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $ihramInvoice->getOriginal('creationDateHijri'),
+                'new' => $newCreationDateHijri
+            ];
+
+        }
+
+        $ihramInvoice->PilgrimsCount();
+        $ihramInvoice->calculateTotal();
+
+        $ihramInvoice->changed_data = $changedData;
+        $ihramInvoice->save();
+
+        $this->loadCommonRelations($ihramInvoice);
         DB::commit();
 
         return $this->respondWithResource(
-            $busInvoice,
-            'تم إكمال فاتورة الحافلة بنجاح'
+            $ihramInvoice,
+            'تم إكمال فاتورة مستلزمات الاحرام بنجاح'
         );
 
     } catch (\Exception $e) {
@@ -830,6 +831,8 @@ public function completed($id, Request $request)
         ], 500);
     }
 }
+
+
 
 
 

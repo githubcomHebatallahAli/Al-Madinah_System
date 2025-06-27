@@ -119,7 +119,7 @@ public function calculateTotal(): void
                   - ($this->discount ?? 0)
                   + ($this->tax ?? 0);
 
-    $this->save();
+    
 }
 
 
