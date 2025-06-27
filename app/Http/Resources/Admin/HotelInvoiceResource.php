@@ -25,7 +25,7 @@ class HotelInvoiceResource extends JsonResource
             // 'invoiceNumber' => $this->invoiceNumber,
             'bus_invoice_id'=> $this ->busInvoice?->id,
             'bedPrice' => $this->hotel?->bedPrice ?? 0,
-            'roomPrice' => $this->hotel?->roomPrice ?? 0,
+            'roomPrice' => $this->hotel?->sellingPrice ?? 0,
             'trip_id' => $this->trip?->id,
             'trip_name' => $this->trip?->name,
             'hotel_id' => $this->hotel?->id,
