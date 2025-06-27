@@ -144,9 +144,9 @@ public function create(ShipmentRequest $request)
                 $itemTotal = $item['quantity'] * $item['unitPrice'];
                 $total += $itemTotal;
 
-                $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart']) : null;
-                $rentalEndHijri = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd']) : null;
-                $tripDateHijri = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip']) : null;
+   $rentalStartHijri = $item['rentalStart'] ? $this->getHijriDate($item['rentalStart'], false) : null;
+    $rentalEndHijri = $item['rentalEnd'] ? $this->getHijriDate($item['rentalEnd'], false) : null;
+    $tripDateHijri = $item['DateTimeTrip'] ? $this->getHijriDate($item['DateTimeTrip'], false) : null;
 
                 $shipmentItem = ShipmentItem::create([
                     'shipment_id' => $shipment->id,
@@ -158,6 +158,7 @@ public function create(ShipmentRequest $request)
                     'rentalStart' => $item['rentalStart'] ?? null,
                     'rentalEnd' => $item['rentalEnd'] ?? null,
                     'rentalStartHijri' => $rentalStartHijri,
+
                     'rentalEndHijri' => $rentalEndHijri,
                     'DateTimeTrip' => $item['DateTimeTrip'] ?? null,
                     'DateTimeTripHijri' => $tripDateHijri,
@@ -165,7 +166,7 @@ public function create(ShipmentRequest $request)
                     'class' => $item['class'] ?? null,
                     'roomType' => $item['roomType'] ?? null,
                     'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-                    'creationDateHijri' => $this->getHijriDate(),
+                    'creationDateHijri' => $this->getHijriDate(null, true),
                 ]);
 
                 $shipment->updateItemsCount();

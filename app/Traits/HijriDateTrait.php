@@ -8,51 +8,57 @@ use Illuminate\Support\Facades\Http;
 
 trait HijriDateTrait
 {
-      public function getHijriDate()
+    //   public function getHijriDate()
+    // {
+    //     $now = now()->timezone('Asia/Riyadh');
+
+    //     $response = Http::get('https://api.aladhan.com/v1/gToH', [
+    //         'date' => $now->format('d-m-Y'),
+    //     ]);
+
+    //     $hijri = $response['data']['hijri'];
+
+    //     return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$now->format('H:i:s')}";
+    // }
+
+     public function getHijriDate(?string $gregorianDate = null, bool $includeSeconds = false)
     {
-        $now = now()->timezone('Asia/Riyadh');
+        try {
+            $date = $gregorianDate
+                ? Carbon::parse($gregorianDate)->timezone('Asia/Riyadh')
+                : now()->timezone('Asia/Riyadh');
 
-        $response = Http::get('https://api.aladhan.com/v1/gToH', [
-            'date' => $now->format('d-m-Y'),
-        ]);
+            $response = Http::retry(3, 100)->get('https://api.aladhan.com/v1/gToH', [
+                'date' => $date->format('d-m-Y'),
+            ]);
 
-        $hijri = $response['data']['hijri'];
+            if (!$response->successful()) {
+                throw new \Exception('Failed to fetch Hijri date from API');
+            }
 
-        return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$now->format('H:i:s')}";
+            $hijri = $response->json()['data']['hijri'];
+
+            $timeFormat = $includeSeconds ? 'H:i:s' : 'H:i';
+
+            return sprintf(
+                '%s %s %s %s - %s',
+                $hijri['weekday']['ar'],
+                $hijri['day'],
+                $hijri['month']['ar'],
+                $hijri['year'],
+                $date->format($timeFormat)
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Hijri date conversion failed: '.$e->getMessage());
+
+            $timeFormat = $includeSeconds ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+
+            return $gregorianDate
+                ? Carbon::parse($gregorianDate)->timezone('Asia/Riyadh')->format($timeFormat)
+                : now()->timezone('Asia/Riyadh')->format($timeFormat);
+        }
     }
-
-//     public function getHijriDate(?string $gregorianInput = null)
-// {
-//     try {
-//         $date = $gregorianInput
-//             ? \Carbon\Carbon::parse($gregorianInput)->timezone('Asia/Riyadh')
-//             : now()->timezone('Asia/Riyadh');
-
-//         // أرسل فقط اليوم والشهر والسنة للـ API
-//         $response = Http::get('https://api.aladhan.com/v1/gToH', [
-//             'date' => $date->format('d-m-Y'),
-//         ]);
-
-//         if (!$response->ok()) {
-//             return response()->json(['message' => 'فشل في جلب التاريخ الهجري'], 500);
-//         }
-
-//         $hijri = $response['data']['hijri'];
-
-//         // ندمج التاريخ الهجري من الـ API مع الوقت الأصلي من الميلادي
-//         return "{$hijri['weekday']['ar']} {$hijri['day']} {$hijri['month']['ar']} {$hijri['year']} - {$date->format('H:i:s')}";
-//     } catch (\Exception $e) {
-//         Log::error('getHijriDate error: ' . $e->getMessage());
-//         return response()->json([
-//             'message' => 'حدث خطأ أثناء تحويل التاريخ: ' . mb_convert_encoding($e->getMessage(), 'UTF-8', 'UTF-8')
-//         ], 500);
-//     }
-// }
-
-
-
-
-
 
 
 
