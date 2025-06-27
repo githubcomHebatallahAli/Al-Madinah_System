@@ -185,6 +185,8 @@ public function create(IhramInvoiceRequest $request)
 
         // ]);
 
+        $invoice->load('ihramSupplies');
+
         $invoice->calculateTotals();
 
         $invoice->updateIhramSuppliesCount();
