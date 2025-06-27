@@ -79,4 +79,9 @@ public function updater()
     'changed_data' => 'array',
     'roomNum' => 'array',
 ];
+
+public function isRoomAvailable($roomNumber): bool
+{
+    return in_array($roomNumber, $this->roomNum ?? []);
+}
 }

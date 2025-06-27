@@ -119,7 +119,7 @@ public function calculateTotal(): void
                   - ($this->discount ?? 0)
                   + ($this->tax ?? 0);
 
-    
+
 }
 
 
@@ -137,6 +137,117 @@ public function calculateTotal(): void
 
 protected $attributes = [
     'invoiceStatus' => 'pending',
-
 ];
+
+    protected static function booted()
+    {
+        static::updating(function ($invoice) {
+            // إذا تم تغيير رقم الغرفة
+            if ($invoice->isDirty('roomNum')) {
+                $originalRoom = $invoice->getOriginal('roomNum');
+                $newRoom = $invoice->roomNum;
+
+                // إعادة الغرفة القديمة إذا كانت مختلفة
+                if ($originalRoom && $originalRoom != $newRoom) {
+                    $invoice->releaseSpecificRoom($originalRoom);
+                }
+
+                // حجز الغرفة الجديدة
+                if ($newRoom) {
+                    $invoice->occupySpecificRoom($newRoom);
+                }
+            }
+
+            // إذا تم إنهاء الإقامة بتحديث عدد الأيام
+            if ($invoice->isDirty('numDay') && $invoice->numDay <= 0) {
+                $invoice->releaseRoom();
+            }
+
+            // إذا تم تحديث تاريخ الخروج ليكون تاريخ قديم
+            if ($invoice->isDirty('checkOutDate') && $invoice->checkOutDate <= now()) {
+                $invoice->releaseRoom();
+            }
+        });
+
+        static::created(function ($invoice) {
+            // حجز الغرفة تلقائياً عند الإنشاء
+            if ($invoice->roomNum) {
+                $invoice->occupyRoom();
+            }
+        });
+    }
+
+    /**
+     * حجز الغرفة الحالية في الفاتورة
+     */
+    public function occupyRoom(): bool
+    {
+        if (!$this->hotel || !$this->roomNum) return false;
+
+        $hotel = $this->hotel;
+        $currentRooms = $hotel->roomNum ?? [];
+
+        if (!in_array($this->roomNum, $currentRooms)) {
+            $currentRooms[] = $this->roomNum;
+            sort($currentRooms);
+            return $hotel->update(['roomNum' => $currentRooms]);
+        }
+
+        return true;
+    }
+
+    /**
+     * إعادة الغرفة الحالية في الفاتورة
+     */
+    public function releaseRoom(): bool
+    {
+        if (!$this->hotel || !$this->roomNum) return false;
+
+        $hotel = $this->hotel;
+        $currentRooms = $hotel->roomNum ?? [];
+
+        if (($key = array_search($this->roomNum, $currentRooms)) !== false) {
+            unset($currentRooms[$key]);
+            return $hotel->update(['roomNum' => array_values($currentRooms)]);
+        }
+
+        return true;
+    }
+
+    /**
+     * حجز غرفة محددة (للاستخدام عند تغيير رقم الغرفة)
+     */
+    protected function occupySpecificRoom($roomNumber): bool
+    {
+        if (!$this->hotel) return false;
+
+        $hotel = $this->hotel;
+        $currentRooms = $hotel->roomNum ?? [];
+
+        if (!in_array($roomNumber, $currentRooms)) {
+            $currentRooms[] = $roomNumber;
+            sort($currentRooms);
+            return $hotel->update(['roomNum' => $currentRooms]);
+        }
+
+        return true;
+    }
+
+    /**
+     * إعادة غرفة محددة (للاستخدام عند تغيير رقم الغرفة)
+     */
+    protected function releaseSpecificRoom($roomNumber): bool
+    {
+        if (!$this->hotel) return false;
+
+        $hotel = $this->hotel;
+        $currentRooms = $hotel->roomNum ?? [];
+
+        if (($key = array_search($roomNumber, $currentRooms)) !== false) {
+            unset($currentRooms[$key]);
+            return $hotel->update(['roomNum' => array_values($currentRooms)]);
+        }
+
+        return true;
+    }
 }
