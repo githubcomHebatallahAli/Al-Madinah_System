@@ -38,6 +38,8 @@ class HotelRequest extends FormRequest
             'address'=>'nullable|string',
             'communication'=>'nullable|string',
             'roomType' =>'nullable|in:single,double,triple,quad,suite',
+            'roomNum' => 'nullable|array',
+            'roomNum.*' => 'string',
             'quantity'=>'required|string',
             'bedPrice' => 'required|numeric|min:0',
             'description'=>'nullable|string',

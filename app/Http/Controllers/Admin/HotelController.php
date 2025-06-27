@@ -102,7 +102,7 @@ public function showAllWithoutPaginate(Request $request)
        $data = array_merge($request->only([
             'service_id','company_id', 'name','place','address','bedPrice',
             'description','communication','quantity','sellingPrice','purchesPrice','roomType',
-            'rentalStart','rentalEnd','rentalStartHijri','rentalEndHijri',
+            'rentalStart','rentalEnd','rentalStartHijri','rentalEndHijri','roomNum'
         ]), $this->prepareCreationMetaData());
 
               if (isset($data['sellingPrice']) && isset($data['purchesPrice'])) {
@@ -136,7 +136,7 @@ public function update(HotelRequest $request, string $id)
 
     $updateData = $request->only(['status', 'service_id','company_id','name','place','address',
             'description','communication','quantity','sellingPrice','purchesPrice','bedPrice',
-            'roomType','rentalStart','rentalEnd','rentalStartHijri','rentalEndHijri'
+            'roomType','rentalStart','rentalEnd','rentalStartHijri','rentalEndHijri','roomNum'
 
 
 

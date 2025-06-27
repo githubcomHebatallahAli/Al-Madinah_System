@@ -23,7 +23,8 @@ return new class extends Migration
             $table->enum('roomType', ['single', 'double','triple','quad','suite']);
             $table->integer('quantity')->default(0);
             $table->decimal('bedPrice', 10, 2)->default(0);
-            // $table->decimal('roomPrice', 10, 2)->default(0);
+            $table->json('roomNum')->nullable();
+
             $table->decimal('sellingPrice');
             $table->decimal('purchesPrice');
             $table->decimal('profit')->nullable();

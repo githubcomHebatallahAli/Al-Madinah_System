@@ -23,6 +23,7 @@ class Hotel extends Model
         'communication',
         'description',
         'roomType',
+        'roomNum',
         'bedPrice',
         'quantity',
         'sellingPrice',
@@ -76,5 +77,6 @@ public function updater()
 
      protected $casts = [
     'changed_data' => 'array',
+    'roomNum' => 'array',
 ];
 }
