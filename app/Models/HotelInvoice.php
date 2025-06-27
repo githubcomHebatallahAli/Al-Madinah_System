@@ -193,11 +193,17 @@ protected static function booted()
         }
     });
 
-    static::deleted(function ($invoice) {
-        if ($invoice->roomNum) {
-            $invoice->updateHotelRooms($invoice->roomNum, 'release');
-        }
-    });
 }
+
+public static function releaseExpiredRooms()
+{
+    static::whereNotNull('roomNum')
+        ->where('checkOutDate', '<=', now())
+        ->get()
+        ->each(function ($invoice) {
+            $invoice->updateHotelRooms($invoice->roomNum, 'release');
+        });
+}
+
 
 }

@@ -456,6 +456,7 @@ protected function ensureNumeric($value)
         public function edit(string $id)
     {
         $this->authorize('manage_system');
+         HotelInvoice::releaseExpiredRooms();
 
         $hotelInvoice =HotelInvoice::with([
           'paymentMethodType.paymentMethod',
