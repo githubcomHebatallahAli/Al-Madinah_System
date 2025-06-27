@@ -356,36 +356,46 @@ public function create(HotelInvoiceRequest $request)
         }
     }
 
-    // تحويل التواريخ إلى هجري
-    $creationDateHijri = $this->getHijriDate(now(), true);
-    $hijriDates = [
-        'creationDateHijri' => $creationDateHijri['arabic'] // نستخدم النسخة العربية للتخزين
-    ];
-
-    if ($request->has('checkInDate')) {
-        $checkInHijri = $this->getHijriDate($request->checkInDate);
-        $hijriDates['checkInDateHijri'] = $checkInHijri['arabic'];
-        $request->merge(['checkInDateHijriCarbon' => $checkInHijri['carbon']]); // لحساب المدة
-    }
-
-    if ($request->has('checkOutDate')) {
-        $checkOutHijri = $this->getHijriDate($request->checkOutDate);
-        $hijriDates['checkOutDateHijri'] = $checkOutHijri['arabic'];
-        $request->merge(['checkOutDateHijriCarbon' => $checkOutHijri['carbon']]);
-    }
-
-    $data = array_merge([
-        'discount' => $this->ensureNumeric($request->input('discount', 0)),
-        'tax' => $this->ensureNumeric($request->input('tax', 0)),
-        'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
-        'subtotal' => 0,
-        'total' => 0,
-    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
-    $hijriDates,
-    $this->prepareCreationMetaData());
-
     DB::beginTransaction();
     try {
+        // تحويل التواريخ إلى هجري
+        $creationDateHijri = $this->getHijriDate(now(), true);
+        if (!is_array($creationDateHijri)) {
+            throw new \Exception('Invalid Hijri date format returned');
+        }
+
+        $hijriDates = [
+            'creationDateHijri' => $creationDateHijri['arabic']
+        ];
+
+        if ($request->has('checkInDate')) {
+            $checkInHijri = $this->getHijriDate($request->checkInDate);
+            if (!is_array($checkInHijri)) {
+                throw new \Exception('Invalid check-in Hijri date format');
+            }
+            $hijriDates['checkInDateHijri'] = $checkInHijri['arabic'];
+            $request->merge(['checkInDateHijriCarbon' => $checkInHijri['carbon']]);
+        }
+
+        if ($request->has('checkOutDate')) {
+            $checkOutHijri = $this->getHijriDate($request->checkOutDate);
+            if (!is_array($checkOutHijri)) {
+                throw new \Exception('Invalid check-out Hijri date format');
+            }
+            $hijriDates['checkOutDateHijri'] = $checkOutHijri['arabic'];
+            $request->merge(['checkOutDateHijriCarbon' => $checkOutHijri['carbon']]);
+        }
+
+        $data = array_merge([
+            'discount' => $this->ensureNumeric($request->input('discount', 0)),
+            'tax' => $this->ensureNumeric($request->input('tax', 0)),
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+            'subtotal' => 0,
+            'total' => 0,
+        ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
+        $hijriDates,
+        $this->prepareCreationMetaData());
+
         $invoice = HotelInvoice::create($data);
 
         if ($request->has('pilgrims')) {
@@ -426,7 +436,8 @@ public function create(HotelInvoiceRequest $request)
         DB::rollBack();
         Log::error('فشل إنشاء فاتورة الفندق', [
             'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
+            'request' => $request->all()
         ]);
 
         return response()->json([
