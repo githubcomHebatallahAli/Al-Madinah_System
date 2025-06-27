@@ -350,18 +350,23 @@ public function create(HotelInvoiceRequest $request)
         $hotel = Hotel::find($request->hotel_id);
         if (!$hotel->isRoomAvailable($request->roomNum)) {
             return response()->json([
-                'message' => 'الغرفة غير متاحة للحجز'
+                'message' => 'الغرفة غير متاحة للحجز',
+                'available_rooms' => $hotel->roomNum
             ], 400);
         }
     }
 
     // تحويل التواريخ إلى هجري
-    $hijriDates = [];
+    $hijriDates = [
+        'creationDateHijri' => $this->getHijriDate(now(), true)
+    ];
+
     if ($request->has('checkInDate')) {
-        $hijriDates['checkInDateHijri'] = $this->getHijriDate($request->checkInDate);
+        $hijriDates['checkInDateHijri'] = $this->getHijriDate($request->checkInDate, false);
     }
+
     if ($request->has('checkOutDate')) {
-        $hijriDates['checkOutDateHijri'] = $this->getHijriDate($request->checkOutDate);
+        $hijriDates['checkOutDateHijri'] = $this->getHijriDate($request->checkOutDate, false);
     }
 
     $data = array_merge([
@@ -370,9 +375,7 @@ public function create(HotelInvoiceRequest $request)
         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         'subtotal' => 0,
         'total' => 0,
-        'creationDateHijri' => $this->getHijriDate(now()), // تاريخ الإنشاء الهجري
-    ],
-    $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
+    ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']),
     $hijriDates,
     $this->prepareCreationMetaData());
 
@@ -381,16 +384,46 @@ public function create(HotelInvoiceRequest $request)
         // إنشاء الفاتورة
         $invoice = HotelInvoice::create($data);
 
+        // حجز الغرفة يتم تلقائياً عبر event في الموديل
+
+        // إرفاق الحجاج إذا وجدوا
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
+
+            // تحديث التواريخ الهجرية للحجاج
+            foreach ($invoice->pilgrims as $pilgrim) {
+                $pilgrim->pivot->update([
+                    'creationDateHijri' => $this->getHijriDate(now(), true)
+                ]);
+            }
         }
 
+        // إرفاق فاتورة الباص إذا وجدت
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
 
+        // حساب عدد الحجاج والمبلغ الإجمالي
         $invoice->PilgrimsCount();
         $invoice->calculateTotal();
+
+        // تحديث الفندق بالتواريخ الهجرية إذا لزم الأمر
+        if ($request->has('checkInDate') || $request->has('checkOutDate')) {
+            $hotel = $invoice->hotel;
+            $updateData = [];
+
+            if ($request->has('checkInDate')) {
+                $updateData['rentalStart'] = $request->checkInDate;
+                $updateData['rentalStartHijri'] = $hijriDates['checkInDateHijri'];
+            }
+
+            if ($request->has('checkOutDate')) {
+                $updateData['rentalEnd'] = $request->checkOutDate;
+                $updateData['rentalEndHijri'] = $hijriDates['checkOutDateHijri'];
+            }
+
+            $hotel->update($updateData);
+        }
 
         DB::commit();
 
@@ -408,6 +441,12 @@ public function create(HotelInvoiceRequest $request)
 
     } catch (\Exception $e) {
         DB::rollBack();
+        Log::error('فشل إنشاء فاتورة الفندق', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'request' => $request->all()
+        ]);
+
         return response()->json([
             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
         ], 500);
