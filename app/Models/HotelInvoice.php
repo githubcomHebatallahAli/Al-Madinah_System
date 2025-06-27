@@ -95,6 +95,7 @@ public function PilgrimsCount(): void
     $this->save();
 }
 
+
 public function calculateTotal(): void
 {
     if (!isset($this->pilgrimsCount)) {
@@ -105,21 +106,18 @@ public function calculateTotal(): void
     $roomPrice = $this->hotel->sellingPrice ?? 0;
     $numDays = $this->numDay ?? 1;
 
-
     if ($this->sleep === 'room') {
-
         $this->subtotal = $roomPrice * $numDays;
     } else {
-
         $this->subtotal = $bedPrice * $this->pilgrimsCount * $numDays;
     }
 
+    $discount = $this->discount ?? 0;
+    $taxRate = $this->tax ?? 0;
 
-    $this->total = $this->subtotal
-                  - ($this->discount ?? 0)
-                  + ($this->tax ?? 0);
+    $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
 
-
+    $this->total = $this->subtotal - $discount + $taxAmount;
 }
 
 
@@ -204,6 +202,9 @@ public static function releaseExpiredRooms()
             $invoice->updateHotelRooms($invoice->roomNum, 'release');
         });
 }
+
+
+
 
 
 }
