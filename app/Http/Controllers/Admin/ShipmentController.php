@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 
+use App\Models\Bus;
+use App\Models\Hotel;
 use App\Models\Flight;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
@@ -201,8 +203,7 @@ public function create(ShipmentRequest $request)
                             $updateData['rentalEnd'] = $item['rentalEnd'];
                             $updateData['rentalEndHijri'] = $rentalEndHijri;
                         }
-
-                   
+                    } // كان ينقص إغلاق هذا القوس في الكود الأصلي
 
                     $itemModel->update($updateData);
 
@@ -239,7 +240,6 @@ public function create(ShipmentRequest $request)
         ], 500);
     }
 }
-
     // public function create(ShipmentRequest $request)
     // {
     //     $this->authorize('manage_system');
