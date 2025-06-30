@@ -143,7 +143,7 @@ protected function ensureNumeric($value)
 
 protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
 {
-    // $requestedSeats = collect($pilgrims)->pluck('seatNumber');
+   
     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
     $availableSeats = collect($busTrip->seatMap)
         ->where('status', 'available')
