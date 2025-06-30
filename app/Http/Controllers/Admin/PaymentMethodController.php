@@ -28,18 +28,11 @@ public function showAllWithPaginate(Request $request)
 {
     $this->authorize('manage_system');
 
-    // $searchTerm = $request->input('search', '');
-
     $query = PaymentMethod::query();
 
     if ($request->filled('status') && in_array($request->status, ['active', 'notActive'])) {
         $query->where('status', $request->status);
     }
-
-    // if (!empty($searchTerm)) {
-    //     $query->where('name', 'like', '%' . $searchTerm . '%');
-    // }
-
 
         if ($request->filled('search')) {
     $query->where('name', 'like', '%' . $request->search . '%');

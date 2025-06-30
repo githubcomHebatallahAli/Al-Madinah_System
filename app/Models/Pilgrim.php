@@ -42,9 +42,9 @@ class Pilgrim extends Model
 ];
 
 
-    public function busInvoices()
+    public function mainInvoices()
 {
-    return $this->belongsToMany(BusInvoice::class, 'bus_invoice_pilgrims')
+    return $this->belongsToMany(MainInvoice::class, 'main_invoice_pilgrims')
         ->withPivot([
             'seatNumber',
             'status',
@@ -59,25 +59,25 @@ class Pilgrim extends Model
 
 
 
-    public function hotelInvoices()
-{
-    return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims')
-        ->withPivot([
-            'creationDate',
-            'creationDateHijri',
-            'changed_data',
-        ]);
-}
+//     public function hotelInvoices()
+// {
+//     return $this->belongsToMany(Pilgrim::class, 'hotel_invoice_pilgrims')
+//         ->withPivot([
+//             'creationDate',
+//             'creationDateHijri',
+//             'changed_data',
+//         ]);
+// }
 
-    public function ihramInvoices()
-{
-    return $this->belongsToMany(Pilgrim::class, 'ihram_invoice_pilgrims')
-        ->withPivot([
-            'creationDate',
-            'creationDateHijri',
-            'changed_data',
-        ]);
-}
+//     public function ihramInvoices()
+// {
+//     return $this->belongsToMany(Pilgrim::class, 'ihram_invoice_pilgrims')
+//         ->withPivot([
+//             'creationDate',
+//             'creationDateHijri',
+//             'changed_data',
+//         ]);
+// }
 
     public function flightInvoices()
 {

@@ -40,6 +40,7 @@ class FlightInvoiceResource extends JsonResource
             'ticketPrice' => $this->flight?->sellingPrice ?? 0,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
+            'totalAfterDiscount'=>$this->totalAfterDiscount,
             'tax' => $this->tax,
             'total' => $this->total,
             'paidAmount' => $this->paidAmount,

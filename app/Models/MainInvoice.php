@@ -1,0 +1,370 @@
+<?php
+
+namespace App\Models;
+
+use App\Traits\HijriDateTrait;
+use App\Traits\TracksChangesTrait;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class MainInvoice extends Model
+{
+        use HasFactory, TracksChangesTrait,HijriDateTrait;
+        protected $fillable = [
+        'invoiceNumber',
+        'main_pilgrim_id',
+        'bus_trip_id',
+        'campaign_id',
+        'office_id',
+        'group_id',
+        'worker_id',
+        'payment_method_type_id',
+        'description',
+
+        'trip_id',
+        'hotel_id',
+        'checkInDate',
+        'checkInDateHijri',
+        'checkOutDate',
+        'checkOutDateHijri',
+        'bookingSource',
+        'roomNum',
+        'need',
+        'sleep',
+        'numDay',
+
+        'ihramSuppliesCount',
+
+        'subtotal',
+        'discount',
+        'totalAfterDiscount',
+        'tax',
+        'total',
+        'paidAmount',
+        'pilgrimsCount',
+        'invoiceStatus',
+        'reason',
+        'creationDate',
+        'creationDateHijri',
+        'changed_data',
+        'added_by',
+        'added_by_type',
+        'updated_by',
+        'updated_by_type',
+    ];
+
+    public function mainPilgrim()
+{
+    return $this->belongsTo(Pilgrim::class, 'main_pilgrim_id');
+}
+
+
+
+    public function busTrip()
+{
+    return $this->belongsTo(BusTrip::class, 'bus_trip_id');
+}
+
+    public function campaign()
+    {
+        return $this->belongsTo(Campaign::class);
+    }
+
+    public function office()
+    {
+        return $this->belongsTo(Office::class);
+    }
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
+
+    public function worker()
+    {
+        return $this->belongsTo(Worker::class);
+    }
+
+    public function paymentMethodType()
+    {
+        return $this->belongsTo(PaymentMethodType::class);
+    }
+
+            public function trip()
+    {
+        return $this->belongsTo(Trip::class);
+    }
+
+        public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
+    }
+
+
+    //        public function hotelInvoices()
+    // {
+    //     return $this->hasMany(HotelInvoice::class, 'bus_invoice_id');
+    // }
+
+
+    public function pilgrims()
+{
+    return $this->belongsToMany(Pilgrim::class, 'main_invoice_pilgrims')
+        ->withPivot([
+            'seatNumber',
+            'status',
+            'creationDate',
+            'creationDateHijri',
+            'changed_data',
+            'type',
+            'position',
+        ]);
+}
+
+public function ihramSupplies()
+{
+    return $this->belongsToMany(IhramSupply::class, 'ihram_invoice_supplies')
+                ->withPivot('quantity', 'price', 'total','creationDate',
+            'creationDateHijri', 'changed_data');
+}
+
+// public function PilgrimsCount(): void
+// {
+//     $this->pilgrimsCount = $this->pilgrims()->count();
+//     $this->save();
+// }
+
+
+// public function calculateTotal(): void
+// {
+
+//     if (!isset($this->pilgrimsCount)) {
+//         $this->PilgrimsCount();
+//     }
+
+
+//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
+
+
+//     $this->subtotal = $seatPrice * $this->pilgrimsCount;
+
+//     $discount = $this->discount ?? 0;
+
+//     $taxRate = $this->tax ?? 0;
+//     $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
+
+//     $this->total = $this->subtotal - $discount + $taxAmount;
+
+// }
+
+
+
+
+
+    //   protected static function booted()
+    // {
+    //     static::creating(function ($invoice) {
+    //         $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
+    //     });
+    // }
+
+    public function generateInvoiceNumber()
+{
+    try {
+        $lastNumber = static::max('id') ?? 0;
+        $nextNumber = $lastNumber + 1;
+
+        $hijriDate = $this->extractHijriDateParts($this->getHijriDate());
+
+        return sprintf(
+            'BUS-%04d/%s/%s/%s',
+            $nextNumber,
+            $hijriDate['year'],
+            $hijriDate['month'],
+            $hijriDate['day']
+        );
+
+    } catch (\Exception $e) {
+        $lastNumber = static::max('id') ?? 0;
+        return sprintf(
+            'BUS-%04d/%s',
+            $lastNumber + 1,
+            now()->format('Y-m-d')
+        );
+    }
+}
+
+
+        public function creator()
+{
+    return $this->morphTo(null, 'added_by_type', 'added_by');
+}
+
+public function updater()
+{
+    return $this->morphTo(null, 'updated_by_type', 'updated_by');
+}
+
+    protected $casts = [
+    'changed_data' => 'array',
+    'subtotal' => 'decimal:2',
+    'discount' => 'decimal:2',
+    'totalAfterDiscount'=>'decimal:2',
+    'tax' => 'decimal:2',
+    'total' => 'decimal:2',
+    'paidAmount' => 'decimal:2',
+    // 'seatPrice' => 'decimal:2',
+];
+
+protected $attributes = [
+    'invoiceStatus' => 'pending',
+];
+
+public function updateHotelRooms($roomNumber, $action = 'occupy')
+{
+    if (!$this->hotel) return false;
+
+    $hotel = $this->hotel;
+    $currentRooms = $hotel->roomNum ?? [];
+
+    if ($action === 'occupy') {
+        // إزالة الغرفة من القائمة
+        if (($key = array_search($roomNumber, $currentRooms)) !== false) {
+            unset($currentRooms[$key]);
+            $hotel->roomNum = array_values($currentRooms);
+            return $hotel->save();
+        }
+    } else {
+        // إعادة الغرفة إلى القائمة
+        if (!in_array($roomNumber, $currentRooms)) {
+            $currentRooms[] = $roomNumber;
+            sort($currentRooms);
+            $hotel->roomNum = $currentRooms;
+            return $hotel->save();
+        }
+    }
+
+    return true;
+}
+
+// protected static function booted()
+// {
+//     static::created(function ($invoice) {
+//         if ($invoice->roomNum) {
+//             $invoice->updateHotelRooms($invoice->roomNum, 'occupy');
+//         }
+//     });
+
+//     static::updating(function ($invoice) {
+//         if ($invoice->isDirty('roomNum')) {
+//             $originalRoom = $invoice->getOriginal('roomNum');
+//             $newRoom = $invoice->roomNum;
+
+//             if ($originalRoom && $originalRoom != $newRoom) {
+//                 $invoice->updateHotelRooms($originalRoom, 'release');
+//                 $invoice->updateHotelRooms($newRoom, 'occupy');
+//             }
+//         }
+
+//         if ($invoice->isDirty('numDay') && $invoice->numDay <= 0) {
+//             $invoice->updateHotelRooms($invoice->roomNum, 'release');
+//         }
+
+//         if ($invoice->isDirty('checkOutDate') && $invoice->checkOutDate <= now()) {
+//             $invoice->updateHotelRooms($invoice->roomNum, 'release');
+//         }
+//     });
+
+// }
+
+//     protected static function booted()
+// {
+
+//     static::created(function ($ihramInvoice) {
+//         $ihramInvoice->load('ihramSupplies');
+//         $ihramInvoice->updateIhramSuppliesCount();
+//     });
+
+
+// }
+
+public function calculateTotalPrice()
+{
+    $total = 0;
+
+    foreach ($this->ihramSupplies as $ihramSupply) {
+        $total += $ihramSupply->pivot->total;
+    }
+
+    return $total;
+}
+
+public function calculateTotals(): void
+{
+
+    $this->subtotal = $this->calculateTotalPrice();
+    $discount = $this->discount ?? 0;
+    $taxRate = $this->tax ?? 0;
+
+    $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
+    $this->total = $this->subtotal - $discount + $taxAmount;
+
+    // $this->save();
+}
+
+
+public function updateIhramSuppliesCount()
+{
+    $this->ihramSuppliesCount = $this->ihramSupplies()->count();
+    $this->save();
+}
+
+
+
+public function getIhramSuppliesCountAttribute()
+{
+    return $this->attributes['ihramSuppliesCount'] ?? 0;
+}
+
+protected static function booted()
+{
+    // عند الإنشاء: توليد رقم الفاتورة
+    static::creating(function ($invoice) {
+        $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
+    });
+
+    // عند الإنشاء: إشغال الغرفة
+    static::created(function ($invoice) {
+        if ($invoice->roomNum) {
+            $invoice->updateHotelRooms($invoice->roomNum, 'occupy');
+        }
+
+        // تحميل مستلزمات الإحرام وتحديث عددها
+        $invoice->load('ihramSupplies');
+        $invoice->updateIhramSuppliesCount();
+    });
+
+    // عند التحديث: تحرير الغرفة أو إشغال أخرى
+    static::updating(function ($invoice) {
+        if ($invoice->isDirty('roomNum')) {
+            $originalRoom = $invoice->getOriginal('roomNum');
+            $newRoom = $invoice->roomNum;
+
+            if ($originalRoom && $originalRoom != $newRoom) {
+                $invoice->updateHotelRooms($originalRoom, 'release');
+                $invoice->updateHotelRooms($newRoom, 'occupy');
+            }
+        }
+
+        // تحرير الغرفة لو عدد الأيام صفر أو انتهى الحجز
+        if ($invoice->isDirty('numDay') && $invoice->numDay <= 0) {
+            $invoice->updateHotelRooms($invoice->roomNum, 'release');
+        }
+
+        if ($invoice->isDirty('checkOutDate') && $invoice->checkOutDate <= now()) {
+            $invoice->updateHotelRooms($invoice->roomNum, 'release');
+        }
+    });
+}
+
+
+}

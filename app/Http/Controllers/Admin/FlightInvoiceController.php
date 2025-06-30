@@ -181,7 +181,6 @@ protected function attachPilgrims(FlightInvoice $invoice, array $pilgrims)
 
         $query = FlightInvoice::query();
 
-
         if ($request->filled('trip_id')) {
             $query->where('trip_id', $request->trip_id);
         }
@@ -218,6 +217,7 @@ public function create(FlightInvoiceRequest $request)
         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         'subtotal' => 0,
         'total' => 0,
+        'totalAfterDiscount'=>0,
     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 
     DB::beginTransaction();

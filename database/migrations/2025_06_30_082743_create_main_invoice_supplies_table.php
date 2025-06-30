@@ -11,16 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bus_invoice_pilgrims', function (Blueprint $table) {
+        Schema::create('main_invoice_supplies', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bus_invoice_id')->constrained('bus_invoices')->cascadeOnDelete();
-            $table->foreignId('pilgrim_id')->constrained('pilgrims')->cascadeOnDelete();
-            $table->string('seatNumber')->nullable();
-            $table->enum('status', ['booked', 'cancelled'])->default('booked');
-            $table->string('type')->nullable();
-            $table->string('position')->nullable();
-
-         
+            $table->foreignId('main_invoice_id')->constrained('main_invoices')->cascadeOnDelete();
+            $table->foreignId('ihram_supply_id')->constrained('ihram_supplies')->cascadeOnDelete();
+            $table->integer('quantity')->default(1);
+            $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('total', 15, 2);
             $table->dateTime('creationDate')->nullable();
             $table->string('creationDateHijri')->nullable();
             $table->json('changed_data')->nullable();
@@ -33,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bus_invoice_pilgrims');
+        Schema::dropIfExists('main_invoice_supplies');
     }
 };

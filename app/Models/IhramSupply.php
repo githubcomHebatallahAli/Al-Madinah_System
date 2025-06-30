@@ -35,9 +35,9 @@ class IhramSupply extends Model
         return $this->belongsTo(IhramItem::class);
     }
 
-    public function ihramInvoices()
+    public function mainInvoices()
 {
-    return $this->belongsToMany(IhramInvoice::class, 'ihram_invoice_supplies')
+    return $this->belongsToMany(MainInvoice::class, 'main_invoice_supplies')
                 ->withPivot('quantity', 'price','total', 'creationDate',
             'creationDateHijri', 'changed_data');
 }

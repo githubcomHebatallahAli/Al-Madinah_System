@@ -11,24 +11,46 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('flight_invoices', function (Blueprint $table) {
+        Schema::create('main_invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
-            $table->foreignId('hotel_id')->nullable()->constrained('hotels')->cascadeOnDelete();
-            $table->foreignId('flight_id')->constrained('flights')->cascadeOnDelete();
+            // bus
+            $table->string('invoiceNumber')->unique();
+            $table->foreignId('bus_trip_id')->nullable()->constrained('bus_trips')->cascadeOnDelete();
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
+            // العلاقات
+            $table->foreignId('office_id')->nullable()->constrained('offices')->cascadeOnDelete();
+            $table->foreignId('campaign_id')->nullable()->constrained('campaigns')->cascadeOnDelete();
+            $table->foreignId('group_id')->nullable()->constrained('groups')->cascadeOnDelete();
+            $table->foreignId('worker_id')->nullable()->constrained('workers');
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
 
+            // Trip
+            $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
+            $table->foreignId('hotel_id')->nullable()->constrained('hotels')->cascadeOnDelete();
 
+            $table->enum('need', ['family','single'])->nullable();
+            $table->enum('sleep', ['bed', 'room'])->nullable();
+            $table->enum('bookingSource', ['MeccaCash','MeccaDelegate','office','otherOffice'])->nullable();
+            $table->dateTime('checkInDate')->nullable();
+            $table->string('checkInDateHijri')->nullable();
+            $table->dateTime('checkOutDate')->nullable();
+            $table->string('checkOutDateHijri')->nullable();
+            $table->integer('numDay')->nullable();
+            $table->string('roomNum')->nullable();
             $table->text('description')->nullable();
 
+             $table->unsignedBigInteger('ihramSuppliesCount')->default(0);
+
+            // الحسابات
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('totalAfterDiscount', 10, 2)->default(0);
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
+
+
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
@@ -49,6 +71,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('flight_invoices');
+        Schema::dropIfExists('main_invoices');
     }
 };

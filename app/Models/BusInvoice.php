@@ -101,21 +101,7 @@ public function PilgrimsCount(): void
     $this->save();
 }
 
-// public function calculateTotal(): void
-// {
-//     if (!isset($this->pilgrimsCount)) {
-//         $this->PilgrimsCount();
-//     }
 
-//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
-
-//     $this->subtotal = $seatPrice * $this->pilgrimsCount;
-//     $this->total = $this->subtotal
-//                   - ($this->discount ?? 0)
-//                   + ($this->tax ?? 0);
-
-//     // $this->save();
-// }
 
 
 public function calculateTotal(): void

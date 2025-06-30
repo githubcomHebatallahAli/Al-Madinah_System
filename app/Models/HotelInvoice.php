@@ -193,15 +193,15 @@ protected static function booted()
 
 }
 
-public static function releaseExpiredRooms()
-{
-    static::whereNotNull('roomNum')
-        ->where('checkOutDate', '<=', now())
-        ->get()
-        ->each(function ($invoice) {
-            $invoice->updateHotelRooms($invoice->roomNum, 'release');
-        });
-}
+// public static function releaseExpiredRooms()
+// {
+//     static::whereNotNull('roomNum')
+//         ->where('checkOutDate', '<=', now())
+//         ->get()
+//         ->each(function ($invoice) {
+//             $invoice->updateHotelRooms($invoice->roomNum, 'release');
+//         });
+// }
 
 
 
