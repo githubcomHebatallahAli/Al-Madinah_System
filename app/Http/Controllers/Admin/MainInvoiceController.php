@@ -100,7 +100,7 @@ protected function syncPilgrims(MainInvoice $invoice, array $pilgrims)
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
 
-    // 🟠 حفظ بيانات البفوت القديمة قبل التعديل
+
     $oldPivotPilgrims = $invoice->pilgrims->mapWithKeys(function ($pilgrim) {
         return [
             $pilgrim->id => [
@@ -121,7 +121,7 @@ protected function syncPilgrims(MainInvoice $invoice, array $pilgrims)
         ];
     }
 
-    // 🟢 تنفيذ منطق التغيير وتسجيل الفرق
+
     $pivotChanges = $this->getPivotChanges($oldPivotPilgrims, $pilgrimsData);
 
     foreach ($pivotChanges as $pilgrimId => $change) {

@@ -26,7 +26,7 @@ class MainInvoiceRequest extends FormRequest
         'worker_id'=>'nullable|exists:workers,id',
         'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
 
-        'trip_id'=>'nullable|exists:trips,id',
+        // 'trip_id'=>'nullable|exists:trips,id',
         'hotel_id'=>'nullable|exists:hotels,id',
         'checkInDate'=>'nullable|date_format:Y-m-d H:i',
         'checkInDateHijri'=>'nullable|string',

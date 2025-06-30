@@ -21,7 +21,7 @@ class MainInvoice extends Model
         'payment_method_type_id',
         'description',
 
-        'trip_id',
+        // 'trip_id',
         'hotel_id',
         'checkInDate',
         'checkInDateHijri',
@@ -89,10 +89,10 @@ class MainInvoice extends Model
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-            public function trip()
-    {
-        return $this->belongsTo(Trip::class);
-    }
+    //         public function trip()
+    // {
+    //     return $this->belongsTo(Trip::class);
+    // }
 
         public function hotel()
     {
