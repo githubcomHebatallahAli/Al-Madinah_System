@@ -42,8 +42,6 @@ class BusInvoice extends Model
     return $this->belongsTo(Pilgrim::class, 'main_pilgrim_id');
 }
 
-
-
     public function busTrip()
 {
     return $this->belongsTo(BusTrip::class, 'bus_trip_id');
@@ -113,8 +111,6 @@ public function calculateTotal(): void
 
 
     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
-
-
     $this->subtotal = $seatPrice * $this->pilgrimsCount;
 
     $discount = $this->discount ?? 0;
@@ -123,8 +119,6 @@ public function calculateTotal(): void
     $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
 
     $this->total = $this->subtotal - $discount + $taxAmount;
-
-
 }
       protected static function booted()
     {

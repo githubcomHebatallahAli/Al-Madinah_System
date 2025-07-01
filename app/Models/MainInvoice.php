@@ -42,7 +42,6 @@ class MainInvoice extends Model
         'numRoom',
 
         'ihramSuppliesCount',
-
         'subtotal',
         'discount',
         'totalAfterDiscount',
@@ -66,8 +65,6 @@ class MainInvoice extends Model
     return $this->belongsTo(Pilgrim::class, 'main_pilgrim_id');
 }
 
-
-
     public function busTrip()
 {
     return $this->belongsTo(BusTrip::class, 'bus_trip_id');
@@ -82,6 +79,7 @@ class MainInvoice extends Model
     {
         return $this->belongsTo(Office::class);
     }
+
     public function group()
     {
         return $this->belongsTo(Group::class);
@@ -135,45 +133,7 @@ public function ihramSupplies()
             'creationDateHijri', 'changed_data');
 }
 
-// public function PilgrimsCount(): void
-// {
-//     $this->pilgrimsCount = $this->pilgrims()->count();
-//     $this->save();
-// }
 
-
-// public function calculateTotal(): void
-// {
-
-//     if (!isset($this->pilgrimsCount)) {
-//         $this->PilgrimsCount();
-//     }
-
-
-//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
-
-
-//     $this->subtotal = $seatPrice * $this->pilgrimsCount;
-
-//     $discount = $this->discount ?? 0;
-
-//     $taxRate = $this->tax ?? 0;
-//     $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
-
-//     $this->total = $this->subtotal - $discount + $taxAmount;
-
-// }
-
-
-
-
-
-    //   protected static function booted()
-    // {
-    //     static::creating(function ($invoice) {
-    //         $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
-    //     });
-    // }
 
     public function generateInvoiceNumber()
 {
@@ -254,70 +214,64 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
     return true;
 }
 
-// protected static function booted()
-// {
-//     static::created(function ($invoice) {
-//         if ($invoice->roomNum) {
-//             $invoice->updateHotelRooms($invoice->roomNum, 'occupy');
-//         }
-//     });
 
-//     static::updating(function ($invoice) {
-//         if ($invoice->isDirty('roomNum')) {
-//             $originalRoom = $invoice->getOriginal('roomNum');
-//             $newRoom = $invoice->roomNum;
-
-//             if ($originalRoom && $originalRoom != $newRoom) {
-//                 $invoice->updateHotelRooms($originalRoom, 'release');
-//                 $invoice->updateHotelRooms($newRoom, 'occupy');
-//             }
-//         }
-
-//         if ($invoice->isDirty('numDay') && $invoice->numDay <= 0) {
-//             $invoice->updateHotelRooms($invoice->roomNum, 'release');
-//         }
-
-//         if ($invoice->isDirty('checkOutDate') && $invoice->checkOutDate <= now()) {
-//             $invoice->updateHotelRooms($invoice->roomNum, 'release');
-//         }
-//     });
-
-// }
-
-//     protected static function booted()
-// {
-
-//     static::created(function ($ihramInvoice) {
-//         $ihramInvoice->load('ihramSupplies');
-//         $ihramInvoice->updateIhramSuppliesCount();
-//     });
-
-
-// }
-
-public function calculateTotalPrice()
-{
-    $total = 0;
-
-    foreach ($this->ihramSupplies as $ihramSupply) {
-        $total += $ihramSupply->pivot->total;
-    }
-
-    return $total;
-}
 
 public function calculateTotals(): void
 {
+    $seatTotal = $this->calculateBusTotal();
+    $ihramTotal = $this->calculateIhramTotal();
+    $hotelTotal = $this->calculateHotelTotal();
 
-    $this->subtotal = $this->calculateTotalPrice();
+    $this->subtotal = $seatTotal + $ihramTotal + $hotelTotal;
+
     $discount = $this->discount ?? 0;
+    $this->totalAfterDiscount = max($this->subtotal - $discount, 0);
+
     $taxRate = $this->tax ?? 0;
+    $taxAmount = round($this->totalAfterDiscount * ($taxRate / 100), 2);
 
-    $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
-    $this->total = $this->subtotal - $discount + $taxAmount;
+    $this->total = round($this->totalAfterDiscount + $taxAmount, 2);
 
-    // $this->save();
 }
+
+protected function calculateBusTotal(): float
+{
+    $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
+
+    $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
+        return count(explode(',', $pilgrim->pivot->seatNumber));
+    });
+
+    return $seatPrice * $totalSeats;
+}
+
+protected function calculateIhramTotal(): float
+{
+    return $this->ihramSupplies->sum(function ($supply) {
+        return $supply->pivot->total ?? 0;
+    });
+}
+
+protected function calculateHotelTotal(): float
+{
+    if (!$this->hotel) {
+        return 0;
+    }
+
+    $bedPrice = $this->hotel->bedPrice ?? 0;
+    $roomPrice = $this->hotel->sellingPrice ?? 0;
+    $numDays = $this->numDay ?? 1;
+    $numRooms = $this->numRoom ?? 1;
+    $numBeds = $this->numBed ?? $this->pilgrimsCount ?? $this->pilgrims()->count();
+
+    if ($this->sleep === 'room') {
+        return $roomPrice * $numDays * $numRooms;
+    }
+
+    return $bedPrice * $numBeds * $numDays;
+}
+
+
 
 
 public function updateIhramSuppliesCount()

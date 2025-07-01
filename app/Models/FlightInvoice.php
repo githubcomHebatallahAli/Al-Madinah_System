@@ -51,48 +51,24 @@ class FlightInvoice extends Model
     $this->save();
 }
 
-// public function calculateTotal(): void
-// {
-//     $seatPrice = $this->flight->sellingPrice ?? 0;
-//     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-//         $seats = explode(',', $pilgrim->pivot->seatNumber);
-//         return count($seats);
-//     });
-
-//     $this->subtotal = $seatPrice * $totalSeats;
-
-//     $discount = $this->discount ?? 0;
-//     $taxRate = $this->tax ?? 0;
-
-//     $taxAmount = ($this->subtotal - $discount) * ($taxRate / 100);
-
-//     $this->total = $this->subtotal - $discount + $taxAmount;
-
-// }
 
 public function calculateTotal(): void
 {
     $seatPrice = $this->flight->sellingPrice ?? 0;
-
-    // احسب عدد المقاعد
     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
         $seats = explode(',', $pilgrim->pivot->seatNumber);
         return count($seats);
     });
 
-    // الإجمالي قبل الخصم والضريبة
+
     $this->subtotal = $seatPrice * $totalSeats;
 
     $discount = $this->discount ?? 0;
     $taxRate = $this->tax ?? 0;
-
-    // الإجمالي بعد الخصم
     $this->totalAfterDiscount = $this->subtotal - $discount;
 
-    // حساب قيمة الضريبة
     $taxAmount = $this->totalAfterDiscount * ($taxRate / 100);
 
-    // الحساب النهائي للإجمالي
     $this->total = $this->totalAfterDiscount + $taxAmount;
 }
 
