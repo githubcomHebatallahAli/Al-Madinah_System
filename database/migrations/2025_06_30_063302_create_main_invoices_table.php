@@ -26,7 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
 
             // Trip
-            $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
+            // $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
             $table->foreignId('hotel_id')->nullable()->constrained('hotels')->cascadeOnDelete();
 
             $table->enum('need', ['family','single'])->nullable();
