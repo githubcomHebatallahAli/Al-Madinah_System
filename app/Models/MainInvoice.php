@@ -202,7 +202,6 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
             return $hotel->save();
         }
     } else {
-        // إعادة الغرفة إلى القائمة
         if (!in_array($roomNumber, $currentRooms)) {
             $currentRooms[] = $roomNumber;
             sort($currentRooms);
