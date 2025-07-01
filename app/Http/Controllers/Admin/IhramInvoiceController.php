@@ -122,7 +122,6 @@ public function create(IhramInvoiceRequest $request)
         $totalPrice = 0;
         $outOfStockSupplies = [];
 
-
         if ($request->has('ihramSupplies')) {
             foreach ($request->ihramSupplies as $supply) {
                 $supplyModel = IhramSupply::find($supply['id']);
@@ -141,13 +140,11 @@ public function create(IhramInvoiceRequest $request)
                     ], 400);
                 }
 
-
                 $supplyModel->decrement('quantity', $supply['quantity']);
 
                 if ($supplyModel->quantity === 0) {
                     $outOfStockSupplies[] = $supplyModel->ihramItem->name;
                 }
-
 
                 $totalPriceForSupply = $supplyModel->sellingPrice * $supply['quantity'];
                 $totalPrice += $totalPriceForSupply;
@@ -163,7 +160,6 @@ public function create(IhramInvoiceRequest $request)
             }
         }
 
-
         if ($request->filled('bus_invoice_id')) {
             $this->attachBusPilgrims($invoice, $request->bus_invoice_id);
         }
@@ -172,37 +168,11 @@ public function create(IhramInvoiceRequest $request)
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
 
-
-        // $subtotal = $totalPrice;
-        // $discount = $invoice->discount;
-        // $tax = $invoice->tax;
-        // $total = $subtotal - $discount + $tax;
-
-
-        // $invoice->update([
-        //     'subtotal'      => $subtotal,
-        //     'total'         => $total,
-
-        // ]);
-
         $invoice->load('ihramSupplies');
-
         $invoice->calculateTotals();
-
         $invoice->updateIhramSuppliesCount();
 
         DB::commit();
-
-        // $response = [
-        //     'data'      => new IhramInvoiceResource($invoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
-        //     'message'   => 'تم إنشاء فاتورة مستلزمات الإحرام بنجاح',
-        //     'subtotal'  => $subtotal,
-        //     'discount'  => $discount,
-        //     'tax'       => $tax,
-        //     'total'     => $total,
-        //     'paidAmount'=> $invoice->paidAmount,
-        // ];
-
            $response = [
             'data'        => new IhramInvoiceResource($invoice->load(['busInvoice', 'paymentMethodType', 'pilgrims', 'ihramSupplies'])),
             'message'     => 'تم إنشاء فاتورة مستلزمات الإحرام بنجاح',
@@ -216,7 +186,6 @@ public function create(IhramInvoiceRequest $request)
         if (!empty($outOfStockSupplies)) {
             $response['warning'] = "المستلزمات التالية نفدت من المخزون: " . implode(', ', $outOfStockSupplies);
         }
-
         return response()->json($response);
     } catch (\Exception $e) {
         DB::rollBack();

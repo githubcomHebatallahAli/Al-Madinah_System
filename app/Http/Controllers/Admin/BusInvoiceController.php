@@ -49,7 +49,6 @@ class BusInvoiceController extends Controller
             $query->where('office_id', $request->office_id);
         }
 
-
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
@@ -93,11 +92,9 @@ class BusInvoiceController extends Controller
             $query->where('office_id', $request->office_id);
         }
 
-
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
-
 
         $busInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->get();
         $totalPaidAmount = BusInvoice::sum('paidAmount');
@@ -143,7 +140,7 @@ protected function ensureNumeric($value)
 
 protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
 {
-   
+
     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
     $availableSeats = collect($busTrip->seatMap)
         ->where('status', 'available')
@@ -691,6 +688,7 @@ protected function findOrCreatePilgrim(array $pilgrimData): Pilgrim
         'tax' => $this->ensureNumeric($request->input('tax', 0)),
         'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
         'subtotal' => 0,
+        'totalAfterDiscount'=> 0,
         'total' => 0,
     ], $request->except(['discount', 'tax', 'paidAmount', 'pilgrims']), $this->prepareCreationMetaData());
 

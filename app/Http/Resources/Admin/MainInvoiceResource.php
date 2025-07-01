@@ -43,14 +43,21 @@ class MainInvoiceResource extends JsonResource
 
             'bedPrice' => $this->hotel?->bedPrice ?? 0,
             'roomPrice' => $this->hotel?->sellingPrice ?? 0,
-            'trip_id' => $this->trip?->id,
-            'trip_name' => $this->trip?->name,
+            // 'trip_id' => $this->trip?->id,
+            // 'trip_name' => $this->trip?->name,
             'hotel_id' => $this->hotel?->id,
             'hotel_name' => $this->hotel?->name,
-            'checkInDate' => $this-> checkInDate ,
-        'checkInDateHijri'=> $this-> checkInDateHijri,
-        'checkOutDate'=> $this-> checkOutDate,
-        'checkOutDateHijri'=> $this-> checkOutDateHijri,
+            'checkInDateMecca' => $this-> checkInDateMecca ,
+        'checkInDateHijriMecca'=> $this-> checkInDateHijriMecca,
+        'checkOutDateMecca'=> $this-> checkOutDateMecca,
+        'checkOutDateHijriMecca'=> $this-> checkOutDateHijriMecca,
+
+        'checkInDateMadinah'=> $this->checkInDateMadinah,
+        'checkInDateHijriMadinah'=> $this->checkInDateHijriMadinah,
+        'checkOutDateMadinah'=> $this->checkOutDateMadinah,
+        'checkOutDateHijriMadinah'=> $this->checkOutDateHijriMadinah,
+        'numBed'=> $this->numBed,
+        'numRoom'=> $this->numRoom,
         'bookingSource'=> $this-> bookingSource,
         'roomNum'=> $this-> roomNum,
         'need'=> $this-> need,
@@ -58,7 +65,7 @@ class MainInvoiceResource extends JsonResource
         'numDay'=> $this-> numDay,
 
         "ihramSuppliesCount"=> $this->ihramSuppliesCount,
-        
+
         'description'=> $this-> description,
 
             'subtotal' => $this->subtotal,
