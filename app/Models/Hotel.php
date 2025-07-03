@@ -54,10 +54,26 @@ class Hotel extends Model
     return $this->morphMany(ShipmentItem::class, 'item');
 }
 
-       public function mainInvoices()
-    {
-        return $this->hasMany(MainInvoice::class);
-    }
+    public function mainInvoices()
+{
+    return $this->belongsToMany(Hotel::class, 'main_invoice_hotels')
+                ->withPivot([
+        'checkInDate',
+        'checkInDateHijri',
+        'checkOutDate',
+        'checkOutDateHijri',
+        'numBed',
+        'numRoom',
+        'bookingSource',
+        'roomNum',
+        'need',
+        'sleep',
+        'numDay',
+        'numBed',
+        'numRoom',
+        'hotelSubtotal',
+                ]);
+}
 
             public function flightInvoices()
 {

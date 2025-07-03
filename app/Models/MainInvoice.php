@@ -20,31 +20,10 @@ class MainInvoice extends Model
         'worker_id',
         'payment_method_type_id',
         'description',
-        'bus_subtotal',
-
-        // 'trip_id',
-        'hotel_id',
-        'checkInDateMecca',
-        'checkInDateHijriMecca',
-        'checkOutDateMecca',
-        'checkOutDateHijriMecca',
-        'checkInDateMadinah',
-        'checkInDateHijriMadinah',
-        'checkOutDateMadinah',
-        'checkOutDateHijriMadinah',
-        'numBed',
-        'numRoom',
-        'bookingSource',
-        'roomNum',
-        'need',
-        'sleep',
-        'numDay',
-        'numBed',
-        'numRoom',
-        'hotel_subtotal',
+        'busSubtotal',
 
         'ihramSuppliesCount',
-        'ihram_subtotal',
+        'ihramSubtotal',
         'subtotal',
         'discount',
         'totalAfterDiscount',
@@ -98,21 +77,26 @@ class MainInvoice extends Model
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-    //         public function trip()
-    // {
-    //     return $this->belongsTo(Trip::class);
-    // }
-
-        public function hotel()
-    {
-        return $this->belongsTo(Hotel::class);
-    }
-
-
-    //        public function hotelInvoices()
-    // {
-    //     return $this->hasMany(HotelInvoice::class, 'bus_invoice_id');
-    // }
+public function hotels()
+{
+    return $this->belongsToMany(Hotel::class, 'main_invoice_hotels')
+                ->withPivot([
+        'checkInDate',
+        'checkInDateHijri',
+        'checkOutDate',
+        'checkOutDateHijri',
+        'numBed',
+        'numRoom',
+        'bookingSource',
+        'roomNum',
+        'need',
+        'sleep',
+        'numDay',
+        'numBed',
+        'numRoom',
+        'hotelSubtotal',
+                ]);
+}
 
 
     public function pilgrims()
