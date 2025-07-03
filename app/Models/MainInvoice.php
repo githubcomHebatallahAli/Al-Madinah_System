@@ -20,6 +20,7 @@ class MainInvoice extends Model
         'worker_id',
         'payment_method_type_id',
         'description',
+        'bus_subtotal',
 
         // 'trip_id',
         'hotel_id',
@@ -40,8 +41,10 @@ class MainInvoice extends Model
         'numDay',
         'numBed',
         'numRoom',
+        'hotel_subtotal',
 
         'ihramSuppliesCount',
+        'ihram_subtotal',
         'subtotal',
         'discount',
         'totalAfterDiscount',
@@ -180,7 +183,6 @@ public function updater()
     'tax' => 'decimal:2',
     'total' => 'decimal:2',
     'paidAmount' => 'decimal:2',
-    // 'seatPrice' => 'decimal:2',
 ];
 
 protected $attributes = [
@@ -201,6 +203,7 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
             $hotel->roomNum = array_values($currentRooms);
             return $hotel->save();
         }
+
     } else {
         if (!in_array($roomNumber, $currentRooms)) {
             $currentRooms[] = $roomNumber;

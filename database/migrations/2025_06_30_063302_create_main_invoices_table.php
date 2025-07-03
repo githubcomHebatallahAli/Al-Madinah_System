@@ -22,31 +22,14 @@ return new class extends Migration
             $table->foreignId('campaign_id')->nullable()->constrained('campaigns')->cascadeOnDelete();
             $table->foreignId('group_id')->nullable()->constrained('groups')->cascadeOnDelete();
             $table->foreignId('worker_id')->nullable()->constrained('workers');
+            $table->decimal('busSubtotal', 10, 2)->default(0);
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
 
-            // Trip
-            // $table->foreignId('trip_id')->nullable()->constrained('trips')->cascadeOnDelete();
-            $table->foreignId('hotel_id')->nullable()->constrained('hotels')->cascadeOnDelete();
 
-            $table->enum('need', ['family','single'])->nullable();
-            $table->enum('sleep', ['bed', 'room'])->nullable();
-            $table->enum('bookingSource', ['MeccaCash','MeccaDelegate','office','otherOffice'])->nullable();
-            $table->dateTime('checkInDateMecca')->nullable();
-            $table->string('checkInDateHijriMecca')->nullable();
-            $table->dateTime('checkOutDateMecca')->nullable();
-            $table->string('checkOutDateHijriMecca')->nullable();
-            $table->dateTime('checkInDateMadinah')->nullable();
-            $table->string('checkInDateHijriMadinah')->nullable();
-            $table->dateTime('checkOutDateMadinah')->nullable();
-            $table->string('checkOutDateHijriMadinah')->nullable();
-            $table->integer('numBed')->nullable();
-            $table->integer('numRoom')->nullable();
-            $table->integer('numDay')->nullable();
-            $table->string('roomNum')->nullable();
-            $table->text('description')->nullable();
 
              $table->unsignedBigInteger('ihramSuppliesCount')->default(0);
+             $table->decimal('ihramSubtotal', 10, 2)->default(0);
 
             // الحسابات
             $table->decimal('subtotal', 10, 2)->default(0);
