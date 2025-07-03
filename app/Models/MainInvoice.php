@@ -167,6 +167,9 @@ public function updater()
     'tax' => 'decimal:2',
     'total' => 'decimal:2',
     'paidAmount' => 'decimal:2',
+    'bedPrice' => 'decimal:2',
+    'roomPrice' => 'decimal:2',
+    'seatPrice' => 'decimal:2',
 ];
 
 protected $attributes = [
