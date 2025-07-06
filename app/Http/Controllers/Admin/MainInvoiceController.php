@@ -175,69 +175,160 @@ class MainInvoiceController extends Controller
 }
 
 
-    public function update(MainInvoiceRequest $request, $id)
-    {
-        $this->authorize('manage_system');
+public function update(MainInvoiceRequest $request, $id)
+{
+    $this->authorize('manage_system');
 
-        $invoice = MainInvoice::with(['hotels', 'pilgrims', 'ihramSupplies'])->findOrFail($id);
+    DB::beginTransaction();
+    try {
+        $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels'])->findOrFail($id);
 
-        DB::beginTransaction();
-        try {
-            $oldRoomNum = $invoice->roomNum;
-            $oldHotelId = $invoice->hotel_id;
+        $data = array_merge([
+            'discount' => $this->ensureNumeric($request->input('discount', 0)),
+            'tax' => $this->ensureNumeric($request->input('tax', 0)),
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+        ], $request->except([
+            'pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels'
+        ]), $this->prepareUpdateMetaData());
 
-            $data = array_merge($request->except(['pilgrims', 'ihramSupplies', 'hotels', 'seatMapValidation']), $this->prepareUpdateMetaData());
+        // تحديث الفاتورة
+        $invoice->update($data);
 
-            if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
-                $this->validateBusSeats($request->bus_trip_id, $request->pilgrims);
-            }
+        // مزامنة الفنادق والغرف
+        if ($request->has('hotels')) {
+            $this->syncHotels($invoice, $request->hotels);
+        }
 
-            if ($request->has('roomNum') && $request->has('hotel_id')) {
-                if ($oldRoomNum && ($oldRoomNum !== $request->roomNum || $oldHotelId != $request->hotel_id)) {
-                    $oldHotel = Hotel::findOrFail($oldHotelId);
-                    $this->releaseRoom($oldHotel, $oldRoomNum);
-                }
+        // مزامنة المعتمرين مع تتبع التعديلات
+        if ($request->has('pilgrims')) {
+            $this->syncPilgrims($invoice, $request->pilgrims);
+            $invoice->pilgrimsCount = count($request->pilgrims);
+        }
 
-                $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
-                $hotel = Hotel::findOrFail($request->hotel_id);
-                $this->occupyRoom($hotel, $request->roomNum);
-            }
+        // مزامنة مستلزمات الإحرام
+        if ($request->has('ihramSupplies')) {
+            $this->syncIhramSupplies($invoice, $request->ihramSupplies);
+        }
 
-            $invoice->update($data);
+        // إعادة الحسابات
+        $invoice->calculateTotals();
+        $invoice->updateIhramSuppliesCount();
 
-            if ($request->has('hotels')) {
-                $invoice->hotels()->detach();
-                $this->attachHotels($invoice, $request->hotels);
-            }
+        DB::commit();
 
-            if ($request->has('pilgrims') && $this->hasPilgrimsChanges($invoice, $request->pilgrims)) {
-                $this->syncPilgrims($invoice, $request->pilgrims);
-                $invoice->pilgrimsCount = count($request->pilgrims);
-            }
-
-            if ($request->has('ihramSupplies')) {
-                $invoice->ihramSupplies()->detach();
-                $this->attachIhramSupplies($invoice, $request->ihramSupplies);
-            }
-
-            $invoice->calculateTotals();
-            $invoice->updateIhramSuppliesCount();
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'تم تحديث الفاتورة بنجاح',
-                'invoice' => new MainInvoiceResource($invoice->load([
+        return response()->json([
+            'message' => 'تم تحديث الفاتورة بنجاح',
+            'invoice' => new MainInvoiceResource(
+                $invoice->load([
                     'pilgrims', 'ihramSupplies', 'busTrip', 'hotel', 'campaign', 'office', 'group', 'worker', 'paymentMethodType', 'mainPilgrim'
-                ]))
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
-            ], 500);
+                ])
+            )
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+    protected function syncIhramSupplies(MainInvoice $invoice, array $supplies)
+{
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    // استرجاع الكميات القديمة
+    foreach ($invoice->ihramSupplies as $old) {
+        $oldModel = $old;
+        $oldModel->increment('quantity', $old->pivot->quantity);
+    }
+
+    $pivotData = [];
+
+    foreach ($supplies as $supply) {
+        $model = IhramSupply::findOrFail($supply['id']);
+
+        if ($model->quantity <= 0 || $supply['quantity'] > $model->quantity) {
+            throw new \Exception("الكمية غير متاحة لـ {$model->ihramItem->name}");
+        }
+
+        $model->decrement('quantity', $supply['quantity']);
+
+        $total = $model->sellingPrice * $supply['quantity'];
+
+        $pivotData[$supply['id']] = [
+            'quantity' => $supply['quantity'],
+            'price' => $model->sellingPrice,
+            'total' => $total,
+            'creationDate' => $currentDate,
+            'creationDateHijri' => $hijriDate,
+        ];
+    }
+
+    $invoice->ihramSupplies()->sync($pivotData);
+}
+
+protected function syncHotels(MainInvoice $invoice, array $hotelsData)
+{
+    // تحميل العلاقات القديمة
+    $oldHotelPivots = $invoice->hotels()->get()->keyBy('id');
+    $newPivotData = [];
+
+    foreach ($hotelsData as $hotelData) {
+        $hotel = Hotel::findOrFail($hotelData['hotel_id']);
+
+        $roomNum = $hotelData['roomNum'] ?? null;
+        $hotelId = $hotel->id;
+
+        // تأكد من الغرفة الجديدة
+        if ($roomNum) {
+            $this->validateRoomAvailability($hotelId, $roomNum);
+        }
+
+        // لو كان الفندق مرتبط من قبل بنفس الغرفة، نحتفظ بيها
+        $existingPivot = $oldHotelPivots->get($hotelId);
+        $oldRoom = $existingPivot?->pivot->roomNum;
+
+        // لو فيه تغيير في رقم الغرفة، نحرر القديمة ونشغل الجديدة
+        if ($existingPivot && $oldRoom && $roomNum && $oldRoom !== $roomNum) {
+            $this->releaseRoom($hotel, $oldRoom);
+            $this->occupyRoom($hotel, $roomNum);
+        }
+
+        if (!$existingPivot && $roomNum) {
+            $this->occupyRoom($hotel, $roomNum);
+        }
+
+        $newPivotData[$hotelId] = [
+            'checkInDate' => $hotelData['checkInDate'] ?? null,
+            'checkOutDate' => $hotelData['checkOutDate'] ?? null,
+            'checkInDateHijri' => $hotelData['checkInDateHijri'] ?? null,
+            'checkOutDateHijri' => $hotelData['checkOutDateHijri'] ?? null,
+            'numBed' => $hotelData['numBed'] ?? null,
+            'numRoom' => $hotelData['numRoom'] ?? null,
+            'bookingSource' => $hotelData['bookingSource'] ?? null,
+            'roomNum' => $roomNum,
+            'need' => $hotelData['need'] ?? null,
+            'sleep' => $hotelData['sleep'] ?? null,
+            'numDay' => $hotelData['numDay'] ?? 1,
+            'hotelSubtotal' => $this->calculateHotelSubtotal($hotel, $hotelData),
+        ];
+    }
+
+
+    foreach ($oldHotelPivots as $oldHotelId => $oldHotel) {
+        if (!isset($newPivotData[$oldHotelId])) {
+            $roomNum = $oldHotel->pivot->roomNum ?? null;
+            if ($roomNum) {
+                $this->releaseRoom($oldHotel, $roomNum);
+            }
         }
     }
+
+    $invoice->hotels()->sync($newPivotData);
+}
+
 
 protected function occupyRoom(Hotel $hotel, string $roomNum): void
 {
