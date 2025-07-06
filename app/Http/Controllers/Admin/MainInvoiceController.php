@@ -180,7 +180,7 @@ protected function attachHotels(MainInvoice $invoice, array $hotelsData)
     foreach ($hotelsData as $hotelData) {
         $hotel = Hotel::findOrFail($hotelData['hotel_id']);
 
-        // التحقق من توفر الغرف
+    
         if (isset($hotelData['roomNum'])) {
             $this->validateRoomAvailability($hotel->id, $hotelData['roomNum']);
         }
