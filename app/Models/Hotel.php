@@ -69,8 +69,6 @@ class Hotel extends Model
         'need',
         'sleep',
         'numDay',
-        'numBed',
-        'numRoom',
         'hotelSubtotal',
                 ]);
 }

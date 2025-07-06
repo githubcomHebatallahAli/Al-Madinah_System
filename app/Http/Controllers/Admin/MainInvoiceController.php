@@ -175,14 +175,105 @@ class MainInvoiceController extends Controller
 }
 
 
+    public function update(MainInvoiceRequest $request, $id)
+    {
+        $this->authorize('manage_system');
+
+        $invoice = MainInvoice::with(['hotels', 'pilgrims', 'ihramSupplies'])->findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            $oldRoomNum = $invoice->roomNum;
+            $oldHotelId = $invoice->hotel_id;
+
+            $data = array_merge($request->except(['pilgrims', 'ihramSupplies', 'hotels', 'seatMapValidation']), $this->prepareUpdateMetaData());
+
+            if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
+                $this->validateBusSeats($request->bus_trip_id, $request->pilgrims);
+            }
+
+            if ($request->has('roomNum') && $request->has('hotel_id')) {
+                if ($oldRoomNum && ($oldRoomNum !== $request->roomNum || $oldHotelId != $request->hotel_id)) {
+                    $oldHotel = Hotel::findOrFail($oldHotelId);
+                    $this->releaseRoom($oldHotel, $oldRoomNum);
+                }
+
+                $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
+                $hotel = Hotel::findOrFail($request->hotel_id);
+                $this->occupyRoom($hotel, $request->roomNum);
+            }
+
+            $invoice->update($data);
+
+            if ($request->has('hotels')) {
+                $invoice->hotels()->detach();
+                $this->attachHotels($invoice, $request->hotels);
+            }
+
+            if ($request->has('pilgrims') && $this->hasPilgrimsChanges($invoice, $request->pilgrims)) {
+                $this->syncPilgrims($invoice, $request->pilgrims);
+                $invoice->pilgrimsCount = count($request->pilgrims);
+            }
+
+            if ($request->has('ihramSupplies')) {
+                $invoice->ihramSupplies()->detach();
+                $this->attachIhramSupplies($invoice, $request->ihramSupplies);
+            }
+
+            $invoice->calculateTotals();
+            $invoice->updateIhramSuppliesCount();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'تم تحديث الفاتورة بنجاح',
+                'invoice' => new MainInvoiceResource($invoice->load([
+                    'pilgrims', 'ihramSupplies', 'busTrip', 'hotel', 'campaign', 'office', 'group', 'worker', 'paymentMethodType', 'mainPilgrim'
+                ]))
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+protected function occupyRoom(Hotel $hotel, string $roomNum): void
+{
+    $availableRooms = $hotel->roomNum ?? [];
+
+    if (!in_array($roomNum, $availableRooms)) {
+        throw new \Exception("الغرفة {$roomNum} غير متاحة للحجز.");
+    }
+
+    $updatedRooms = array_values(array_diff($availableRooms, [$roomNum]));
+    $hotel->roomNum = $updatedRooms;
+    $hotel->save();
+}
+
+protected function releaseRoom(Hotel $hotel, string $roomNum): void
+{
+    $currentRooms = $hotel->roomNum ?? [];
+
+    if (!in_array($roomNum, $currentRooms)) {
+        $currentRooms[] = $roomNum;
+        sort($currentRooms);
+        $hotel->roomNum = $currentRooms;
+        $hotel->save();
+    }
+}
+
+
 protected function attachHotels(MainInvoice $invoice, array $hotelsData)
 {
     foreach ($hotelsData as $hotelData) {
         $hotel = Hotel::findOrFail($hotelData['hotel_id']);
 
-    
         if (isset($hotelData['roomNum'])) {
             $this->validateRoomAvailability($hotel->id, $hotelData['roomNum']);
+
+            $this->occupyRoom($hotel, $hotelData['roomNum']);
         }
 
         $invoice->hotels()->attach($hotel->id, [
@@ -197,10 +288,11 @@ protected function attachHotels(MainInvoice $invoice, array $hotelsData)
             'need' => $hotelData['need'] ?? null,
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
-            'hotelSubtotal' => $this->calculateHotelSubtotal($hotel, $hotelData)
+            'hotelSubtotal' => $this->calculateHotelSubtotal($hotel, $hotelData),
         ]);
     }
 }
+
 
 protected function attachIhramSupplies(MainInvoice $invoice, array $supplies)
 {

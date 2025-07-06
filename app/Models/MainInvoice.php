@@ -92,8 +92,6 @@ public function hotels()
         'need',
         'sleep',
         'numDay',
-        'numBed',
-        'numRoom',
         'hotelSubtotal',
                 ]);
 }
@@ -239,23 +237,38 @@ protected function calculateIhramTotal(): float
     });
 }
 
+// protected function calculateHotelTotal(): float
+// {
+
+
+//     $bedPrice = $this->hotel->bedPrice ?? 0;
+//     $roomPrice = $this->hotel->sellingPrice ?? 0;
+//     $numDays = $this->numDay ?? 1;
+//     $numRooms = $this->numRoom ?? 1;
+//     $numBeds = $this->numBed ?? $this->pilgrimsCount ?? $this->pilgrims()->count();
+
+//     if ($this->sleep === 'room') {
+//         return $roomPrice * $numDays * $numRooms;
+//     }
+
+//     return $bedPrice * $numBeds * $numDays;
+// }
+
 protected function calculateHotelTotal(): float
 {
-    if (!$this->hotel) {
-        return 0;
-    }
+    return $this->hotels->sum(function ($hotel) {
+        $bedPrice = $hotel->bedPrice ?? 0;
+        $roomPrice = $hotel->sellingPrice ?? 0;
+        $numDays = $hotel->pivot->numDay ?? 1;
+        $numRooms = $hotel->pivot->numRoom ?? 1;
+        $numBeds = $hotel->pivot->numBed ?? $this->pilgrimsCount ?? $this->pilgrims()->count();
 
-    $bedPrice = $this->hotel->bedPrice ?? 0;
-    $roomPrice = $this->hotel->sellingPrice ?? 0;
-    $numDays = $this->numDay ?? 1;
-    $numRooms = $this->numRoom ?? 1;
-    $numBeds = $this->numBed ?? $this->pilgrimsCount ?? $this->pilgrims()->count();
+        if ($hotel->pivot->sleep === 'room') {
+            return $roomPrice * $numDays * $numRooms;
+        }
 
-    if ($this->sleep === 'room') {
-        return $roomPrice * $numDays * $numRooms;
-    }
-
-    return $bedPrice * $numBeds * $numDays;
+        return $bedPrice * $numBeds * $numDays;
+    });
 }
 
 
@@ -266,7 +279,6 @@ public function updateIhramSuppliesCount()
 }
 
 
-
 public function getIhramSuppliesCountAttribute()
 {
     return $this->attributes['ihramSuppliesCount'] ?? 0;
@@ -274,42 +286,13 @@ public function getIhramSuppliesCountAttribute()
 
 protected static function booted()
 {
-    // عند الإنشاء: توليد رقم الفاتورة
     static::creating(function ($invoice) {
         $invoice->invoiceNumber = $invoice->generateInvoiceNumber();
     });
 
-    // عند الإنشاء: إشغال الغرفة
     static::created(function ($invoice) {
-        if ($invoice->roomNum) {
-            $invoice->updateHotelRooms($invoice->roomNum, 'occupy');
-        }
-
-        // تحميل مستلزمات الإحرام وتحديث عددها
         $invoice->load('ihramSupplies');
         $invoice->updateIhramSuppliesCount();
-    });
-
-    // عند التحديث: تحرير الغرفة أو إشغال أخرى
-    static::updating(function ($invoice) {
-        if ($invoice->isDirty('roomNum')) {
-            $originalRoom = $invoice->getOriginal('roomNum');
-            $newRoom = $invoice->roomNum;
-
-            if ($originalRoom && $originalRoom != $newRoom) {
-                $invoice->updateHotelRooms($originalRoom, 'release');
-                $invoice->updateHotelRooms($newRoom, 'occupy');
-            }
-        }
-
-        // تحرير الغرفة لو عدد الأيام صفر أو انتهى الحجز
-        if ($invoice->isDirty('numDay') && $invoice->numDay <= 0) {
-            $invoice->updateHotelRooms($invoice->roomNum, 'release');
-        }
-
-        if ($invoice->isDirty('checkOutDate') && $invoice->checkOutDate <= now()) {
-            $invoice->updateHotelRooms($invoice->roomNum, 'release');
-        }
     });
 }
 
