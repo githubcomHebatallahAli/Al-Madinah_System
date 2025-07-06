@@ -141,6 +141,10 @@ class MainInvoiceController extends Controller
 
         $invoice = MainInvoice::create($data);
 
+         if ($request->has('hotels')) {
+        $this->attachHotels($invoice, $request->hotels);
+    }
+
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
             $invoice->pilgrimsCount = count($request->pilgrims);
@@ -167,6 +171,34 @@ class MainInvoiceController extends Controller
         return response()->json([
             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage(),
         ], 500);
+    }
+}
+
+
+protected function attachHotels(MainInvoice $invoice, array $hotelsData)
+{
+    foreach ($hotelsData as $hotelData) {
+        $hotel = Hotel::findOrFail($hotelData['hotel_id']);
+
+        // التحقق من توفر الغرف
+        if (isset($hotelData['roomNum'])) {
+            $this->validateRoomAvailability($hotel->id, $hotelData['roomNum']);
+        }
+
+        $invoice->hotels()->attach($hotel->id, [
+            'checkInDate' => $hotelData['checkInDate'] ?? null,
+            'checkOutDate' => $hotelData['checkOutDate'] ?? null,
+            'checkInDateHijri' => $hotelData['checkInDateHijri'] ?? null,
+            'checkOutDateHijri' => $hotelData['checkOutDateHijri'] ?? null,
+            'numBed' => $hotelData['numBed'] ?? null,
+            'numRoom' => $hotelData['numRoom'] ?? null,
+            'bookingSource' => $hotelData['bookingSource'] ?? null,
+            'roomNum' => $hotelData['roomNum'] ?? null,
+            'need' => $hotelData['need'] ?? null,
+            'sleep' => $hotelData['sleep'] ?? null,
+            'numDay' => $hotelData['numDay'] ?? 1,
+            'hotelSubtotal' => $this->calculateHotelSubtotal($hotel, $hotelData)
+        ]);
     }
 }
 

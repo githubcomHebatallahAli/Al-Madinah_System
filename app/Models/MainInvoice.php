@@ -148,13 +148,12 @@ public function ihramSupplies()
     }
 }
 
-
         public function creator()
 {
     return $this->morphTo(null, 'added_by_type', 'added_by');
 }
 
-public function updater()
+    public function updater()
 {
     return $this->morphTo(null, 'updated_by_type', 'updated_by');
 }
@@ -184,7 +183,7 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
     $currentRooms = $hotel->roomNum ?? [];
 
     if ($action === 'occupy') {
-        // إزالة الغرفة من القائمة
+
         if (($key = array_search($roomNumber, $currentRooms)) !== false) {
             unset($currentRooms[$key]);
             $hotel->roomNum = array_values($currentRooms);
