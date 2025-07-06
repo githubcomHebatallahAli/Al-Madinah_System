@@ -203,7 +203,6 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
 }
 
 
-
 public function calculateTotals(): void
 {
     $seatTotal = $this->calculateBusTotal();
@@ -258,8 +257,6 @@ protected function calculateHotelTotal(): float
 
     return $bedPrice * $numBeds * $numDays;
 }
-
-
 
 
 public function updateIhramSuppliesCount()

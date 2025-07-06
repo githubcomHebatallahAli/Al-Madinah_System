@@ -43,8 +43,7 @@ class MainInvoiceResource extends JsonResource
 
             'bedPrice' => $this->hotel?->bedPrice ?? 0,
             'roomPrice' => $this->hotel?->sellingPrice ?? 0,
-            // 'trip_id' => $this->trip?->id,
-            // 'trip_name' => $this->trip?->name,
+
             'hotel_id' => $this->hotel?->id,
             'hotel_name' => $this->hotel?->name,
             'checkInDateMecca' => $this-> checkInDateMecca ,
@@ -74,9 +73,7 @@ class MainInvoiceResource extends JsonResource
             'tax' => $this->tax,
             'total' => $this->total,
             'paidAmount' => $this->paidAmount,
-            'bookedSeats' => $this->busTrip->bookedSeats ?? 0,
-            'availableSeats' => $this->busTrip->availableSeats ?? 0,
-            'cancelledSeats' => $this->busTrip->cancelledSeats ?? 0,
+
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
 
@@ -104,6 +101,36 @@ class MainInvoiceResource extends JsonResource
                     ];
                 });
             }),
+
+                'ihramSupplies' => $this->ihramSupplies->map(function ($ihramSupply) {
+                    return [
+                        'id' => $ihramSupply->id,
+                        'name' => $ihramSupply->ihramItem->name,
+                        'sellingPrice' => $ihramSupply->sellingPrice,
+                        'quantity' => $ihramSupply->pivot->quantity,
+                        'total' => $ihramSupply->pivot->total,
+                    ];
+                }),
+
+'hotels' => $this->hotels->map(function ($hotel) {
+    return [
+        'id' => $hotel->id,
+        'name' => $hotel->name,
+        'checkInDate' => $hotel->pivot->checkInDate,
+        'checkInDateHijri' => $hotel->pivot->checkInDateHijri,
+        'checkOutDate' => $hotel->pivot->checkOutDate,
+        'checkOutDateHijri' => $hotel->pivot->checkOutDateHijri,
+        'bookingSource' => $hotel->pivot->bookingSource,
+        'roomNum' => $hotel->pivot->roomNum,
+        'numRoom' => $hotel->pivot->numRoom,
+        'numBed' => $hotel->pivot->numBed,
+        'need' => $hotel->pivot->need,
+        'sleep' => $hotel->pivot->sleep,
+        'numDay' => $hotel->pivot->numDay,
+        'hotelSubtotal' => $hotel->pivot->hotelSubtotal,
+    ];
+}),
+
         ];
 
     }

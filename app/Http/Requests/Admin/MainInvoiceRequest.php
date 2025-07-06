@@ -26,21 +26,7 @@ class MainInvoiceRequest extends FormRequest
         'worker_id'=>'nullable|exists:workers,id',
         'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
 
-        'hotel_id'=>'nullable|exists:hotels,id',
-        'checkInDateMecca'=>'nullable|date_format:Y-m-d H:i',
-        'checkOutDateMecca'=>'nullable|date_format:Y-m-d H:i',
-        'checkInDateMadinah'=>'nullable|date_format:Y-m-d H:i',
-        'checkOutDateMadinah'=>'nullable|date_format:Y-m-d H:i',
-
-        'bookingSource'=>'nullable|in:MeccaCash,MeccaDelegate,office,otherOffice',
-        'roomNum'=>'nullable|string',
-        'numRoom'=>'nullable|string',
-        'numBed'=>'nullable|string',
-        'need'=>'nullable|in:family,single',
-        'sleep'=>'nullable|in:bed,room',
-        'numDay'=>'nullable|integer',
         'description'=>'nullable|string',
-
         'discount'=>'nullable|numeric|min:0|max:99999.99',
         'tax'=>'nullable|numeric|min:0|max:99999.99',
         'paidAmount'=>'nullable|numeric|min:0|max:99999.99',
@@ -62,6 +48,20 @@ class MainInvoiceRequest extends FormRequest
         'ihramSupplies' => 'nullable|array',
         'ihramSupplies.*.id' => 'nullable|exists:ihram_supplies,id',
         'ihramSupplies.*.quantity' => 'nullable|integer|min:1',
+
+        'hotels' => 'nullable|array',
+        'hotels.*.id' => 'nullable|exists:hotels,id',
+        'hotels.*.checkInDate' =>'nullable|date_format:Y-m-d H:i',
+        'hotels.*.checkOutDate' =>'nullable|date_format:Y-m-d H:i',
+        'hotels.*.bookingSource' =>'nullable|in:MeccaCash,MeccaDelegate,office,otherOffice',
+        'hotels.*.roomNum' =>'nullable|string',
+        'hotels.*.numRoom' =>'nullable|string',
+        'hotels.*.numBed' =>'nullable|string',
+        'hotels.*.need' =>'nullable|in:family,single',
+        'hotels.*.sleep' =>'nullable|in:bed,room',
+        'hotels.*.numDay' =>'nullable|integer',
+
+
 
         ];
     }

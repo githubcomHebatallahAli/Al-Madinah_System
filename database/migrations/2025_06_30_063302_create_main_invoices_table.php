@@ -26,8 +26,6 @@ return new class extends Migration
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
 
-
-
              $table->unsignedBigInteger('ihramSuppliesCount')->default(0);
              $table->decimal('ihramSubtotal', 10, 2)->default(0);
 
@@ -39,7 +37,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('paidAmount', 10, 2)->default(0);
 
-
+            $table->text('description')->nullable();
 
             $table->enum('invoiceStatus', ['pending','approved','rejected','completed','absence'])->default('pending');
             $table->text('reason')->nullable();
