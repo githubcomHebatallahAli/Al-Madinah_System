@@ -178,30 +178,32 @@ protected $attributes = [
 
 public function updateHotelRooms($roomNumber, $action = 'occupy')
 {
-    if (!$this->hotel) return false;
+    $updated = false;
 
-    $hotel = $this->hotel;
-    $currentRooms = $hotel->roomNum ?? [];
+    foreach ($this->hotels as $hotel) {
+        $currentRooms = $hotel->roomNum ?? [];
 
-    if ($action === 'occupy') {
-
-        if (($key = array_search($roomNumber, $currentRooms)) !== false) {
-            unset($currentRooms[$key]);
-            $hotel->roomNum = array_values($currentRooms);
-            return $hotel->save();
-        }
-
-    } else {
-        if (!in_array($roomNumber, $currentRooms)) {
-            $currentRooms[] = $roomNumber;
-            sort($currentRooms);
-            $hotel->roomNum = $currentRooms;
-            return $hotel->save();
+        if ($action === 'occupy') {
+            if (($key = array_search($roomNumber, $currentRooms)) !== false) {
+                unset($currentRooms[$key]);
+                $hotel->roomNum = array_values($currentRooms);
+                $hotel->save();
+                $updated = true;
+            }
+        } else {
+            if (!in_array($roomNumber, $currentRooms)) {
+                $currentRooms[] = $roomNumber;
+                sort($currentRooms);
+                $hotel->roomNum = $currentRooms;
+                $hotel->save();
+                $updated = true;
+            }
         }
     }
 
-    return true;
+    return $updated;
 }
+
 
 
 public function calculateTotals(): void
