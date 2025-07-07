@@ -113,7 +113,7 @@ public function hotels()
 
 public function ihramSupplies()
 {
-    return $this->belongsToMany(IhramSupply::class, 'ihram_invoice_supplies')
+    return $this->belongsToMany(IhramSupply::class, 'main_invoice_supplies')
                 ->withPivot('quantity', 'price', 'total','creationDate',
             'creationDateHijri', 'changed_data');
 }
