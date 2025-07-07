@@ -29,6 +29,7 @@ class MainInvoiceResource extends JsonResource
             'pilgrimsCount'=> $this ->pilgrimsCount,
             'bus_trip_id'=> $this ->busTrip?->id,
             'seatPrice' => $this->busTrip?->bus?->seatPrice ?? 0,
+            'busSubtotal' => $this->busSubtotal,
             'campaign_id' => $this->campaign?->id,
             'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
@@ -41,11 +42,11 @@ class MainInvoiceResource extends JsonResource
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
 
-            'bedPrice' => $this->hotel?->bedPrice ?? 0,
-            'roomPrice' => $this->hotel?->sellingPrice ?? 0,
+
 
 
         "ihramSuppliesCount"=> $this->ihramSuppliesCount,
+         'ihramSubtotal' => $this->ihramSubtotal,
 
         'description'=> $this-> description,
 
@@ -98,6 +99,8 @@ class MainInvoiceResource extends JsonResource
     return [
         'id' => $hotel->id,
         'name' => $hotel->name,
+        'bedPrice' => $hotel->bedPrice ?? 0,
+        'roomPrice' => $hotel->sellingPrice ?? 0,
         'checkInDate' => $hotel->pivot->checkInDate,
         'checkInDateHijri' => $hotel->pivot->checkInDateHijri,
         'checkOutDate' => $hotel->pivot->checkOutDate,
@@ -112,6 +115,13 @@ class MainInvoiceResource extends JsonResource
         'hotelSubtotal' => $hotel->pivot->hotelSubtotal,
     ];
 }),
+
+    'subtotal' => $this->subtotal,
+            'discount' => $this->discount,
+            'totalAfterDiscount'=>$this->totalAfterDiscount,
+            'tax' => $this->tax,
+            'total' => $this->total,
+            'paidAmount' => $this->paidAmount,
 
         ];
 
