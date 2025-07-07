@@ -44,24 +44,6 @@ class MainInvoiceResource extends JsonResource
             'bedPrice' => $this->hotel?->bedPrice ?? 0,
             'roomPrice' => $this->hotel?->sellingPrice ?? 0,
 
-            'hotel_id' => $this->hotel?->id,
-            'hotel_name' => $this->hotel?->name,
-            'checkInDateMecca' => $this-> checkInDateMecca ,
-        'checkInDateHijriMecca'=> $this-> checkInDateHijriMecca,
-        'checkOutDateMecca'=> $this-> checkOutDateMecca,
-        'checkOutDateHijriMecca'=> $this-> checkOutDateHijriMecca,
-
-        'checkInDateMadinah'=> $this->checkInDateMadinah,
-        'checkInDateHijriMadinah'=> $this->checkInDateHijriMadinah,
-        'checkOutDateMadinah'=> $this->checkOutDateMadinah,
-        'checkOutDateHijriMadinah'=> $this->checkOutDateHijriMadinah,
-        'numBed'=> $this->numBed,
-        'numRoom'=> $this->numRoom,
-        'bookingSource'=> $this-> bookingSource,
-        'roomNum'=> $this-> roomNum,
-        'need'=> $this-> need,
-        'sleep'=> $this-> sleep,
-        'numDay'=> $this-> numDay,
 
         "ihramSuppliesCount"=> $this->ihramSuppliesCount,
 
