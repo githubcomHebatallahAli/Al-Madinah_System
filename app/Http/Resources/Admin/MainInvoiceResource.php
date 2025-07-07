@@ -106,7 +106,7 @@ class MainInvoiceResource extends JsonResource
         'checkOutDate' => $hotel->pivot->checkOutDate,
         'checkOutDateHijri' => $hotel->pivot->checkOutDateHijri,
         'bookingSource' => $hotel->pivot->bookingSource,
-        'roomNum' => $hotel->pivot->roomNum,
+        // 'roomNum' => $hotel->pivot->roomNum,
         'numRoom' => $hotel->pivot->numRoom,
         'numBed' => $hotel->pivot->numBed,
         'need' => $hotel->pivot->need,
