@@ -77,7 +77,7 @@ class MainInvoice extends Model
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-public function hotels()
+public function hotel()
 {
     return $this->belongsToMany(Hotel::class, 'main_invoice_hotels')
                 ->withPivot([
