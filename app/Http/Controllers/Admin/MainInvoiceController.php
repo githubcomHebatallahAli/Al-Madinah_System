@@ -346,7 +346,7 @@ protected function syncHotels(MainInvoice $invoice, array $hotelsData)
             'need' => $hotelData['need'] ?? null,
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
-            'hotelSubtotal' => $this->calculateHotelTotal($hotel, $hotelData),
+            'hotelSubtotal' => $invoice->calculateHotelTotalForPivot($hotel, $hotelData),
         ];
     }
 
@@ -413,7 +413,7 @@ protected function attachHotels(MainInvoice $invoice, array $hotelsData)
             'need' => $hotelData['need'] ?? null,
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
-           'hotelSubtotal' => $this->calculateHotelTotal($hotel, $hotelData),
+            'hotelSubtotal' => $invoice->calculateHotelTotalForPivot($hotel, $hotelData),
 
         ]);
     }

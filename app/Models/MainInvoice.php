@@ -256,6 +256,21 @@ protected function calculateHotelTotal(): float
     });
 }
 
+public function calculateHotelTotalForPivot(Hotel $hotel, array $hotelData): float
+{
+    $bedPrice = $hotel->bedPrice ?? 0;
+    $roomPrice = $hotel->sellingPrice ?? 0;
+    $numDays = $hotelData['numDay'] ?? 1;
+    $numRooms = $hotelData['numRoom'] ?? 1;
+    $numBeds = $hotelData['numBed'] ?? $this->pilgrimsCount ?? $this->pilgrims()->count();
+
+    if (($hotelData['sleep'] ?? null) === 'room') {
+        return $roomPrice * $numDays * $numRooms;
+    }
+
+    return $bedPrice * $numBeds * $numDays;
+}
+
 
 public function updateIhramSuppliesCount()
 {
