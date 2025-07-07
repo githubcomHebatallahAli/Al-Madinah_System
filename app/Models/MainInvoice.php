@@ -280,17 +280,13 @@ public function calculateHotelTotalForPivot(Hotel $hotel, array $hotelData): flo
 }
 
 
-// public function updateIhramSuppliesCount()
-// {
-//     $this->ihramSuppliesCount = $this->ihramSupplies()->count();
-//     $this->save();
-// }
-
 public function updateIhramSuppliesCount()
 {
-    $this->ihramSuppliesCount = $this->ihramSupplies()->sum('pivot.quantity');
+    $this->ihramSuppliesCount = $this->ihramSupplies()->count();
     $this->save();
 }
+
+
 
 
 public function getIhramSuppliesCountAttribute()
