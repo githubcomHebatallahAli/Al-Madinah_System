@@ -50,12 +50,12 @@ class MainInvoiceResource extends JsonResource
 
         'description'=> $this-> description,
 
-            'subtotal' => $this->subtotal,
-            'discount' => $this->discount,
-            'totalAfterDiscount'=>$this->totalAfterDiscount,
-            'tax' => $this->tax,
-            'total' => $this->total,
-            'paidAmount' => $this->paidAmount,
+            // 'subtotal' => $this->subtotal,
+            // 'discount' => $this->discount,
+            // 'totalAfterDiscount'=>$this->totalAfterDiscount,
+            // 'tax' => $this->tax,
+            // 'total' => $this->total,
+            // 'paidAmount' => $this->paidAmount,
 
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
