@@ -29,7 +29,7 @@ class MainInvoiceResource extends JsonResource
             'pilgrimsCount'=> $this ->pilgrimsCount,
             'bus_trip_id'=> $this ->busTrip?->id,
             'seatPrice' => $this->busTrip?->bus?->seatPrice ?? 0,
-            'busSubtotal' => $this->busSubtotal,
+            'busSubtotal' => $this->busSubtotal?? $this->calculateBusTotal(),
             'campaign_id' => $this->campaign?->id,
             'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
@@ -45,17 +45,9 @@ class MainInvoiceResource extends JsonResource
 
 
 
-        "ihramSuppliesCount"=> $this->ihramSuppliesCount,
-         'ihramSubtotal' => $this->ihramSubtotal,
+
 
         'description'=> $this-> description,
-
-            // 'subtotal' => $this->subtotal,
-            // 'discount' => $this->discount,
-            // 'totalAfterDiscount'=>$this->totalAfterDiscount,
-            // 'tax' => $this->tax,
-            // 'total' => $this->total,
-            // 'paidAmount' => $this->paidAmount,
 
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
@@ -94,6 +86,9 @@ class MainInvoiceResource extends JsonResource
                         'total' => $ihramSupply->pivot->total,
                     ];
                 }),
+
+                  "ihramSuppliesCount"=> $this->ihramSuppliesCount,
+         'ihramSubtotal' => $this->ihramSubtotal?? $this->calculateIhramTotal(),
 
 'hotels' => $this->hotels->map(function ($hotel) {
     return [
