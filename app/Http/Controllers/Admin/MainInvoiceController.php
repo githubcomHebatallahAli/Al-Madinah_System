@@ -307,7 +307,6 @@ public function update(MainInvoiceRequest $request, $id)
 
 protected function syncHotels(MainInvoice $invoice, array $hotelsData)
 {
-    // تحميل العلاقات القديمة
     $oldHotelPivots = $invoice->hotels()->get()->keyBy('id');
     $newPivotData = [];
 
@@ -317,7 +316,6 @@ protected function syncHotels(MainInvoice $invoice, array $hotelsData)
         $roomNum = $hotelData['roomNum'] ?? null;
         $hotelId = $hotel->id;
 
-        // تأكد من الغرفة الجديدة
         if ($roomNum) {
             $this->validateRoomAvailability($hotelId, $roomNum);
         }
@@ -348,7 +346,7 @@ protected function syncHotels(MainInvoice $invoice, array $hotelsData)
             'need' => $hotelData['need'] ?? null,
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
-            'hotelSubtotal' => $this->calculateHotelSubtotal($hotel, $hotelData),
+            'hotelSubtotal' => $this->calculateHotelTotal($hotel, $hotelData),
         ];
     }
 
@@ -415,7 +413,7 @@ protected function attachHotels(MainInvoice $invoice, array $hotelsData)
             'need' => $hotelData['need'] ?? null,
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
-           'hotelSubtotal' => $invoice->calculateHotelTotal(),
+           'hotelSubtotal' => $this->calculateHotelTotal($hotel, $hotelData),
 
         ]);
     }
@@ -501,13 +499,7 @@ protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
     $busTrip->save();
 }
 
-//     protected function ensureNumeric($value)
-// {
-//     if ($value === null || $value === '') {
-//         return 0;
-//     }
-//     return is_numeric($value) ? $value : 0;
-// }
+
 
 protected function prepareUpdateMetaData(): array
 {
