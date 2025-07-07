@@ -120,49 +120,68 @@ class MainInvoiceController extends Controller
 }
 
 
-    public function create(MainInvoiceRequest $request)
+public function create(MainInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
     DB::beginTransaction();
     try {
-        $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount', 0)),
-            'tax' => $this->ensureNumeric($request->input('tax', 0)),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
-            'subtotal' => 0,
-            'totalAfterDiscount' => 0,
-            'total' => 0,
-            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
-            'creationDateHijri' => $this->getHijriDate(),
-        ], $request->except([
-            'pilgrims', 'ihramSupplies', 'seatMapValidation'
-        ]), $this->prepareCreationMetaData());
+        // نبدأ بتجهيز البيانات من الطلب باستثناء الحقول المعالجة يدويًا
+        $data = $request->except([
+            'pilgrims',
+            'ihramSupplies',
+            'seatMapValidation',
+            'discount',
+            'tax',
+            'paidAmount',
+        ]);
 
+        // نضيف القيم الرقمية بعد التحقق منها
+        $data['discount'] = $this->ensureNumeric($request->input('discount', 0));
+        $data['tax'] = $this->ensureNumeric($request->input('tax', 0));
+        $data['paidAmount'] = $this->ensureNumeric($request->input('paidAmount', 0));
+
+        // نضيف القيم الابتدائية للفاتورة
+        $data['subtotal'] = 0;
+        $data['totalAfterDiscount'] = 0;
+        $data['total'] = 0;
+        $data['creationDate'] = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+        $data['creationDateHijri'] = $this->getHijriDate();
+
+        // ندمج البيانات الخاصة بمن أضاف
+        $data = array_merge($data, $this->prepareCreationMetaData());
+
+        // التحقق من المقاعد في حال وجود رحلة وبحجاج
         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
-    $busTrip = BusTrip::findOrFail($request->bus_trip_id);
-    $this->validateBusSeats($busTrip, $request->pilgrims);
-}
+            $busTrip = BusTrip::findOrFail($request->bus_trip_id);
+            $this->validateBusSeats($busTrip, $request->pilgrims);
+        }
 
+        // التحقق من الغرف في حال اختيار فندق وغرفة
         if ($request->has('roomNum')) {
             $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
         }
 
+        // إنشاء الفاتورة
         $invoice = MainInvoice::create($data);
 
-         if ($request->has('hotels')) {
-        $this->attachHotels($invoice, $request->hotels);
-    }
+        // ربط الفنادق
+        if ($request->has('hotels')) {
+            $this->attachHotels($invoice, $request->hotels);
+        }
 
+        // ربط الحجاج
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
             $invoice->pilgrimsCount = count($request->pilgrims);
         }
 
+        // ربط مستلزمات الإحرام
         if ($request->has('ihramSupplies')) {
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
 
+        // حساب الإجماليات وتحديث العدد
         $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
 
@@ -171,7 +190,16 @@ class MainInvoiceController extends Controller
         return response()->json([
             'message' => 'تم إنشاء الفاتورة بنجاح',
             'invoice' => new MainInvoiceResource($invoice->load([
-                'pilgrims', 'ihramSupplies', 'busTrip', 'hotel', 'campaign', 'office', 'group', 'worker', 'paymentMethodType', 'mainPilgrim'
+                'pilgrims',
+                'ihramSupplies',
+                'busTrip',
+                'hotel',
+                'campaign',
+                'office',
+                'group',
+                'worker',
+                'paymentMethodType',
+                'mainPilgrim'
             ]))
         ], 201);
 
@@ -182,6 +210,7 @@ class MainInvoiceController extends Controller
         ], 500);
     }
 }
+
 
 
 public function update(MainInvoiceRequest $request, $id)
