@@ -179,7 +179,7 @@ public function create(MainInvoiceRequest $request)
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
 
-        // حساب الإجماليات وتحديث العدد
+   $invoice->load(['hotels', 'ihramSupplies', 'pilgrims']);
         $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
 

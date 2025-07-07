@@ -237,22 +237,7 @@ protected function calculateIhramTotal(): float
     });
 }
 
-// protected function calculateHotelTotal(): float
-// {
 
-
-//     $bedPrice = $this->hotel->bedPrice ?? 0;
-//     $roomPrice = $this->hotel->sellingPrice ?? 0;
-//     $numDays = $this->numDay ?? 1;
-//     $numRooms = $this->numRoom ?? 1;
-//     $numBeds = $this->numBed ?? $this->pilgrimsCount ?? $this->pilgrims()->count();
-
-//     if ($this->sleep === 'room') {
-//         return $roomPrice * $numDays * $numRooms;
-//     }
-
-//     return $bedPrice * $numBeds * $numDays;
-// }
 
 protected function calculateHotelTotal(): float
 {
