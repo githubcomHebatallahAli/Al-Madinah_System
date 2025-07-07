@@ -206,13 +206,33 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
 
 
 
+// public function calculateTotals(): void
+// {
+//     $seatTotal = $this->calculateBusTotal();
+//     $ihramTotal = $this->calculateIhramTotal();
+//     $hotelTotal = $this->calculateHotelTotal();
+
+//     $this->subtotal = $seatTotal + $ihramTotal + $hotelTotal;
+
+//     $discount = $this->discount ?? 0;
+//     $this->totalAfterDiscount = max($this->subtotal - $discount, 0);
+
+//     $taxRate = $this->tax ?? 0;
+//     $taxAmount = round($this->totalAfterDiscount * ($taxRate / 100), 2);
+
+//     $this->total = round($this->totalAfterDiscount + $taxAmount, 2);
+
+// }
+
 public function calculateTotals(): void
 {
-    $seatTotal = $this->calculateBusTotal();
-    $ihramTotal = $this->calculateIhramTotal();
+    // حساب الإجماليات
+    $this->busSubtotal = $this->calculateBusTotal();
+    $this->ihramSubtotal = $this->calculateIhramTotal();
     $hotelTotal = $this->calculateHotelTotal();
 
-    $this->subtotal = $seatTotal + $ihramTotal + $hotelTotal;
+    // حساب المجاميع
+    $this->subtotal = $this->busSubtotal + $this->ihramSubtotal + $hotelTotal;
 
     $discount = $this->discount ?? 0;
     $this->totalAfterDiscount = max($this->subtotal - $discount, 0);
@@ -221,6 +241,7 @@ public function calculateTotals(): void
     $taxAmount = round($this->totalAfterDiscount * ($taxRate / 100), 2);
 
     $this->total = round($this->totalAfterDiscount + $taxAmount, 2);
+
 
 }
 
