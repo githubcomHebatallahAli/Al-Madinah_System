@@ -27,6 +27,9 @@ return new class extends Migration
             $table->integer('numDay')->nullable();
             $table->string('roomNum')->nullable();
             $table->decimal('hotelSubtotal', 10, 2)->default(0);
+            $table->dateTime('creationDate')->nullable();
+            $table->string('creationDateHijri')->nullable();
+            $table->json('changed_data')->nullable();
             $table->timestamps();
         });
     }

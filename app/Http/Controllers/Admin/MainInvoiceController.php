@@ -274,7 +274,6 @@ public function update(MainInvoiceRequest $request, $id)
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
-    // استرجاع الكميات القديمة
     foreach ($invoice->ihramSupplies as $old) {
         $oldModel = $old;
         $oldModel->increment('quantity', $old->pivot->quantity);
@@ -556,32 +555,54 @@ protected function syncPilgrims(MainInvoice $invoice, array $pilgrims)
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
+
     $oldPivotPilgrims = $invoice->pilgrims->mapWithKeys(function ($pilgrim) {
         return [
             $pilgrim->id => [
                 'creationDate' => $pilgrim->pivot->creationDate,
                 'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+                'seatNumber' => $pilgrim->pivot->seatNumber,
+                'status' => $pilgrim->pivot->status,
+                'type' => $pilgrim->pivot->type,
+                'position' => $pilgrim->pivot->position,
             ],
         ];
     })->toArray();
+
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+
+        $seatNumber = null;
+        if (isset($pilgrim['seatNumber'])) {
+            $seatNumber = is_array($pilgrim['seatNumber'])
+                ? implode(',', $pilgrim['seatNumber'])
+                : $pilgrim['seatNumber'];
+        }
+
         $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
+
         $pilgrimsData[$p->id] = [
+            'seatNumber' => $seatNumber,
+            'status' => $pilgrim['status'] ?? null,
+            'type' => $pilgrim['type'] ?? null,
+            'position' => $pilgrim['position'] ?? null,
             'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
             'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
             'changed_data' => null,
         ];
     }
 
+    // تتبع التغييرات
     $pivotChanges = $this->getPivotChanges($oldPivotPilgrims, $pilgrimsData);
     foreach ($pivotChanges as $pilgrimId => $change) {
         if (isset($pilgrimsData[$pilgrimId])) {
             $pilgrimsData[$pilgrimId]['changed_data'] = json_encode($change, JSON_UNESCAPED_UNICODE);
         }
     }
+
     $invoice->pilgrims()->sync($pilgrimsData);
 }
+
 
 protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims): bool
 {
@@ -601,10 +622,19 @@ protected function attachPilgrims(MainInvoice $invoice, array $pilgrims)
     $pilgrimsData = [];
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+
+        $seatNumber = null;
+        if (isset($pilgrim['seatNumber'])) {
+            $seatNumber = is_array($pilgrim['seatNumber'])
+                ? implode(',', $pilgrim['seatNumber']) // تحويل المصفوفة إلى string مفصول بفواصل
+                : $pilgrim['seatNumber'];
+        }
+
         $pilgrimsData[$p->id] = [
-            'seatNumber' => $pilgrim['seatNumber'] ?? null,
+            'seatNumber' => $seatNumber,
             'status' => $pilgrim['status'] ?? null,
             'type' => $pilgrim['type'] ?? null,
             'position' => $pilgrim['position'] ?? null,
@@ -613,8 +643,10 @@ protected function attachPilgrims(MainInvoice $invoice, array $pilgrims)
             'changed_data' => null
         ];
     }
+
     $invoice->pilgrims()->attach($pilgrimsData);
 }
+
 
 protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
 {
