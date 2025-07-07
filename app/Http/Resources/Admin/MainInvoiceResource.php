@@ -29,23 +29,18 @@ class MainInvoiceResource extends JsonResource
             'pilgrimsCount'=> $this ->pilgrimsCount,
             'bus_trip_id'=> $this ->busTrip?->id,
             'seatPrice' => $this->busTrip?->bus?->seatPrice ?? 0,
-            'busSubtotal' => $this->busSubtotal?? $this->calculateBusTotal(),
-            'campaign_id' => $this->campaign?->id,
-            'campaign_name' => $this->campaign?->name,
+            'busSubtotal' => $this->busSubtotal,
+            // 'campaign_id' => $this->campaign?->id,
+            // 'campaign_name' => $this->campaign?->name,
             'office_id' => $this->office?->id,
             'office_name' => $this->office?->name,
-            'group_id' => $this->group?->id,
-            'group_num' => $this->group?->groupNum,
-            'worker_id' => $this->worker?->id,
-            'worker_name' => $this->worker?->name,
-            'payment_method_type_id' => $this->paymentMethodType?->id,
-            'payment_method_type' => $this->paymentMethodType?->type,
-            'payment_method_type_by' => $this->paymentMethodType?->by,
-
-
-
-
-
+            // 'group_id' => $this->group?->id,
+            // 'group_num' => $this->group?->groupNum,
+            // 'worker_id' => $this->worker?->id,
+            // 'worker_name' => $this->worker?->name,
+            // 'payment_method_type_id' => $this->paymentMethodType?->id,
+            // 'payment_method_type' => $this->paymentMethodType?->type,
+            // 'payment_method_type_by' => $this->paymentMethodType?->by,
 
         'description'=> $this-> description,
 
@@ -87,8 +82,8 @@ class MainInvoiceResource extends JsonResource
                     ];
                 }),
 
-                  "ihramSuppliesCount"=> $this->ihramSuppliesCount,
-         'ihramSubtotal' => $this->ihramSubtotal?? $this->calculateIhramTotal(),
+        "ihramSuppliesCount"=> $this->ihramSuppliesCount,
+        'ihramSubtotal' => $this->ihramSubtotal,
 
 'hotels' => $this->hotels->map(function ($hotel) {
     return [
