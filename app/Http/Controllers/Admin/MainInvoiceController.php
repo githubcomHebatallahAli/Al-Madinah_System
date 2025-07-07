@@ -111,6 +111,14 @@ class MainInvoiceController extends Controller
         ]);
     }
 
+        protected function ensureNumeric($value)
+{
+    if ($value === null || $value === '') {
+        return 0;
+    }
+    return is_numeric($value) ? $value : 0;
+}
+
 
     public function create(MainInvoiceRequest $request)
 {
@@ -465,13 +473,13 @@ protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
     $busTrip->save();
 }
 
-    protected function ensureNumeric($value)
-{
-    if ($value === null || $value === '') {
-        return 0;
-    }
-    return is_numeric($value) ? $value : 0;
-}
+//     protected function ensureNumeric($value)
+// {
+//     if ($value === null || $value === '') {
+//         return 0;
+//     }
+//     return is_numeric($value) ? $value : 0;
+// }
 
 protected function prepareUpdateMetaData(): array
 {
