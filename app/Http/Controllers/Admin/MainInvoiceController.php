@@ -162,21 +162,19 @@ public function create(MainInvoiceRequest $request)
             $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
         }
 
-        // إنشاء الفاتورة
         $invoice = MainInvoice::create($data);
 
-        // ربط الفنادق
+
         if ($request->has('hotels')) {
             $this->attachHotels($invoice, $request->hotels);
         }
 
-        // ربط الحجاج
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
             $invoice->pilgrimsCount = count($request->pilgrims);
         }
 
-        // ربط مستلزمات الإحرام
+
         if ($request->has('ihramSupplies')) {
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
@@ -417,7 +415,7 @@ protected function attachHotels(MainInvoice $invoice, array $hotelsData)
             'need' => $hotelData['need'] ?? null,
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
-            'hotelSubtotal' => $this->calculateHotelSubtotal($hotel, $hotelData),
+            'hotelSubtotal' => $this->calculateHotelTotal($hotel, $hotelData),
         ]);
     }
 }
