@@ -132,8 +132,9 @@ class MainInvoiceController extends Controller
         ]), $this->prepareCreationMetaData());
 
         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
-            $this->validateBusSeats($request->bus_trip_id, $request->pilgrims);
-        }
+    $busTrip = BusTrip::findOrFail($request->bus_trip_id);
+    $this->validateBusSeats($busTrip, $request->pilgrims);
+}
 
         if ($request->has('roomNum')) {
             $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
@@ -666,20 +667,6 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
         return $this->changeInvoiceStatus($invoice, 'completed', $validated);
     }
 
-//     protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
-// {
-
-//     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
-//     $availableSeats = collect($busTrip->seatMap)
-//         ->where('status', 'available')
-//         ->pluck('seatNumber');
-
-//     $unavailableSeats = $requestedSeats->diff($availableSeats);
-
-//     if ($unavailableSeats->isNotEmpty()) {
-//         throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
-//     }
-// }
 
 
         protected function getResourceClass(): string
