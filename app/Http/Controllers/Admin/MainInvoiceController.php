@@ -126,7 +126,7 @@ public function create(MainInvoiceRequest $request)
 
     DB::beginTransaction();
     try {
-        // نبدأ بتجهيز البيانات من الطلب باستثناء الحقول المعالجة يدويًا
+
         $data = $request->except([
             'pilgrims',
             'ihramSupplies',
@@ -148,16 +148,13 @@ public function create(MainInvoiceRequest $request)
         $data['creationDate'] = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $data['creationDateHijri'] = $this->getHijriDate();
 
-        // ندمج البيانات الخاصة بمن أضاف
         $data = array_merge($data, $this->prepareCreationMetaData());
 
-        // التحقق من المقاعد في حال وجود رحلة وبحجاج
         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
             $busTrip = BusTrip::findOrFail($request->bus_trip_id);
             $this->validateBusSeats($busTrip, $request->pilgrims);
         }
 
-        // التحقق من الغرف في حال اختيار فندق وغرفة
         if ($request->has('roomNum')) {
             $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
         }
@@ -191,7 +188,7 @@ public function create(MainInvoiceRequest $request)
                 'pilgrims',
                 'ihramSupplies',
                 'busTrip',
-                'hotel',
+                'hotels',
                 'campaign',
                 'office',
                 'group',
@@ -227,26 +224,22 @@ public function update(MainInvoiceRequest $request, $id)
             'pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels'
         ]), $this->prepareUpdateMetaData());
 
-        // تحديث الفاتورة
         $invoice->update($data);
 
-        // مزامنة الفنادق والغرف
         if ($request->has('hotels')) {
             $this->syncHotels($invoice, $request->hotels);
         }
 
-        // مزامنة المعتمرين مع تتبع التعديلات
         if ($request->has('pilgrims')) {
             $this->syncPilgrims($invoice, $request->pilgrims);
             $invoice->pilgrimsCount = count($request->pilgrims);
         }
 
-        // مزامنة مستلزمات الإحرام
+
         if ($request->has('ihramSupplies')) {
             $this->syncIhramSupplies($invoice, $request->ihramSupplies);
         }
 
-        // إعادة الحسابات
         $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
 
@@ -256,7 +249,7 @@ public function update(MainInvoiceRequest $request, $id)
             'message' => 'تم تحديث الفاتورة بنجاح',
             'invoice' => new MainInvoiceResource(
                 $invoice->load([
-                    'pilgrims', 'ihramSupplies', 'busTrip', 'hotel', 'campaign', 'office', 'group', 'worker', 'paymentMethodType', 'mainPilgrim'
+                    'pilgrims', 'ihramSupplies', 'busTrip', 'hotels', 'campaign', 'office', 'group', 'worker', 'paymentMethodType', 'mainPilgrim'
                 ])
             )
         ]);
