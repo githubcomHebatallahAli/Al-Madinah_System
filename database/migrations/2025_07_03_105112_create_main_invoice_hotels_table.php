@@ -26,7 +26,6 @@ return new class extends Migration
             $table->integer('numRoom')->nullable();
             $table->integer('numDay')->nullable();
             $table->string('roomNum')->nullable();
-            
             $table->decimal('hotelSubtotal', 10, 2)->default(0);
             $table->timestamps();
         });
