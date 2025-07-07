@@ -435,7 +435,7 @@ protected function validateRoomAvailability($hotelId, $roomNum)
         return $this->respondWithResource($MainInvoice, "Main Invoice retrieved for editing.");
     }
 
-    protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
+    protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
 {
     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
     $availableSeats = collect($busTrip->seatMap)
@@ -665,6 +665,21 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
         $invoice = MainInvoice::find($id);
         return $this->changeInvoiceStatus($invoice, 'completed', $validated);
     }
+
+//     protected function validateSeatsAvailability(BusTrip $busTrip, array $pilgrims)
+// {
+
+//     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
+//     $availableSeats = collect($busTrip->seatMap)
+//         ->where('status', 'available')
+//         ->pluck('seatNumber');
+
+//     $unavailableSeats = $requestedSeats->diff($availableSeats);
+
+//     if ($unavailableSeats->isNotEmpty()) {
+//         throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
+//     }
+// }
 
 
         protected function getResourceClass(): string
