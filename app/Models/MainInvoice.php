@@ -206,24 +206,6 @@ public function updateHotelRooms($roomNumber, $action = 'occupy')
 
 
 
-// public function calculateTotals(): void
-// {
-//     $seatTotal = $this->calculateBusTotal();
-//     $ihramTotal = $this->calculateIhramTotal();
-//     $hotelTotal = $this->calculateHotelTotal();
-
-//     $this->subtotal = $seatTotal + $ihramTotal + $hotelTotal;
-
-//     $discount = $this->discount ?? 0;
-//     $this->totalAfterDiscount = max($this->subtotal - $discount, 0);
-
-//     $taxRate = $this->tax ?? 0;
-//     $taxAmount = round($this->totalAfterDiscount * ($taxRate / 100), 2);
-
-//     $this->total = round($this->totalAfterDiscount + $taxAmount, 2);
-
-// }
-
 public function calculateTotals(): void
 {
     // حساب الإجماليات
@@ -298,9 +280,15 @@ public function calculateHotelTotalForPivot(Hotel $hotel, array $hotelData): flo
 }
 
 
+// public function updateIhramSuppliesCount()
+// {
+//     $this->ihramSuppliesCount = $this->ihramSupplies()->count();
+//     $this->save();
+// }
+
 public function updateIhramSuppliesCount()
 {
-    $this->ihramSuppliesCount = $this->ihramSupplies()->count();
+    $this->ihramSuppliesCount = $this->ihramSupplies()->sum('pivot.quantity');
     $this->save();
 }
 
