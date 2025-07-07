@@ -27,9 +27,9 @@ class MainInvoiceHotel extends Model
         'numBed',
         'numRoom',
         'hotelSubtotal',
-        'creationDate',
-        'creationDateHijri',
-        'changed_data'
+        // 'creationDate',
+        // 'creationDateHijri',
+        // 'changed_data'
         ];
 
               protected $casts = [

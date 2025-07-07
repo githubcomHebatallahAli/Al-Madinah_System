@@ -93,9 +93,9 @@ public function hotels()
         'sleep',
         'numDay',
         'hotelSubtotal',
-        'creationDate',
-        'creationDateHijri',
-        'changed_data'
+        // 'creationDate',
+        // 'creationDateHijri',
+        // 'changed_data'
                 ]);
 }
 

@@ -70,9 +70,9 @@ class Hotel extends Model
         'sleep',
         'numDay',
         'hotelSubtotal',
-        'creationDate',
-        'creationDateHijri',
-        'changed_data'
+        // 'creationDate',
+        // 'creationDateHijri',
+        // 'changed_data'
                 ]);
 }
 
