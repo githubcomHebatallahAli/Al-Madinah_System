@@ -121,16 +121,16 @@ public function ihramSupplies()
             'creationDateHijri', 'changed_data');
 }
 
-public function calculateSeatsCount(): void
-{
-    $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-        $seatNumbers = $pilgrim->pivot->seatNumber ?? '';
-        return count(explode(',', $seatNumbers));
-    });
+// public function calculateSeatsCount(): void
+// {
+//     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
+//         $seatNumbers = $pilgrim->pivot->seatNumber ?? '';
+//         return count(explode(',', $seatNumbers));
+//     });
 
-    $this->seatsCount = $totalSeats;
-    $this->save();
-}
+//     $this->seatsCount = $totalSeats;
+//     $this->save();
+// }
 
 
 
@@ -236,24 +236,24 @@ public function calculateTotals(): void
     $this->total = round($this->totalAfterDiscount + $taxAmount, 2);
 }
 
-// protected function calculateBusTotal(): float
-// {
-//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
-
-//     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-//         return count(explode(',', $pilgrim->pivot->seatNumber));
-//     });
-
-//     return $seatPrice * $totalSeats;
-// }
-
 protected function calculateBusTotal(): float
 {
     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
-    $this->calculateSeatsCount(); // تحديث عدد المقاعد أولاً
 
-    return $seatPrice * $this->seatsCount;
+    $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
+        return count(explode(',', $pilgrim->pivot->seatNumber));
+    });
+
+    return $seatPrice * $totalSeats;
 }
+
+// protected function calculateBusTotal(): float
+// {
+//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
+//     $this->calculateSeatsCount(); // تحديث عدد المقاعد أولاً
+
+//     return $seatPrice * $this->seatsCount;
+// }
 
 protected function calculateIhramTotal(): float
 {
@@ -318,12 +318,12 @@ protected static function booted()
     static::created(function ($invoice) {
         $invoice->load('ihramSupplies');
         $invoice->updateIhramSuppliesCount();
-             $invoice->calculateSeatsCount();
+            //  $invoice->calculateSeatsCount();
     });
 
       static::updated(function ($invoice) {
         if ($invoice->isDirty('pilgrimsCount')) {
-            $invoice->calculateSeatsCount();
+            // $invoice->calculateSeatsCount();
         }
     });
 }
