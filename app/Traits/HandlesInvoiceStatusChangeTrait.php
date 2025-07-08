@@ -63,6 +63,7 @@ trait HandlesInvoiceStatusChangeTrait
         }
 
         if ($status === 'completed') {
+            $invoice->calculateSeatsCount();
             $invoice->calculateTotals();
             $invoice->updateIhramSuppliesCount();
         }
