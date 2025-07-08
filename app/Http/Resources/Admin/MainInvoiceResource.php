@@ -47,11 +47,7 @@ class MainInvoiceResource extends JsonResource
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
 
-            'creationDateHijri' => $this->creationDateHijri,
-            'creationDate' => $this->creationDate,
-            'changed_data' => $this->changed_data,
-            'added_by' => $this->addedByAttribute(),
-            'updated_by' => $this->updatedByAttribute(),
+
             'pilgrims' => $this->whenLoaded('pilgrims', function () {
                 return $this->pilgrims->map(function ($pilgrim) {
                     return [
@@ -105,6 +101,12 @@ class MainInvoiceResource extends JsonResource
         'hotelSubtotal' => $hotel->pivot->hotelSubtotal,
     ];
 }),
+
+ 'creationDateHijri' => $this->creationDateHijri,
+            'creationDate' => $this->creationDate,
+            'changed_data' => $this->changed_data,
+            'added_by' => $this->addedByAttribute(),
+            'updated_by' => $this->updatedByAttribute(),
 
     'subtotal' => $this->subtotal,
             'discount' => $this->discount,
