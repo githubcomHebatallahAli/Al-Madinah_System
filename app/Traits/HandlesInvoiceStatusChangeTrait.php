@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use App\Models\PaymentMethodType;
-use Illuminate\Http\JsonResponse;
+
 
 trait HandlesInvoiceStatusChangeTrait
 {
@@ -63,7 +63,7 @@ trait HandlesInvoiceStatusChangeTrait
         }
 
         if ($status === 'completed') {
-            $invoice->calculateSeatsCount();
+            $invoice->updateSeatsCount();
             $invoice->calculateTotals();
             $invoice->updateIhramSuppliesCount();
         }

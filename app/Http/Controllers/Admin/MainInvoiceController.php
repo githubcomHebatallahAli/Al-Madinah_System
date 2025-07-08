@@ -306,7 +306,7 @@ $invoice->pilgrimsCount = count($syncedPilgrims);
             $this->syncIhramSupplies($invoice, $request->ihramSupplies);
         }
 
-        $invoice->calculateSeatsCount();
+        $invoice->updateSeatsCount();
         $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
 
