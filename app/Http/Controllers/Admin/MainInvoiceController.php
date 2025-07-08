@@ -246,18 +246,19 @@ $invoice->pilgrimsCount = count($attachedPilgrims);
 }
 
 
-
 public function update(MainInvoiceRequest $request, $id)
 {
     $this->authorize('manage_system');
 
     DB::beginTransaction();
     try {
+        // 1. جلب الفاتورة مع العلاقات
         $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels', 'busTrip'])->findOrFail($id);
         $busTrip = $invoice->busTrip;
         $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
         $originalSeats = $invoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
+        // 2. التحقق من المقاعد إذا كانت هناك رحلة باص
         if ($request->has('pilgrims') && $busTrip) {
             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
             $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
@@ -272,18 +273,60 @@ public function update(MainInvoiceRequest $request, $id)
             }
         }
 
-        // **تأكد من أن `discount`، `tax`، و `paidAmount` ليست `null`**
-        $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount', 0)), // استخدم 0 كقيمة افتراضية
-            'tax' => $this->ensureNumeric($request->input('tax', 0)),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
-        ], $request->except([
+        // 3. تحضير البيانات الأساسية مع ضمان القيم الرقمية
+        $data = $request->except([
             'pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels'
-        ]), $this->prepareUpdateMetaData());
+        ]);
 
+        // 4. معالجة الحقول الرقمية (السبب الرئيسي للخطأ)
+        $numericFields = [
+            'discount' => $request->input('discount', 0),
+            'tax' => $request->input('tax', 0),
+            'paidAmount' => $request->input('paidAmount', 0)
+        ];
+
+        foreach ($numericFields as $field => $value) {
+            $data[$field] = $this->ensureNumeric($value);
+        }
+
+        // 5. دمج بيانات التحديث
+        $data = array_merge($data, $this->prepareUpdateMetaData());
+
+        // 6. تحديث الفاتورة
         $invoice->update($data);
 
-        // ... (باقي الكود كما هو)
+        // 7. تحديث العلاقات
+        if ($request->has('hotels')) {
+            $this->syncHotels($invoice, $request->hotels);
+        }
+
+        if ($request->has('pilgrims')) {
+            $syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+            $invoice->pilgrimsCount = count($syncedPilgrims);
+        }
+
+        if ($request->has('ihramSupplies')) {
+            $this->syncIhramSupplies($invoice, $request->ihramSupplies);
+        }
+
+        // 8. تحديث الإحصائيات
+        $invoice->updateSeatsCount();
+        $invoice->calculateTotals();
+        $invoice->updateIhramSuppliesCount();
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'تم تحديث الفاتورة بنجاح',
+            'invoice' => new MainInvoiceResource(
+                $invoice->load([
+                    'pilgrims', 'ihramSupplies', 'busTrip', 'hotels',
+                    'campaign', 'office', 'group', 'worker',
+                    'paymentMethodType', 'mainPilgrim'
+                ])
+            )
+        ]);
+
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json([
@@ -291,6 +334,7 @@ public function update(MainInvoiceRequest $request, $id)
         ], 500);
     }
 }
+
 
 protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
 {
