@@ -206,8 +206,8 @@ public function create(MainInvoiceRequest $request)
         // }
 
         if ($request->has('pilgrims')) {
-    $this->attachPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
-    $invoice->pilgrimsCount = count($request->pilgrims);
+$attachedPilgrims = $this->attachPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+$invoice->pilgrimsCount = count($attachedPilgrims);
 }
 
 
@@ -296,8 +296,11 @@ public function update(MainInvoiceRequest $request, $id)
         // }
 
         if ($request->has('pilgrims')) {
-    $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
-    $invoice->pilgrimsCount = count($request->pilgrims);
+    // $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+    // $invoice->pilgrimsCount = count($request->pilgrims);
+    // بعد سطر syncPilgrims
+$syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+$invoice->pilgrimsCount = count($syncedPilgrims);
 }
 
 
@@ -704,97 +707,37 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $changes;
 }
 
-// protected function syncPilgrims(MainInvoice $invoice, array $pilgrims)
-// {
-//     $hijriDate = $this->getHijriDate();
-//     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-//     $pilgrimsData = [];
-
-//     $oldPivotPilgrims = $invoice->pilgrims->mapWithKeys(function ($pilgrim) {
-//         return [
-//             $pilgrim->id => [
-//                 'creationDate' => $pilgrim->pivot->creationDate,
-//                 'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-//                 'seatNumber' => $pilgrim->pivot->seatNumber,
-//                 'status' => $pilgrim->pivot->status,
-//                 'type' => $pilgrim->pivot->type,
-//                 'position' => $pilgrim->pivot->position,
-//             ],
-//         ];
-//     })->toArray();
-
-//     foreach ($pilgrims as $pilgrim) {
-//         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
-
-//         $seatNumber = null;
-//         if (isset($pilgrim['seatNumber'])) {
-//             $seatNumber = is_array($pilgrim['seatNumber'])
-//                 ? implode(',', $pilgrim['seatNumber'])
-//                 : $pilgrim['seatNumber'];
-//         }
-
-//         $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
-
-//         $pilgrimsData[$p->id] = [
-//             'seatNumber' => $seatNumber,
-//             'status' => $pilgrim['status'] ?? null,
-//             'type' => $pilgrim['type'] ?? null,
-//             'position' => $pilgrim['position'] ?? null,
-//             'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
-//             'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
-//             'changed_data' => null,
-//         ];
-//     }
-
-//     // تتبع التغييرات
-//     $pivotChanges = $this->getPivotChanges($oldPivotPilgrims, $pilgrimsData);
-//     foreach ($pivotChanges as $pilgrimId => $change) {
-//         if (isset($pilgrimsData[$pilgrimId])) {
-//             $pilgrimsData[$pilgrimId]['changed_data'] = json_encode($change, JSON_UNESCAPED_UNICODE);
-//         }
-//     }
-
-//     $invoice->pilgrims()->sync($pilgrimsData);
-// }
-
 protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
 {
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
 
-    $oldPivotPilgrims = $invoice->pilgrims->mapWithKeys(function ($pilgrim) {
-        return [
-            $pilgrim->id => [
-                'creationDate' => $pilgrim->pivot->creationDate,
-                'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-                'seatNumber' => $pilgrim->pivot->seatNumber,
-                'status' => $pilgrim->pivot->status,
-                'type' => $pilgrim->pivot->type,
-                'position' => $pilgrim->pivot->position,
-            ],
-        ];
-    })->toArray();
-
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
 
-        $seatNumber = null;
+        $seatNumbers = [];
         if (isset($pilgrim['seatNumber'])) {
-            $seatNumber = is_array($pilgrim['seatNumber'])
-                ? implode(',', $pilgrim['seatNumber'])
-                : $pilgrim['seatNumber'];
+            $seatNumbers = is_array($pilgrim['seatNumber'])
+                ? $pilgrim['seatNumber']
+                : explode(',', $pilgrim['seatNumber']);
+        }
 
-            // تحديث حالة المقعد إذا كان هناك رحلة باص
-            if ($busTrip && $seatMapArray) {
-                $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+        // تحديث حالة المقاعد إذا كان هناك رحلة باص
+        if ($busTrip && $seatMapArray && !empty($seatNumbers)) {
+            foreach ($seatNumbers as $seatNumber) {
+                try {
+                    $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+                } catch (\Exception $e) {
+                    throw new \Exception("فشل في حجز المقعد {$seatNumber}: " . $e->getMessage());
+                }
             }
         }
 
         $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
 
         $pilgrimsData[$p->id] = [
-            'seatNumber' => $seatNumber,
+            'seatNumber' => implode(',', $seatNumbers),
             'status' => $pilgrim['status'] ?? null,
             'type' => $pilgrim['type'] ?? null,
             'position' => $pilgrim['position'] ?? null,
@@ -804,16 +747,33 @@ protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip 
         ];
     }
 
-    // تتبع التغييرات
-    $pivotChanges = $this->getPivotChanges($oldPivotPilgrims, $pilgrimsData);
-    foreach ($pivotChanges as $pilgrimId => $change) {
-        if (isset($pilgrimsData[$pilgrimId])) {
-            $pilgrimsData[$pilgrimId]['changed_data'] = json_encode($change, JSON_UNESCAPED_UNICODE);
-        }
-    }
-
     $invoice->pilgrims()->sync($pilgrimsData);
+
+    return $invoice->pilgrims()->withPivot([
+        'seatNumber',
+        'status',
+        'type',
+        'position',
+        'creationDate',
+        'creationDateHijri'
+    ])->get()->map(function($pilgrim) {
+        return [
+            'id' => $pilgrim->id,
+            'name' => $pilgrim->name,
+            'idNum' => $pilgrim->idNum,
+            'phoNum' => $pilgrim->phoNum,
+            'nationality' => $pilgrim->nationality,
+            'gender' => $pilgrim->gender,
+            'seatNumber' => $pilgrim->pivot->seatNumber,
+            'status' => $pilgrim->pivot->status,
+            'type' => $pilgrim->pivot->type,
+            'position' => $pilgrim->pivot->position,
+            'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+            'creationDate' => $pilgrim->pivot->creationDate
+        ];
+    })->toArray();
 }
+
 
 
 protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims): bool
