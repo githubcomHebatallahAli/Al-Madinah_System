@@ -233,22 +233,32 @@ public function calculateTotals(): void
 //     return $seatPrice * $totalSeats;
 // }
 
-public function calculateSeatsCount(): void
+public function calculateSeatsCount(): int
 {
-    $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-        $seatNumbers = $pilgrim->pivot->seatNumber ?? '';
-        return count(explode(',', $seatNumbers));
-    });
+    // لو العلاقة مش محمّلة، نحمّلها علشان نقدر نحسب
+    if (!$this->relationLoaded('pilgrims')) {
+        $this->load('pilgrims');
+    }
 
-    $this->seatsCount = $totalSeats;
-    $this->save();
+    return $this->pilgrims->sum(function ($pilgrim) {
+        $seatNumbers = $pilgrim->pivot->seatNumber ?? '';
+
+        if (empty($seatNumbers)) {
+            return 0;
+        }
+
+        return count(array_filter(explode(',', $seatNumbers)));
+    });
 }
+
 
 public function updateSeatsCount(): void
 {
-    $this->seatsCount = $this->calculateSeatsCount();
+    $count = $this->calculateSeatsCount();
+    $this->seatsCount = $count ?? 0; // تأكد إنها مش null
     $this->save();
 }
+
 
 protected function calculateBusTotal(): float
 {
