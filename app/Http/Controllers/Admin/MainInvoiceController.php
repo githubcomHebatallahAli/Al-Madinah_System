@@ -215,7 +215,7 @@ $invoice->pilgrimsCount = count($attachedPilgrims);
         }
 
    $invoice->load(['hotels', 'ihramSupplies', 'pilgrims']);
-        $invoice->calculateSeatsCount();
+        // $invoice->calculateSeatsCount();
         $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
 
