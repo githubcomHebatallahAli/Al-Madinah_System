@@ -251,11 +251,7 @@ public function update(MainInvoiceRequest $request, $id)
 {
     $this->authorize('manage_system');
 
-    // DB::beginTransaction();
-    // try {
-    //     $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels'])->findOrFail($id);
-
-        DB::beginTransaction();
+    DB::beginTransaction();
     try {
         $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels', 'busTrip'])->findOrFail($id);
         $busTrip = $invoice->busTrip;
@@ -276,10 +272,11 @@ public function update(MainInvoiceRequest $request, $id)
             }
         }
 
+        // Ensure numeric values with proper defaults
         $data = array_merge([
-            'discount' => $this->ensureNumeric($request->input('discount', 0)),
-            'tax' => $this->ensureNumeric($request->input('tax', 0)),
-            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+            'discount' => $this->ensureNumeric($request->input('discount')) ?? 0,
+            'tax' => $this->ensureNumeric($request->input('tax')) ?? 0,
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount')) ?? 0,
         ], $request->except([
             'pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels'
         ]), $this->prepareUpdateMetaData());
@@ -290,17 +287,10 @@ public function update(MainInvoiceRequest $request, $id)
             $this->syncHotels($invoice, $request->hotels);
         }
 
-        // if ($request->has('pilgrims')) {
-        //     $this->syncPilgrims($invoice, $request->pilgrims);
-        //     $invoice->pilgrimsCount = count($request->pilgrims);
-        // }
-
         if ($request->has('pilgrims')) {
-
-$syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
-$invoice->pilgrimsCount = count($syncedPilgrims);
-}
-
+            $syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+            $invoice->pilgrimsCount = count($syncedPilgrims);
+        }
 
         if ($request->has('ihramSupplies')) {
             $this->syncIhramSupplies($invoice, $request->ihramSupplies);
@@ -326,8 +316,9 @@ $invoice->pilgrimsCount = count($syncedPilgrims);
             'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
         ], 500);
     }
-
 }
+
+
 
 protected function attachPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
 {
