@@ -324,6 +324,49 @@ public function update(MainInvoiceRequest $request, $id)
             'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
         ], 500);
     }
+
+}
+
+protected function attachPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
+{
+    $pilgrimsData = [];
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+    foreach ($pilgrims as $pilgrim) {
+        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+
+        $seatNumbers = [];
+        if (isset($pilgrim['seatNumber'])) {
+            $seatNumbers = is_array($pilgrim['seatNumber'])
+                ? $pilgrim['seatNumber']
+                : [$pilgrim['seatNumber']];
+        }
+
+        // تحديث حالة المقاعد إذا كان هناك رحلة باص
+        if ($busTrip && $seatMapArray && !empty($seatNumbers)) {
+            foreach ($seatNumbers as $seatNumber) {
+                try {
+                    $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+                } catch (\Exception $e) {
+                    // يمكنك تسجيل الخطأ أو التعامل معه بطريقة أخرى
+                    throw new \Exception("فشل في حجز المقعد {$seatNumber}: " . $e->getMessage());
+                }
+            }
+        }
+
+        $pilgrimsData[$p->id] = [
+            'seatNumber' => implode(',', $seatNumbers), // حفظ المقاعد كسلسلة نصية مفصولة بفواصل
+            'status' => $pilgrim['status'] ?? null,
+            'type' => $pilgrim['type'] ?? null,
+            'position' => $pilgrim['position'] ?? null,
+            'creationDate' => $currentDate,
+            'creationDateHijri' => $hijriDate,
+            'changed_data' => null
+        ];
+    }
+
+    $invoice->pilgrims()->attach($pilgrimsData);
 }
 
 
@@ -525,22 +568,11 @@ protected function validateRoomAvailability($hotelId, $roomNum)
         return $this->respondWithResource($MainInvoice, "Main Invoice retrieved for editing.");
     }
 
-    protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
-{
-    $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
-    $availableSeats = collect($busTrip->seatMap)
-        ->where('status', 'available')
-        ->pluck('seatNumber');
-    $unavailableSeats = $requestedSeats->diff($availableSeats);
-    if ($unavailableSeats->isNotEmpty()) {
-        throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
-    }
-}
-
-protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
+    protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
 {
     $busTrip->refresh();
     $seatMap = collect($busTrip->seatMap);
+
     $seatIndex = $seatMap->search(function ($item) use ($seatNumber) {
         return $item['seatNumber'] === $seatNumber;
     });
@@ -548,11 +580,42 @@ protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
     if ($seatIndex === false) {
         throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
     }
+
     $updatedSeatMap = $seatMap->all();
     $updatedSeatMap[$seatIndex]['status'] = $status;
+
     $busTrip->seatMap = $updatedSeatMap;
     $busTrip->save();
 }
+
+//     protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
+// {
+//     $requestedSeats = collect($pilgrims)->pluck('seatNumber')->flatten();
+//     $availableSeats = collect($busTrip->seatMap)
+//         ->where('status', 'available')
+//         ->pluck('seatNumber');
+//     $unavailableSeats = $requestedSeats->diff($availableSeats);
+//     if ($unavailableSeats->isNotEmpty()) {
+//         throw new \Exception("المقاعد التالية غير متاحة: " . $unavailableSeats->implode(', '));
+//     }
+// }
+
+// protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
+// {
+//     $busTrip->refresh();
+//     $seatMap = collect($busTrip->seatMap);
+//     $seatIndex = $seatMap->search(function ($item) use ($seatNumber) {
+//         return $item['seatNumber'] === $seatNumber;
+//     });
+
+//     if ($seatIndex === false) {
+//         throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
+//     }
+//     $updatedSeatMap = $seatMap->all();
+//     $updatedSeatMap[$seatIndex]['status'] = $status;
+//     $busTrip->seatMap = $updatedSeatMap;
+//     $busTrip->save();
+// }
 
 
 
@@ -761,39 +824,28 @@ protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims):
 //     $invoice->pilgrims()->attach($pilgrimsData);
 // }
 
-protected function attachPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
+protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
 {
-    $pilgrimsData = [];
-    $hijriDate = $this->getHijriDate();
-    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-
+    $requestedSeats = [];
     foreach ($pilgrims as $pilgrim) {
-        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
-
-        $seatNumber = null;
         if (isset($pilgrim['seatNumber'])) {
-            $seatNumber = is_array($pilgrim['seatNumber'])
-                ? implode(',', $pilgrim['seatNumber'])
-                : $pilgrim['seatNumber'];
-
-            // تحديث حالة المقعد إذا كان هناك رحلة باص
-            if ($busTrip && $seatMapArray) {
-                $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
-            }
+            $seats = is_array($pilgrim['seatNumber'])
+                ? $pilgrim['seatNumber']
+                : [$pilgrim['seatNumber']];
+            $requestedSeats = array_merge($requestedSeats, $seats);
         }
-
-        $pilgrimsData[$p->id] = [
-            'seatNumber' => $seatNumber,
-            'status' => $pilgrim['status'] ?? null,
-            'type' => $pilgrim['type'] ?? null,
-            'position' => $pilgrim['position'] ?? null,
-            'creationDate' => $currentDate,
-            'creationDateHijri' => $hijriDate,
-            'changed_data' => null
-        ];
     }
 
-    $invoice->pilgrims()->attach($pilgrimsData);
+    $availableSeats = collect($busTrip->seatMap)
+        ->where('status', 'available')
+        ->pluck('seatNumber')
+        ->toArray();
+
+    $unavailableSeats = array_diff($requestedSeats, $availableSeats);
+
+    if (!empty($unavailableSeats)) {
+        throw new \Exception("المقاعد التالية غير متاحة: " . implode(', ', $unavailableSeats));
+    }
 }
 
 
