@@ -318,6 +318,98 @@ public function update(MainInvoiceRequest $request, $id)
     }
 }
 
+protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
+{
+    $hijriDate = $this->getHijriDate();
+    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+    $pilgrimsData = [];
+
+    // تحرير جميع المقاعد القديمة أولاً
+    if ($busTrip) {
+        $oldPilgrims = $invoice->pilgrims()->withPivot('seatNumber')->get();
+        foreach ($oldPilgrims as $oldPilgrim) {
+            $oldSeats = explode(',', $oldPilgrim->pivot->seatNumber);
+            foreach ($oldSeats as $seat) {
+                if (!empty($seat)) {
+                    $this->updateSeatStatusInTrip($busTrip, $seat, 'available');
+                }
+            }
+        }
+    }
+
+    // حجز المقاعد الجديدة
+    foreach ($pilgrims as $pilgrim) {
+        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+
+        $seatNumbers = [];
+        $seatTypes = [];
+        $seatPositions = [];
+
+        if (isset($pilgrim['seatNumber'])) {
+            $seatNumbers = is_array($pilgrim['seatNumber'])
+                ? $pilgrim['seatNumber']
+                : explode(',', $pilgrim['seatNumber']);
+        }
+
+        if ($busTrip && $seatMapArray && !empty($seatNumbers)) {
+            foreach ($seatNumbers as $seatNumber) {
+                try {
+                    $seatInfo = collect($busTrip->seatMap)->firstWhere('seatNumber', $seatNumber);
+
+                    if (!$seatInfo) {
+                        throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
+                    }
+
+                    $seatTypes[] = $seatInfo['type'] ?? null;
+                    $seatPositions[] = $seatInfo['position'] ?? null;
+
+                    $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
+                } catch (\Exception $e) {
+                    throw new \Exception("فشل في حجز المقعد {$seatNumber}: " . $e->getMessage());
+                }
+            }
+        }
+
+        $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
+
+        $pilgrimsData[$p->id] = [
+            'seatNumber' => implode(',', $seatNumbers),
+            'status' => 'booked',
+            'type' => implode(',', array_unique($seatTypes)),
+            'position' => implode(',', array_unique($seatPositions)),
+            'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
+            'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
+            'changed_data' => null,
+        ];
+    }
+
+    $invoice->pilgrims()->sync($pilgrimsData);
+
+    return $invoice->pilgrims()->withPivot([
+        'seatNumber',
+        'status',
+        'type',
+        'position',
+        'creationDate',
+        'creationDateHijri'
+    ])->get()->map(function($pilgrim) {
+        return [
+            'id' => $pilgrim->id,
+            'name' => $pilgrim->name,
+            'idNum' => $pilgrim->idNum,
+            'phoNum' => $pilgrim->phoNum,
+            'nationality' => $pilgrim->nationality,
+            'gender' => $pilgrim->gender,
+            'seatNumber' => $pilgrim->pivot->seatNumber,
+            'status' => $pilgrim->pivot->status,
+            'type' => $pilgrim->pivot->type,
+            'position' => $pilgrim->pivot->position,
+            'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
+            'creationDate' => $pilgrim->pivot->creationDate
+        ];
+    })->toArray();
+}
+
 
 
 protected function attachPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
@@ -396,82 +488,24 @@ protected function attachPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTri
     })->toArray();
 }
 
-protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
+protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
 {
-    $hijriDate = $this->getHijriDate();
-    $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-    $pilgrimsData = [];
+    $busTrip->refresh();
+    $seatMap = collect($busTrip->seatMap);
 
-    foreach ($pilgrims as $pilgrim) {
-        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
+    $seatIndex = $seatMap->search(function ($item) use ($seatNumber) {
+        return $item['seatNumber'] === $seatNumber;
+    });
 
-        $seatNumbers = [];
-        $seatTypes = [];
-        $seatPositions = [];
-
-        if (isset($pilgrim['seatNumber'])) {
-            $seatNumbers = is_array($pilgrim['seatNumber'])
-                ? $pilgrim['seatNumber']
-                : explode(',', $pilgrim['seatNumber']);
-        }
-
-        if ($busTrip && $seatMapArray && !empty($seatNumbers)) {
-            foreach ($seatNumbers as $seatNumber) {
-                try {
-                    $seatInfo = collect($busTrip->seatMap)->firstWhere('seatNumber', $seatNumber);
-
-                    if (!$seatInfo) {
-                        throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
-                    }
-
-                    $seatTypes[] = $seatInfo['type'] ?? null;
-                    $seatPositions[] = $seatInfo['position'] ?? null;
-
-                    $this->updateSeatStatusInTrip($busTrip, $seatNumber, 'booked');
-                } catch (\Exception $e) {
-                    throw new \Exception("فشل في حجز المقعد {$seatNumber}: " . $e->getMessage());
-                }
-            }
-        }
-
-        $existingPivot = $invoice->pilgrims()->where('pilgrim_id', $p->id)->first();
-
-        $pilgrimsData[$p->id] = [
-            'seatNumber' => implode(',', $seatNumbers),
-            'status' => 'booked',
-            'type' => implode(',', array_unique($seatTypes)),
-            'position' => implode(',', array_unique($seatPositions)),
-            'creationDate' => $existingPivot->pivot->creationDate ?? $currentDate,
-            'creationDateHijri' => $existingPivot->pivot->creationDateHijri ?? $hijriDate,
-            'changed_data' => null,
-        ];
+    if ($seatIndex === false) {
+        throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
     }
 
-    $invoice->pilgrims()->sync($pilgrimsData);
+    $updatedSeatMap = $seatMap->all();
+    $updatedSeatMap[$seatIndex]['status'] = $status;
 
-    return $invoice->pilgrims()->withPivot([
-        'seatNumber',
-        'status',
-        'type',
-        'position',
-        'creationDate',
-        'creationDateHijri'
-    ])->get()->map(function($pilgrim) {
-        return [
-            'id' => $pilgrim->id,
-            'name' => $pilgrim->name,
-            'idNum' => $pilgrim->idNum,
-            'phoNum' => $pilgrim->phoNum,
-            'nationality' => $pilgrim->nationality,
-            'gender' => $pilgrim->gender,
-            'seatNumber' => $pilgrim->pivot->seatNumber,
-            'status' => $pilgrim->pivot->status,
-            'type' => $pilgrim->pivot->type,
-            'position' => $pilgrim->pivot->position,
-            'creationDateHijri' => $pilgrim->pivot->creationDateHijri,
-            'creationDate' => $pilgrim->pivot->creationDate
-        ];
-    })->toArray();
+    $busTrip->seatMap = $updatedSeatMap;
+    $busTrip->save();
 }
 
     protected function syncIhramSupplies(MainInvoice $invoice, array $supplies)
@@ -672,25 +706,7 @@ protected function validateRoomAvailability($hotelId, $roomNum)
         return $this->respondWithResource($MainInvoice, "Main Invoice retrieved for editing.");
     }
 
-    protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
-{
-    $busTrip->refresh();
-    $seatMap = collect($busTrip->seatMap);
 
-    $seatIndex = $seatMap->search(function ($item) use ($seatNumber) {
-        return $item['seatNumber'] === $seatNumber;
-    });
-
-    if ($seatIndex === false) {
-        throw new \Exception("المقعد {$seatNumber} غير موجود في رحلة الباص");
-    }
-
-    $updatedSeatMap = $seatMap->all();
-    $updatedSeatMap[$seatIndex]['status'] = $status;
-
-    $busTrip->seatMap = $updatedSeatMap;
-    $busTrip->save();
-}
 
 protected function prepareUpdateMetaData(): array
 {
