@@ -139,22 +139,24 @@ public function create(MainInvoiceRequest $request)
 
     DB::beginTransaction();
     try {
+        // 1. التحقق من رحلة الباص والمقاعد
         $busTrip = null;
         $seatMapArray = [];
 
-        // التحقق من توفر مقاعد الباص
         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
-            $busTrip = BusTrip::find($request->bus_trip_id);
-            if (!$busTrip) {
-                return response()->json(['message' => 'رحلة الباص غير موجودة'], 404);
-            }
-
+            $busTrip = BusTrip::findOrFail($request->bus_trip_id);
             $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
-            $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
-            $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
-            $unavailableSeats = $requestedSeats->diff($availableSeats);
 
-            if ($unavailableSeats->isNotEmpty()) {
+            $requestedSeats = collect($request->pilgrims)
+                ->pluck('seatNumber')
+                ->flatten()
+                ->filter();
+
+            $availableSeats = collect($seatMapArray)
+                ->where('status', 'available')
+                ->pluck('seatNumber');
+
+            if ($unavailableSeats = $requestedSeats->diff($availableSeats)->isNotEmpty()) {
                 return response()->json([
                     'message' => 'بعض المقاعد غير متوفرة',
                     'unavailable_seats' => $unavailableSeats
@@ -162,52 +164,26 @@ public function create(MainInvoiceRequest $request)
             }
         }
 
-        // حساب القيم المؤقتة أولاً
-        $tempData = [
+        // 2. حساب القيم الأساسية
+        $baseData = [
             'discount' => $this->ensureNumeric($request->input('discount', 0)),
             'tax' => $this->ensureNumeric($request->input('tax', 0)),
             'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
-            'subtotal' => 0,
-            'totalAfterDiscount' => 0,
-            'total' => 0
+            'subtotal' => 0, // سيتم حسابه لاحقاً
+            'totalAfterDiscount' => 0, // سيتم حسابه لاحقاً
+            'total' => 0, // سيتم حسابه لاحقاً
+            'creationDate' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s'),
+            'creationDateHijri' => $this->getHijriDate(),
+            ...$this->prepareCreationMetaData()
         ];
 
-        $tempInvoice = new MainInvoice($tempData);
-        $tempInvoice->calculateTotals();
+        // 3. إنشاء الفاتورة
+        $invoice = MainInvoice::create(array_merge(
+            $request->except(['pilgrims', 'ihramSupplies', 'hotels']),
+            $baseData
+        ));
 
-        // التحقق من تطابق المبلغ المدفوع مع الإجمالي
-        if (abs($tempData['paidAmount'] - $tempInvoice->total) > 0.01) {
-            return response()->json([
-                'message' => 'المبلغ المدفوع يجب أن يساوي الإجمالي',
-                'required_amount' => number_format($tempInvoice->total, 2),
-                'paid_amount' => number_format($tempData['paidAmount'], 2)
-            ], 422);
-        }
-
-        // إعداد البيانات للإنشاء
-        $data = $request->except([
-            'pilgrims',
-            'ihramSupplies',
-            'seatMapValidation',
-            'discount',
-            'tax',
-            'paidAmount',
-        ]);
-
-        $data['discount'] = $tempData['discount'];
-        $data['tax'] = $tempData['tax'];
-        $data['paidAmount'] = $tempData['paidAmount'];
-        $data['subtotal'] = $tempInvoice->subtotal;
-        $data['totalAfterDiscount'] = $tempInvoice->totalAfterDiscount;
-        $data['total'] = $tempInvoice->total;
-        $data['creationDate'] = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-        $data['creationDateHijri'] = $this->getHijriDate();
-        $data = array_merge($data, $this->prepareCreationMetaData());
-
-        // إنشاء الفاتورة الفعلية
-        $invoice = MainInvoice::create($data);
-
-        // إرفاق العلاقات
+        // 4. إرفاق العلاقات
         if ($request->has('hotels')) {
             $this->attachHotels($invoice, $request->hotels);
         }
@@ -221,13 +197,25 @@ public function create(MainInvoiceRequest $request)
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
 
-        // تحديث الحسابات النهائية
+        // 5. حساب القيم النهائية
         $invoice->updateSeatsCount();
-        $invoice->calculateTotals();
+        $invoice->calculateTotals(); // هذه الدالة يجب أن تحسب subtotal و totalAfterDiscount و total
         $invoice->updateIhramSuppliesCount();
+        $invoice->refresh(); // للتأكد من تحديث القيم
+
+        // 6. التحقق من تطابق المبالغ
+        if (abs($invoice->paidAmount - $invoice->total) > 0.01) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'المبلغ المدفوع يجب أن يساوي الإجمالي',
+                'required_amount' => number_format($invoice->total, 2),
+                'paid_amount' => number_format($invoice->paidAmount, 2)
+            ], 422);
+        }
 
         DB::commit();
 
+        // 7. إرجاع النتيجة
         return response()->json([
             'message' => 'تم إنشاء الفاتورة بنجاح',
             'invoice' => new MainInvoiceResource($invoice->load([
@@ -244,6 +232,9 @@ public function create(MainInvoiceRequest $request)
             ]))
         ], 201);
 
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        DB::rollBack();
+        return response()->json(['message' => 'لم يتم العثور على أحد العناصر المطلوبة'], 404);
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json([
@@ -251,7 +242,6 @@ public function create(MainInvoiceRequest $request)
         ], 500);
     }
 }
-
 
 // public function create(MainInvoiceRequest $request)
 // {
