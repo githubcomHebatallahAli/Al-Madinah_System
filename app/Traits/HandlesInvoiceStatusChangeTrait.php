@@ -14,20 +14,33 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
         return response()->json(['message' => "Invoice not found."], 404);
     }
 
-    $originalData = $invoice->attributesToArray();
+    // نسخ القيم الأصلية يدويًا (وليس بالكاست)
+    $originalData = $invoice->only([
+        'discount', 'tax', 'paidAmount', 'invoiceStatus',
+        'subtotal', 'totalAfterDiscount', 'total'
+    ]);
 
-    // لا نعدل على الفاتورة الأصلية قبل التحقق
+    // القيم المقترحة من المستخدم
     $proposedPaidAmount = $extra['paidAmount'] ?? $invoice->paidAmount;
     $proposedDiscount = $extra['discount'] ?? $invoice->discount;
     $proposedTax = $extra['tax'] ?? $invoice->tax;
 
+    // التحقق من حالة الإكمال
     if ($status === 'completed') {
+        // نسخة مؤقتة للحساب فقط
         $tempInvoice = clone $invoice;
         $tempInvoice->discount = $proposedDiscount;
         $tempInvoice->tax = $proposedTax;
         $tempInvoice->calculateTotals();
 
         if (round($proposedPaidAmount, 2) !== round($tempInvoice->total, 2)) {
+            // ✅ نعيد القيم الأصلية يدويًا قبل الخروج
+            $invoice->fill([
+                'discount' => $originalData['discount'],
+                'tax' => $originalData['tax'],
+                'paidAmount' => $originalData['paidAmount'],
+            ]);
+
             return response()->json([
                 'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
                 'required_amount' => number_format($tempInvoice->total, 2),
@@ -36,17 +49,17 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
             ], 422);
         }
 
-        // ✅ فقط بعد النجاح نطبق القيم دي
-        $invoice->paidAmount = $proposedPaidAmount;
+        // ✅ بعد التحقق فقط نعدل القيم
         $invoice->discount = $proposedDiscount;
         $invoice->tax = $proposedTax;
+        $invoice->paidAmount = $proposedPaidAmount;
 
         if ($invoice->invoiceStatus !== 'completed') {
             $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
         }
     }
 
-    // الحالة نفسها
+    // تحديث الحالة فقط بعد التحقق
     if ($invoice->invoiceStatus !== $status || $status === 'completed') {
         $invoice->invoiceStatus = $status;
 
@@ -55,11 +68,13 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
         }
     }
 
+    // تحديث معلومات التعديل
     $invoice->updated_by = $this->getUpdatedByIdOrFail();
     $invoice->updated_by_type = $this->getUpdatedByType();
 
     $invoice->calculateTotals();
 
+    // تتبع التعديلات
     $changedData = $this->buildInvoiceChanges($invoice, $originalData);
     if (!empty($changedData)) {
         $invoice->changed_data = $changedData;
@@ -76,8 +91,6 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
             : "تم تحديث حالة الفاتورة إلى {$status}"
     );
 }
-
-
 
 
 protected function buildInvoiceChanges($invoice, $originalData): array
