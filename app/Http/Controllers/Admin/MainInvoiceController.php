@@ -194,7 +194,6 @@ public function create(MainInvoiceRequest $request)
 
         $invoice = MainInvoice::create($data);
 
-
         if ($request->has('hotels')) {
             $this->attachHotels($invoice, $request->hotels);
         }
@@ -239,31 +238,34 @@ $invoice->pilgrimsCount = count($attachedPilgrims);
     }
 }
 
-
 public function update(MainInvoiceRequest $request, $id)
 {
     $this->authorize('manage_system');
 
     DB::beginTransaction();
     try {
-
         $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels', 'busTrip'])->findOrFail($id);
         $busTrip = $invoice->busTrip;
         $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
         $originalSeats = $invoice->pilgrims->pluck('pivot.seatNumber')->toArray();
 
-
+        // التأكد من توفر المقاعد الجديدة فقط في حالة وجود تغييرات
+        $pilgrimsChanged = false;
         if ($request->has('pilgrims') && $busTrip) {
-            $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
-            $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
-            $availableSeats = $availableSeats->merge($originalSeats)->unique();
-            $unavailableSeats = $requestedSeats->diff($availableSeats);
+            if ($this->hasPilgrimsChanges($invoice, $request->pilgrims)) {
+                $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
+                $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
+                $availableSeats = $availableSeats->merge($originalSeats)->unique();
+                $unavailableSeats = $requestedSeats->diff($availableSeats);
 
-            if ($unavailableSeats->isNotEmpty()) {
-                return response()->json([
-                    'message' => 'بعض المقاعد غير متوفرة',
-                    'unavailable_seats' => $unavailableSeats
-                ], 422);
+                if ($unavailableSeats->isNotEmpty()) {
+                    return response()->json([
+                        'message' => 'بعض المقاعد غير متوفرة',
+                        'unavailable_seats' => $unavailableSeats
+                    ], 422);
+                }
+
+                $pilgrimsChanged = true;
             }
         }
 
@@ -282,14 +284,13 @@ public function update(MainInvoiceRequest $request, $id)
         }
 
         $data = array_merge($data, $this->prepareUpdateMetaData());
-
         $invoice->update($data);
 
         if ($request->has('hotels')) {
             $this->syncHotels($invoice, $request->hotels);
         }
 
-        if ($request->has('pilgrims')) {
+        if ($pilgrimsChanged) {
             $syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
             $invoice->pilgrimsCount = count($syncedPilgrims);
         }
@@ -322,14 +323,13 @@ public function update(MainInvoiceRequest $request, $id)
     }
 }
 
-
+ 
 protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
 {
     $hijriDate = $this->getHijriDate();
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
     $pilgrimsData = [];
 
-    // تحرير جميع المقاعد القديمة أولاً
     if ($busTrip) {
         $oldPilgrims = $invoice->pilgrims()->withPivot('seatNumber')->get();
         foreach ($oldPilgrims as $oldPilgrim) {
@@ -342,7 +342,6 @@ protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip 
         }
     }
 
-    // حجز المقاعد الجديدة
     foreach ($pilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
 
@@ -414,7 +413,6 @@ protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip 
         ];
     })->toArray();
 }
-
 
 
 protected function attachPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
@@ -533,6 +531,9 @@ protected function updateSeatStatusInTrip($busTrip, $seatNumber, $status)
         }
 
         $model->decrement('quantity', $supply['quantity']);
+          if ($model->quantity <= 5) {
+            Log::warning("المنتج {$model->ihramItem->name} أوشك على النفاد. الكمية الحالية: {$model->quantity}");
+        }
 
         $total = $model->sellingPrice * $supply['quantity'];
 
@@ -591,7 +592,6 @@ protected function syncHotels(MainInvoice $invoice, array $hotelsData)
         ];
     }
 
-
     foreach ($oldHotelPivots as $oldHotelId => $oldHotel) {
         if (!isset($newPivotData[$oldHotelId])) {
             $roomNum = $oldHotel->pivot->roomNum ?? null;
@@ -630,7 +630,6 @@ protected function releaseRoom(Hotel $hotel, string $roomNum): void
     }
 }
 
-
 protected function attachHotels(MainInvoice $invoice, array $hotelsData)
 {
     foreach ($hotelsData as $hotelData) {
@@ -655,11 +654,9 @@ protected function attachHotels(MainInvoice $invoice, array $hotelsData)
             'sleep' => $hotelData['sleep'] ?? null,
             'numDay' => $hotelData['numDay'] ?? 1,
             'hotelSubtotal' => $invoice->calculateHotelTotalForPivot($hotel, $hotelData),
-
         ]);
     }
 }
-
 
 protected function attachIhramSupplies(MainInvoice $invoice, array $supplies)
 {
@@ -670,6 +667,9 @@ protected function attachIhramSupplies(MainInvoice $invoice, array $supplies)
             throw new \Exception("الكمية غير متاحة لـ {$model->ihramItem->name}");
         }
         $model->decrement('quantity', $supply['quantity']);
+          if ($model->quantity <= 5) {
+            Log::warning("المنتج {$model->ihramItem->name} أوشك على النفاد. الكمية الحالية: {$model->quantity}");
+        }
 
         $total = $model->sellingPrice * $supply['quantity'];
 
@@ -712,7 +712,6 @@ protected function validateRoomAvailability($hotelId, $roomNum)
     }
 
 
-
 protected function prepareUpdateMetaData(): array
 {
     $updatedBy = $this->getUpdatedByIdOrFail();
@@ -723,7 +722,6 @@ protected function prepareUpdateMetaData(): array
         'updated_at_hijri' => $this->getHijriDate(),
     ];
 }
-
 
 protected function getPivotChanges(array $oldPivotData, array $newPivotData): array
 {
@@ -763,21 +761,38 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $changes;
 }
 
-
 protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims): bool
 {
-    $currentPilgrims = $invoice->pilgrims()->pluck('pilgrims.id')->toArray();
-    $newPilgrimsIds = [];
+    $currentPivotData = $invoice->pilgrims()->get()->keyBy('id')->map(function ($p) {
+        return [
+            'seatNumber' => $p->pivot->seatNumber,
+            'status' => $p->pivot->status,
+            'type' => $p->pivot->type,
+            'position' => $p->pivot->position,
+        ];
+    })->toArray();
+
+    $newPivotData = [];
+
     foreach ($newPilgrims as $pilgrim) {
         $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
-        $newPilgrimsIds[] = $p->id;
+
+        $seatNumbers = isset($pilgrim['seatNumber'])
+            ? (is_array($pilgrim['seatNumber']) ? $pilgrim['seatNumber'] : explode(',', $pilgrim['seatNumber']))
+            : [];
+
+        $seatNumber = implode(',', $seatNumbers);
+
+        $newPivotData[$p->id] = [
+            'seatNumber' => $seatNumber,
+            'status' => 'booked',
+            'type' => '',
+            'position' => '',
+        ];
     }
-    sort($currentPilgrims);
-    sort($newPilgrimsIds);
-    return $currentPilgrims !== $newPilgrimsIds;
+
+    return $this->getPivotChanges($currentPivotData, $newPivotData) !== [];
 }
-
-
 
 protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
 {
