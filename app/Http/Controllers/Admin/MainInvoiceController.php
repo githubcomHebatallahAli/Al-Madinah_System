@@ -162,7 +162,39 @@ public function create(MainInvoiceRequest $request)
             }
         }
 
-        // إعداد البيانات الأساسية
+        // حساب القيم المؤقتة أولاً بنفس طريقة الـ update
+        $tempData = [
+            'discount' => $this->ensureNumeric($request->input('discount', 0)),
+            'tax' => $this->ensureNumeric($request->input('tax', 0)),
+            'paidAmount' => $this->ensureNumeric($request->input('paidAmount', 0)),
+            'subtotal' => 0,
+            'totalAfterDiscount' => 0,
+            'total' => 0
+        ];
+
+        // إنشاء فاتورة مؤقتة للحساب
+        $tempInvoice = new MainInvoice($tempData);
+
+        // حساب القيم المؤقتة (بدون حفظ في DB)
+        $tempInvoice->calculateTotals();
+
+        // التحقق من المبلغ المدفوع بنفس طريقة الـ update
+        if (abs($tempData['paidAmount'] - $tempInvoice->total) > 0.01) {
+            return response()->json([
+                'message' => 'المبلغ المدفوع يجب أن يساوي الإجمالي',
+                'required_amount' => number_format($tempInvoice->total, 2),
+                'paid_amount' => number_format($tempData['paidAmount'], 2),
+                'calculation_details' => [
+                    'subtotal' => number_format($tempInvoice->subtotal, 2),
+                    'discount' => number_format($tempInvoice->discount, 2),
+                    'tax' => number_format($tempInvoice->tax, 2),
+                    'total_after_discount' => number_format($tempInvoice->totalAfterDiscount, 2),
+                    'final_total' => number_format($tempInvoice->total, 2)
+                ]
+            ], 422);
+        }
+
+        // إعداد البيانات للإنشاء
         $data = $request->except([
             'pilgrims',
             'ihramSupplies',
@@ -172,17 +204,17 @@ public function create(MainInvoiceRequest $request)
             'paidAmount',
         ]);
 
-        $data['discount'] = $this->ensureNumeric($request->input('discount', 0));
-        $data['tax'] = $this->ensureNumeric($request->input('tax', 0));
-        $data['paidAmount'] = $this->ensureNumeric($request->input('paidAmount', 0));
-        $data['subtotal'] = 0;
-        $data['totalAfterDiscount'] = 0;
-        $data['total'] = 0;
+        $data['discount'] = $tempData['discount'];
+        $data['tax'] = $tempData['tax'];
+        $data['paidAmount'] = $tempData['paidAmount'];
+        $data['subtotal'] = $tempInvoice->subtotal;
+        $data['totalAfterDiscount'] = $tempInvoice->totalAfterDiscount;
+        $data['total'] = $tempInvoice->total;
         $data['creationDate'] = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
         $data['creationDateHijri'] = $this->getHijriDate();
         $data = array_merge($data, $this->prepareCreationMetaData());
 
-        // إنشاء الفاتورة أولاً
+        // إنشاء الفاتورة الفعلية
         $invoice = MainInvoice::create($data);
 
         // إرفاق الفنادق
@@ -201,31 +233,10 @@ public function create(MainInvoiceRequest $request)
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
 
-        // تحديث جميع الحسابات
+        // تحديث الحسابات النهائية
         $invoice->updateSeatsCount();
-        $invoice->calculateTotals();
+        $invoice->calculateTotals(); // إعادة الحساب لضمان الدقة
         $invoice->updateIhramSuppliesCount();
-
-        // التحقق من تطابق المبلغ المدفوع مع الإجمالي بعد الحسابات
-        if (abs($data['paidAmount'] - $invoice->total) > 0.01) {
-            DB::rollBack();
-
-            return response()->json([
-                'message' => 'المبلغ المدفوع يجب أن يساوي الإجمالي',
-                'required_amount' => number_format($invoice->total, 2),
-                'paid_amount' => number_format($data['paidAmount'], 2),
-                'calculation_details' => [
-                    'subtotal' => number_format($invoice->subtotal, 2),
-                    'discount' => number_format($invoice->discount, 2),
-                    'tax' => number_format($invoice->tax, 2),
-                    'total_after_discount' => number_format($invoice->totalAfterDiscount, 2),
-                    'final_total' => number_format($invoice->total, 2)
-                ]
-            ], 422);
-        }
-
-        // تحميل العلاقات
-        $invoice->load(['hotels', 'ihramSupplies', 'pilgrims']);
 
         DB::commit();
 
