@@ -55,7 +55,7 @@ class MainInvoiceController extends Controller
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
-        $MainInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->paginate(10);
+        $MainInvoices = $query->orderBy('created_at', 'desc')->paginate(10);
         $totalPaidAmount = MainInvoice::sum('paidAmount');
 
         return response()->json([
@@ -98,7 +98,7 @@ class MainInvoiceController extends Controller
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
 
-        $MainInvoices = $query->with(['busTrip'])->orderBy('created_at', 'desc')->get();
+        $MainInvoices = $query->orderBy('created_at', 'desc')->get();
         $totalPaidAmount = MainInvoice::sum('paidAmount');
 
         return response()->json([
