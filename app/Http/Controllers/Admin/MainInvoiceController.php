@@ -323,7 +323,7 @@ public function update(MainInvoiceRequest $request, $id)
     }
 }
 
- 
+
 protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
 {
     $hijriDate = $this->getHijriDate();
@@ -763,36 +763,31 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
 
 protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims): bool
 {
-    $currentPivotData = $invoice->pilgrims()->get()->keyBy('id')->map(function ($p) {
+    // الحصول على المعتمرين الحاليين مع أرقام مقاعدهم
+    $current = $invoice->pilgrims->map(function ($p) {
         return [
-            'seatNumber' => $p->pivot->seatNumber,
-            'status' => $p->pivot->status,
-            'type' => $p->pivot->type,
-            'position' => $p->pivot->position,
+            'idNum' => $p->idNum,
+            'phoNum' => $p->phoNum,
+            'seatNumbers' => collect($p->pivot->seatNumber ?? [])->sort()->values()->all(),
         ];
     })->toArray();
 
-    $newPivotData = [];
+    // ترتيبهم لتسهيل المقارنة
+    usort($current, fn($a, $b) => $a['idNum'] <=> $b['idNum']);
 
-    foreach ($newPilgrims as $pilgrim) {
-        $p = $this->findOrCreatePilgrimForInvoice($pilgrim);
-
-        $seatNumbers = isset($pilgrim['seatNumber'])
-            ? (is_array($pilgrim['seatNumber']) ? $pilgrim['seatNumber'] : explode(',', $pilgrim['seatNumber']))
-            : [];
-
-        $seatNumber = implode(',', $seatNumbers);
-
-        $newPivotData[$p->id] = [
-            'seatNumber' => $seatNumber,
-            'status' => 'booked',
-            'type' => '',
-            'position' => '',
+    $new = collect($newPilgrims)->map(function ($p) {
+        return [
+            'idNum' => $p['idNum'] ?? null,
+            'phoNum' => $p['phoNum'] ?? null,
+            'seatNumbers' => collect($p['seatNumber'] ?? [])->sort()->values()->all(),
         ];
-    }
+    })->toArray();
 
-    return $this->getPivotChanges($currentPivotData, $newPivotData) !== [];
+    usort($new, fn($a, $b) => $a['idNum'] <=> $b['idNum']);
+
+    return $current !== $new;
 }
+
 
 protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
 {
