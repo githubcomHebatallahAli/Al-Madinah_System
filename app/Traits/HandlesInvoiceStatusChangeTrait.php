@@ -7,7 +7,39 @@ use App\Models\PaymentMethodType;
 
 trait HandlesInvoiceStatusChangeTrait
 {
-public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
+
+
+    protected function buildInvoiceChanges($invoice, $originalData): array
+    {
+        $changes = [];
+
+        foreach ($invoice->getDirty() as $field => $newValue) {
+            if (array_key_exists($field, $originalData)) {
+                $changes[$field] = [
+                    'old' => $originalData[$field],
+                    'new' => $newValue
+                ];
+            }
+        }
+
+        if (!empty($changes)) {
+            $previousChanged = $invoice->changed_data ?? [];
+
+            $changes['creationDate'] = [
+                'old' => $previousChanged['creationDate']['new'] ?? $originalData['creationDate'],
+                'new' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s')
+            ];
+
+            $changes['creationDateHijri'] = [
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $originalData['creationDateHijri'],
+                'new' => $this->getHijriDate()
+            ];
+        }
+
+        return $changes;
+    }
+
+    public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
 {
     $this->authorize('manage_system');
 
