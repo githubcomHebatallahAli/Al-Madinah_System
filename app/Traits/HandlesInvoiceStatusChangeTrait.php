@@ -7,7 +7,7 @@ use App\Models\PaymentMethodType;
 trait HandlesInvoiceStatusChangeTrait
 {
 
-    public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
+public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
 {
     $this->authorize('manage_system');
 
@@ -15,41 +15,51 @@ trait HandlesInvoiceStatusChangeTrait
         return response()->json(['message' => "Invoice not found."], 404);
     }
 
-    // البيانات الأصلية بعد الكاست
+    // حفظ البيانات الأصلية للمقارنة
     $originalData = $invoice->attributesToArray();
 
-    // القيم الجديدة المقترحة
+    // القيم المقترحة من الريكوست أو الحالية
     $paidAmount = $extra['paidAmount'] ?? $invoice->paidAmount;
-    $discount = $extra['discount'] ?? $invoice->discount;
-    $tax = $extra['tax'] ?? $invoice->tax;
+    $discount = $extra['discount'] ?? $invoice->discount ?? 0;
+    $taxRate = $extra['tax'] ?? $invoice->tax ?? 0;
 
-    // في حالة الإكمال، نحسب القيم بدون تعديل الفاتورة الأصلية
     if ($status === 'completed') {
-        // نحسب الإجمالي المتوقع باستخدام نفس المعادلات بدون تعديل الموديل
-        $subtotal = $invoice->subtotal; // بافتراض موجود في الفاتورة
-        $totalAfterDiscount = $subtotal - $discount;
-        $expectedTotal = $totalAfterDiscount + $tax;
+        // نحسب subtotal من الدوال الأصلية
+        $busSubtotal = $invoice->calculateBusTotal();
+        $ihramSubtotal = $invoice->calculateIhramTotal();
+        $hotelTotal = $invoice->calculateHotelTotal();
 
-        // التحقق من تطابق المبلغ المدفوع مع الإجمالي
-        if ($paidAmount != $expectedTotal) {
+        $subtotal = $busSubtotal + $ihramSubtotal + $hotelTotal;
+
+        $totalAfterDiscount = max($subtotal - $discount, 0);
+        $taxAmount = round($totalAfterDiscount * ($taxRate / 100), 2);
+        $expectedTotal = round($totalAfterDiscount + $taxAmount, 2);
+
+        // التأكد من التطابق التام (بدقة 2 رقم عشرية)
+        if (round($paidAmount, 2) !== $expectedTotal) {
             return response()->json([
                 'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
-                'required_amount' => $expectedTotal,
-                'paid_amount' => $paidAmount,
+                'required_amount' => number_format($expectedTotal, 2),
+                'paid_amount' => number_format($paidAmount, 2),
                 'current_status' => $invoice->invoiceStatus
             ], 422);
         }
 
-        // فقط بعد نجاح التحقق يتم تعديل الخصم والضريبة والمبلغ المدفوع
+        // فقط بعد التحقق، نعدل القيم
+        $invoice->busSubtotal = $busSubtotal;
+        $invoice->ihramSubtotal = $ihramSubtotal;
+        $invoice->subtotal = $subtotal;
+
         $invoice->paidAmount = $paidAmount;
         $invoice->discount = $discount;
-        $invoice->tax = $tax;
+        $invoice->tax = $taxRate;
 
         if ($invoice->invoiceStatus !== 'completed') {
             $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
         }
     }
 
+    // تحديث الحالة
     if ($invoice->invoiceStatus !== $status || $status === 'completed') {
         $invoice->invoiceStatus = $status;
 
@@ -58,26 +68,33 @@ trait HandlesInvoiceStatusChangeTrait
         }
     }
 
+    // تحديث معلومات التعديل
     $invoice->updated_by = $this->getUpdatedByIdOrFail();
     $invoice->updated_by_type = $this->getUpdatedByType();
 
+    // إعادة حساب الإجماليات بنفس دالتك
     $invoice->calculateTotals();
 
+    // تتبع التغييرات
     $changedData = $this->buildInvoiceChanges($invoice, $originalData);
     if (!empty($changedData)) {
         $invoice->changed_data = $changedData;
     }
 
+    // الحفظ النهائي
     $invoice->save();
 
+    // تحميل العلاقات المطلوبة
     $this->loadInvoiceRelations($invoice);
 
-    return $this->respondWithResource($invoice,
+    return $this->respondWithResource(
+        $invoice,
         $invoice->invoiceStatus === 'completed'
-            ? "تم إكمال الفاتورة بنجاح"
+            ? 'تم إكمال الفاتورة بنجاح'
             : "تم تحديث حالة الفاتورة إلى {$status}"
     );
 }
+
 
 
 protected function buildInvoiceChanges($invoice, $originalData): array
