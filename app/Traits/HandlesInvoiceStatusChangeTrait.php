@@ -14,82 +14,74 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
         return response()->json(['message' => "Invoice not found."], 404);
     }
 
+    // التحقق من القيم الرقمية وتحويلها
+    $paidAmount = isset($extra['paidAmount']) ? floatval($extra['paidAmount']) : $invoice->paidAmount;
+    $discount = isset($extra['discount']) ? floatval($extra['discount']) : $invoice->discount;
+    $tax = isset($extra['tax']) ? floatval($extra['tax']) : $invoice->tax;
+
+    // حفظ البيانات الأصلية للمقارنة
     $originalData = $invoice->getOriginal();
 
-    // 1. تطبيق جميع التحديثات المالية أولاً (لجميع الحالات)
-    if (array_key_exists('paidAmount', $extra)) {
-        $invoice->paidAmount = $this->ensureNumeric($extra['paidAmount']);
-    }
-
-    if (array_key_exists('discount', $extra)) {
-        $invoice->discount = $this->ensureNumeric($extra['discount']);
-    }
-
-    if (array_key_exists('tax', $extra)) {
-        $invoice->tax = $this->ensureNumeric($extra['tax']);
-    }
-
-    if (array_key_exists('payment_method_type_id', $extra)) {
-        $invoice->payment_method_type_id = $extra['payment_method_type_id'];
-    }
-
-    // 2. التحقق من حالة الإكمال
-    $isStatusChanging = ($invoice->invoiceStatus !== $status);
-    $isCompleting = ($status === 'completed');
-
-    if ($isCompleting) {
-        // حساب الإجماليات أولاً
-        $invoice->calculateTotals();
+    // إذا كانت الحالة الجديدة هي 'completed'
+    if ($status === 'completed') {
+        // نسخ مؤقت للفاتورة للحسابات
+        $tempInvoice = clone $invoice;
+        $tempInvoice->discount = $discount;
+        $tempInvoice->tax = $tax;
+        $tempInvoice->calculateTotals();
 
         // التحقق من تطابق المبلغ المدفوع مع الإجمالي
-        if (round($invoice->paidAmount, 2) !== round($invoice->total, 2)) {
+        if (round($paidAmount, 2) !== round($tempInvoice->total, 2)) {
             return response()->json([
-                'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة',
-                'paidAmount' => number_format($invoice->paidAmount, 2),
-                'total' => number_format($invoice->total, 2),
-                'required_amount' => number_format($invoice->total, 2)
+                'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
+                'required_amount' => number_format($tempInvoice->total, 2),
+                'paid_amount' => number_format($paidAmount, 2),
+                'current_status' => $invoice->invoiceStatus
             ], 422);
+        }
+
+        // إذا كان التحويل من حالة غير completed إلى completed
+        if ($invoice->invoiceStatus !== 'completed') {
+            $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
         }
     }
 
-    // 3. تطبيق تغيير الحالة إذا لزم الأمر
-    if ($isStatusChanging) {
+    // تطبيق التحديثات إذا كانت الحالة تتغير أو عند الإكمال
+    if ($invoice->invoiceStatus !== $status || $status === 'completed') {
         $invoice->invoiceStatus = $status;
+        $invoice->paidAmount = $paidAmount;
+        $invoice->discount = $discount;
+        $invoice->tax = $tax;
 
         if ($status === 'rejected') {
             $invoice->reason = $extra['reason'] ?? null;
         }
     }
 
-    // 4. تحديث المعلومات الإدارية
+    // تحديث المعلومات الإدارية
     $invoice->updated_by = $this->getUpdatedByIdOrFail();
     $invoice->updated_by_type = $this->getUpdatedByType();
 
-    // 5. إعادة حساب الإجماليات (لضمان تحديث جميع القيم)
+    // إعادة حساب الإجماليات
     $invoice->calculateTotals();
 
-    // 6. بناء بيانات التغيير
+    // تسجيل التغييرات
     $changedData = $this->buildInvoiceChanges($invoice, $originalData);
-
     if (!empty($changedData)) {
         $invoice->changed_data = $changedData;
     }
 
-    // 7. الحفظ النهائي
+    // الحفظ النهائي
     $invoice->save();
 
-    // 8. تحميل العلاقات للإرجاع
+    // تحميل العلاقات
     $this->loadInvoiceRelations($invoice);
 
-    return $this->respondWithResource($invoice, $isStatusChanging
-        ? "تم تغيير حالة الفاتورة إلى {$status}"
-        : "تم تحديث الفاتورة بنجاح");
-}
-
-// دالة مساعدة للتحويل إلى رقم
-protected function ensureNumeric($value): float
-{
-    return is_numeric($value) ? round(floatval($value), 2) : 0.00;
+    return $this->respondWithResource($invoice,
+        $invoice->invoiceStatus === 'completed'
+            ? "تم إكمال الفاتورة بنجاح"
+            : "تم تحديث حالة الفاتورة إلى {$status}"
+    );
 }
 
     protected function buildInvoiceChanges($invoice, $originalData): array
