@@ -28,22 +28,28 @@ trait HandlesInvoiceStatusChangeTrait
             $invoice->reason = $extra['reason'] ?? null;
         }
 
-        if ($status === 'completed') {
-            $invoice->payment_method_type_id = $extra['payment_method_type_id'];
-            $invoice->paidAmount = $extra['paidAmount'];
-            $invoice->discount = $extra['discount'] ?? 0;
-            $invoice->tax = $extra['tax'] ?? 0;
+if ($status === 'completed') {
+    $tempPaidAmount = $extra['paidAmount'];
+    $tempDiscount = $extra['discount'] ?? 0;
+    $tempTax = $extra['tax'] ?? 0;
 
-               $invoice->calculateTotals(); // لضمان حساب المجموع النهائي بعد الخصم والضريبة
+    // نحسب التوتال مؤقتًا دون حفظ فعلي
+    $invoice->discount = $this->ensureNumeric($tempDiscount);
+    $invoice->tax = $this->ensureNumeric($tempTax);
+    $invoice->calculateTotals();
 
-    if (round($invoice->paidAmount, 2) !== round($invoice->total, 2)) {
+    if (round($tempPaidAmount, 2) !== round($invoice->total, 2)) {
         return response()->json([
             'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة.',
-            'paidAmount' => $invoice->paidAmount,
-            'total' => $invoice->total
+            'paidAmount' => number_format($tempPaidAmount, 2),
+            'total' => number_format($invoice->total, 2)
         ], 422);
     }
-        }
+
+    // ✅ التعديل الفعلي بعد التأكد
+    $invoice->payment_method_type_id = $extra['payment_method_type_id'];
+    $invoice->paidAmount = $tempPaidAmount;
+}
 
         $invoice->updated_by = $this->getUpdatedByIdOrFail();
         $invoice->updated_by_type = $this->getUpdatedByType();
