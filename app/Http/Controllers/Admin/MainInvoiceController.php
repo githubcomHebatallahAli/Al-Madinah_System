@@ -142,7 +142,7 @@ public function create(MainInvoiceRequest $request)
         $busTrip = null;
         $seatMapArray = [];
 
-        // التحقق من توفر مقاعد الباص إذا كان هناك رحلة وحجاج
+        // التحقق من توفر مقاعد الباص
         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
             $busTrip = BusTrip::find($request->bus_trip_id);
             if (!$busTrip) {
@@ -162,7 +162,7 @@ public function create(MainInvoiceRequest $request)
             }
         }
 
-        // حساب القيم المؤقتة أولاً بنفس طريقة الـ update
+        // حساب القيم المؤقتة أولاً
         $tempData = [
             'discount' => $this->ensureNumeric($request->input('discount', 0)),
             'tax' => $this->ensureNumeric($request->input('tax', 0)),
@@ -172,25 +172,15 @@ public function create(MainInvoiceRequest $request)
             'total' => 0
         ];
 
-        // إنشاء فاتورة مؤقتة للحساب
         $tempInvoice = new MainInvoice($tempData);
-
-        // حساب القيم المؤقتة (بدون حفظ في DB)
         $tempInvoice->calculateTotals();
 
-        // التحقق من المبلغ المدفوع بنفس طريقة الـ update
+        // التحقق من تطابق المبلغ المدفوع مع الإجمالي
         if (abs($tempData['paidAmount'] - $tempInvoice->total) > 0.01) {
             return response()->json([
                 'message' => 'المبلغ المدفوع يجب أن يساوي الإجمالي',
                 'required_amount' => number_format($tempInvoice->total, 2),
-                'paid_amount' => number_format($tempData['paidAmount'], 2),
-                'calculation_details' => [
-                    'subtotal' => number_format($tempInvoice->subtotal, 2),
-                    'discount' => number_format($tempInvoice->discount, 2),
-                    'tax' => number_format($tempInvoice->tax, 2),
-                    'total_after_discount' => number_format($tempInvoice->totalAfterDiscount, 2),
-                    'final_total' => number_format($tempInvoice->total, 2)
-                ]
+                'paid_amount' => number_format($tempData['paidAmount'], 2)
             ], 422);
         }
 
@@ -217,25 +207,23 @@ public function create(MainInvoiceRequest $request)
         // إنشاء الفاتورة الفعلية
         $invoice = MainInvoice::create($data);
 
-        // إرفاق الفنادق
+        // إرفاق العلاقات
         if ($request->has('hotels')) {
             $this->attachHotels($invoice, $request->hotels);
         }
 
-        // إرفاق الحجاج
         if ($request->has('pilgrims')) {
             $attachedPilgrims = $this->attachPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
             $invoice->pilgrimsCount = count($attachedPilgrims);
         }
 
-        // إرفاق مستلزمات الإحرام
         if ($request->has('ihramSupplies')) {
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
 
         // تحديث الحسابات النهائية
         $invoice->updateSeatsCount();
-        $invoice->calculateTotals(); // إعادة الحساب لضمان الدقة
+        $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
 
         DB::commit();
@@ -259,9 +247,7 @@ public function create(MainInvoiceRequest $request)
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json([
-            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage(),
-            'exception' => get_class($e),
-            'trace' => config('app.debug') ? $e->getTrace() : null
+            'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()
         ], 500);
     }
 }
