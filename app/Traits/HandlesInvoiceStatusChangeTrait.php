@@ -6,93 +6,76 @@ use App\Models\PaymentMethodType;
 
 trait HandlesInvoiceStatusChangeTrait
 {
- public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
+
+    public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
 {
-        $this->authorize('manage_system');
+    $this->authorize('manage_system');
 
-        if (!$invoice) {
-            return response()->json(['message' => "Invoice not found."], 404);
-        }
-
-        if ($invoice->invoiceStatus === $status) {
-            $this->loadInvoiceRelations($invoice);
-            return $this->respondWithResource($invoice, "Invoice is already set to $status");
-        }
-
-        $originalData = $invoice->getOriginal();
-
-        // إعداد القيم الجديدة
-        $invoice->invoiceStatus = $status;
-        $invoice->updated_by = $this->getUpdatedByIdOrFail();
-        $invoice->updated_by_type = $this->getUpdatedByType();
-
-   if ($status === 'rejected') {
-        $invoice->reason = $extra['reason'] ?? null;
+    if (!$invoice) {
+        return response()->json(['message' => "Invoice not found."], 404);
     }
 
-    // معالجة paidAmount لجميع الحالات وليس فقط completed
+    $originalData = $invoice->getOriginal();
+
+    // تطبيق جميع التغييرات المالية أولاً بغض النظر عن الحالة
     if (isset($extra['paidAmount'])) {
         $invoice->paidAmount = $this->ensureNumeric($extra['paidAmount']);
     }
 
-    if ($status === 'completed') {
-        $tempDiscount = $this->ensureNumeric($extra['discount'] ?? 0);
-        $tempTax = $this->ensureNumeric($extra['tax'] ?? 0);
+    if (isset($extra['discount'])) {
+        $invoice->discount = $this->ensureNumeric($extra['discount']);
+    }
 
-        $tempInvoice = clone $invoice;
-        $tempInvoice->discount = $tempDiscount;
-        $tempInvoice->tax = $tempTax;
-        $tempInvoice->calculateTotals();
+    if (isset($extra['tax'])) {
+        $invoice->tax = $this->ensureNumeric($extra['tax']);
+    }
 
-        if (round($invoice->paidAmount, 2) !== round($tempInvoice->total, 2)) {
-            return response()->json([
-                'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة.',
-                'paidAmount' => number_format($invoice->paidAmount, 2),
-                'total' => number_format($tempInvoice->total, 2)
-            ], 422);
-        }
-
-        $invoice->discount = $tempDiscount;
-        $invoice->tax = $tempTax;
+    if (isset($extra['payment_method_type_id'])) {
         $invoice->payment_method_type_id = $extra['payment_method_type_id'];
-        $invoice->updateSeatsCount();
-        $invoice->calculateTotals();
-        $invoice->updateIhramSuppliesCount();
     }
 
-        // ✅ تتبع التعديلات قبل أول حفظ
-        $changedData = $this->buildInvoiceChanges($invoice, $originalData);
+    // فقط إذا كانت الحالة تتغير فعلاً
+    if ($invoice->invoiceStatus !== $status) {
+        $invoice->invoiceStatus = $status;
 
-        // ✅ الحفظ الأساسي
-        $invoice->save();
-
-        // ✅ إذا في تغييرات إضافية مثل وسيلة الدفع
-        if ($status === 'completed' && $invoice->isDirty('payment_method_type_id')) {
-            $newPaymentMethod = PaymentMethodType::with('paymentMethod')->find($extra['payment_method_type_id']);
-            $changedData['payment_method'] = [
-                'old' => [
-                    'type' => $invoice->paymentMethodType?->type,
-                    'by' => $invoice->paymentMethodType?->by,
-                    'method' => $invoice->paymentMethodType?->paymentMethod?->name,
-                ],
-                'new' => $newPaymentMethod ? [
-                    'type' => $newPaymentMethod->type,
-                    'by' => $newPaymentMethod->by,
-                    'method' => $newPaymentMethod->paymentMethod?->name,
-                ] : null
-            ];
+        if ($status === 'rejected') {
+            $invoice->reason = $extra['reason'] ?? null;
         }
 
-        // ✅ حفظ التغييرات المرصودة إن وجدت
-        if (!empty($changedData)) {
-            $invoice->changed_data = $changedData;
-            $invoice->save();
+        if ($status === 'completed') {
+            $invoice->calculateTotals();
+
+            if (round($invoice->paidAmount, 2) !== round($invoice->total, 2)) {
+                return response()->json([
+                    'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة.',
+                    'paidAmount' => number_format($invoice->paidAmount, 2),
+                    'total' => number_format($invoice->total, 2)
+                ], 422);
+            }
         }
-
-        $this->loadInvoiceRelations($invoice);
-
-        return $this->respondWithResource($invoice, "Invoice set to $status");
     }
+
+    // تحديث التواريخ والمعلومات الإدارية
+    $invoice->updated_by = $this->getUpdatedByIdOrFail();
+    $invoice->updated_by_type = $this->getUpdatedByType();
+
+    // حساب الإجماليات
+    $invoice->calculateTotals();
+
+    // بناء بيانات التغيير
+    $changedData = $this->buildInvoiceChanges($invoice, $originalData);
+
+    if (!empty($changedData)) {
+        $invoice->changed_data = $changedData;
+    }
+
+   
+    $invoice->save();
+
+    $this->loadInvoiceRelations($invoice);
+
+    return $this->respondWithResource($invoice, "Invoice updated successfully");
+}
 
     protected function buildInvoiceChanges($invoice, $originalData): array
     {
