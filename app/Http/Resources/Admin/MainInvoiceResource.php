@@ -26,7 +26,6 @@ class MainInvoiceResource extends JsonResource
             }),
 
             'invoiceNumber' => $this->invoiceNumber,
-            'pilgrimsCount'=> $this ->pilgrimsCount,
             'bus_trip_id'=> $this ->busTrip?->id,
             'seatPrice' => $this->busTrip?->bus?->seatPrice ?? 0,
             'seatsCount'=> $this->seatsCount,
@@ -109,7 +108,7 @@ class MainInvoiceResource extends JsonResource
             'added_by' => $this->addedByAttribute(),
             'updated_by' => $this->updatedByAttribute(),
 
-    'subtotal' => $this->subtotal,
+            'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'totalAfterDiscount'=>$this->totalAfterDiscount,
             'tax' => $this->tax,

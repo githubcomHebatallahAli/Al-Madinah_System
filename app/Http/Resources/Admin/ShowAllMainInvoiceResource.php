@@ -14,6 +14,16 @@ class ShowAllMainInvoiceResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            "id" => $this->id,
+            'pilgrimsCount'=> $this ->pilgrimsCount,
+            'subtotal' => $this->subtotal,
+            'discount' => $this->discount,
+            'totalAfterDiscount'=>$this->totalAfterDiscount,
+            'tax' => $this->tax,
+            'total' => $this->total,
+            'paidAmount' => $this->paidAmount,
+            'creationDate' => $this->creationDate,
+        ];
     }
 }
