@@ -51,6 +51,13 @@ class MainInvoiceController extends Controller
             $query->where('office_id', $request->office_id);
         }
 
+        if ($request->filled('worker_id')) {
+            $query->where('worker_id', $request->worker_id);
+        }
+        if ($request->filled('payment_method_type_id')) {
+            $query->where('payment_method_type_id', $request->payment_method_type_id);
+        }
+
         if ($request->filled('invoiceStatus')) {
             $query->where('invoiceStatus', $request->invoiceStatus);
         }
@@ -84,6 +91,13 @@ class MainInvoiceController extends Controller
 
         if ($request->filled('bus_trip_id')) {
             $query->where('bus_trip_id', $request->bus_trip_id);
+        }
+
+        if ($request->filled('worker_id')) {
+            $query->where('worker_id', $request->worker_id);
+        }
+        if ($request->filled('payment_method_type_id')) {
+            $query->where('payment_method_type_id', $request->payment_method_type_id);
         }
 
         if ($request->filled('campaign_id')) {
