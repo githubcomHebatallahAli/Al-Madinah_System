@@ -6,8 +6,7 @@ use App\Models\PaymentMethodType;
 
 trait HandlesInvoiceStatusChangeTrait
 {
-
-public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
+    public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
 {
     $this->authorize('manage_system');
 
@@ -15,51 +14,42 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
         return response()->json(['message' => "Invoice not found."], 404);
     }
 
-    // حفظ البيانات الأصلية للمقارنة
+    // حفظ البيانات الأصلية للمقارنة بعد الكاست
     $originalData = $invoice->attributesToArray();
 
-    // القيم المقترحة من الريكوست أو الحالية
+    // القيم المقترحة
     $paidAmount = $extra['paidAmount'] ?? $invoice->paidAmount;
-    $discount = $extra['discount'] ?? $invoice->discount ?? 0;
-    $taxRate = $extra['tax'] ?? $invoice->tax ?? 0;
+    $discount = $extra['discount'] ?? $invoice->discount;
+    $tax = $extra['tax'] ?? $invoice->tax;
 
     if ($status === 'completed') {
-        // نحسب subtotal من الدوال الأصلية
-        $busSubtotal = $invoice->calculateBusTotal();
-        $ihramSubtotal = $invoice->calculateIhramTotal();
-        $hotelTotal = $invoice->calculateHotelTotal();
+        // نسخة مؤقتة من الفاتورة للحساب فقط
+        $tempInvoice = clone $invoice;
+        $tempInvoice->discount = $discount;
+        $tempInvoice->tax = $tax;
+        $tempInvoice->calculateTotals();
 
-        $subtotal = $busSubtotal + $ihramSubtotal + $hotelTotal;
-
-        $totalAfterDiscount = max($subtotal - $discount, 0);
-        $taxAmount = round($totalAfterDiscount * ($taxRate / 100), 2);
-        $expectedTotal = round($totalAfterDiscount + $taxAmount, 2);
-
-        // التأكد من التطابق التام (بدقة 2 رقم عشرية)
-        if (round($paidAmount, 2) !== $expectedTotal) {
+        // التحقق من تطابق المبلغ المدفوع مع الإجمالي النهائي
+        if (round($paidAmount, 2) !== round($tempInvoice->total, 2)) {
             return response()->json([
                 'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
-                'required_amount' => number_format($expectedTotal, 2),
+                'required_amount' => number_format($tempInvoice->total, 2),
                 'paid_amount' => number_format($paidAmount, 2),
                 'current_status' => $invoice->invoiceStatus
             ], 422);
         }
 
-        // فقط بعد التحقق، نعدل القيم
-        $invoice->busSubtotal = $busSubtotal;
-        $invoice->ihramSubtotal = $ihramSubtotal;
-        $invoice->subtotal = $subtotal;
-
+        // فقط بعد النجاح يتم حفظ القيم الجديدة
         $invoice->paidAmount = $paidAmount;
         $invoice->discount = $discount;
-        $invoice->tax = $taxRate;
+        $invoice->tax = $tax;
 
         if ($invoice->invoiceStatus !== 'completed') {
             $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
         }
     }
 
-    // تحديث الحالة
+    // تغيير حالة الفاتورة إذا لزم
     if ($invoice->invoiceStatus !== $status || $status === 'completed') {
         $invoice->invoiceStatus = $status;
 
@@ -68,20 +58,20 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
         }
     }
 
-    // تحديث معلومات التعديل
+    // تحديث بيانات التعديل
     $invoice->updated_by = $this->getUpdatedByIdOrFail();
     $invoice->updated_by_type = $this->getUpdatedByType();
 
-    // إعادة حساب الإجماليات بنفس دالتك
+    // حساب الإجماليات وتطبيق الكاست
     $invoice->calculateTotals();
 
-    // تتبع التغييرات
+    // تتبع التعديلات
     $changedData = $this->buildInvoiceChanges($invoice, $originalData);
     if (!empty($changedData)) {
         $invoice->changed_data = $changedData;
     }
 
-    // الحفظ النهائي
+    // حفظ الفاتورة
     $invoice->save();
 
     // تحميل العلاقات المطلوبة
