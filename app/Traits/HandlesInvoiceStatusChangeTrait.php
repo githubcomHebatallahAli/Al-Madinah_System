@@ -33,6 +33,16 @@ trait HandlesInvoiceStatusChangeTrait
             $invoice->paidAmount = $extra['paidAmount'];
             $invoice->discount = $extra['discount'] ?? 0;
             $invoice->tax = $extra['tax'] ?? 0;
+
+               $invoice->calculateTotals(); // لضمان حساب المجموع النهائي بعد الخصم والضريبة
+
+    if (round($invoice->paidAmount, 2) !== round($invoice->total, 2)) {
+        return response()->json([
+            'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة.',
+            'paidAmount' => $invoice->paidAmount,
+            'total' => $invoice->total
+        ], 422);
+    }
         }
 
         $invoice->updated_by = $this->getUpdatedByIdOrFail();
