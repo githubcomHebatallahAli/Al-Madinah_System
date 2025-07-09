@@ -76,35 +76,41 @@ public function changeInvoiceStatus($invoice, string $status, array $extra = [])
 }
 
 
-    protected function buildInvoiceChanges($invoice, $originalData): array
-    {
-        $changes = [];
+protected function buildInvoiceChanges($invoice, $originalData): array
+{
+    $changes = [];
 
-        foreach ($invoice->getDirty() as $field => $newValue) {
-            if (array_key_exists($field, $originalData)) {
+    foreach ($invoice->getDirty() as $field => $newValue) {
+        if (array_key_exists($field, $originalData)) {
+            $oldValue = $invoice->getAttributeValue($field); // old بعد cast
+            $newValueCasted = $invoice->getAttribute($field); // new بعد cast
+
+            if ($oldValue !== $newValueCasted) {
                 $changes[$field] = [
-                    'old' => $originalData[$field],
-                    'new' => $newValue
+                    'old' => $oldValue,
+                    'new' => $newValueCasted
                 ];
             }
         }
-
-        if (!empty($changes)) {
-            $previousChanged = $invoice->changed_data ?? [];
-
-            $changes['creationDate'] = [
-                'old' => $previousChanged['creationDate']['new'] ?? $originalData['creationDate'],
-                'new' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s')
-            ];
-
-            $changes['creationDateHijri'] = [
-                'old' => $previousChanged['creationDateHijri']['new'] ?? $originalData['creationDateHijri'],
-                'new' => $this->getHijriDate()
-            ];
-        }
-
-        return $changes;
     }
+
+    if (!empty($changes)) {
+        $previousChanged = $invoice->changed_data ?? [];
+
+        $changes['creationDate'] = [
+            'old' => $previousChanged['creationDate']['new'] ?? $invoice->getAttribute('creationDate'),
+            'new' => now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s')
+        ];
+
+        $changes['creationDateHijri'] = [
+            'old' => $previousChanged['creationDateHijri']['new'] ?? $invoice->getAttribute('creationDateHijri'),
+            'new' => $this->getHijriDate()
+        ];
+    }
+
+    return $changes;
+}
+
 
     protected function loadInvoiceRelations($invoice): void
     {
