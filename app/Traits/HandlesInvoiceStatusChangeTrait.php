@@ -34,7 +34,7 @@ trait HandlesInvoiceStatusChangeTrait
             $invoice->discount = $extra['discount'] ?? 0;
             $invoice->tax = $extra['tax'] ?? 0;
 
-               $invoice->calculateTotals(); // لضمان حساب المجموع النهائي بعد الخصم والضريبة
+            //    $invoice->calculateTotals(); // لضمان حساب المجموع النهائي بعد الخصم والضريبة
 
     if (round($invoice->paidAmount, 2) !== round($invoice->total, 2)) {
         return response()->json([
