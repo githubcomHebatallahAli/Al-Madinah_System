@@ -238,103 +238,103 @@ $invoice->pilgrimsCount = count($attachedPilgrims);
     }
 }
 
-public function update(MainInvoiceRequest $request, $id)
-{
-    $this->authorize('manage_system');
+// public function update(MainInvoiceRequest $request, $id)
+// {
+//     $this->authorize('manage_system');
 
-    DB::beginTransaction();
-    try {
-        $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels', 'busTrip'])->findOrFail($id);
-        $busTrip = $invoice->busTrip;
-        $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
+//     DB::beginTransaction();
+//     try {
+//         $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels', 'busTrip'])->findOrFail($id);
+//         $busTrip = $invoice->busTrip;
+//         $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
 
-        // الحصول على المقاعد الأصلية
-        $originalSeats = $invoice->pilgrims->pluck('pivot.seatNumber')->flatten()->toArray();
+//         // الحصول على المقاعد الأصلية
+//         $originalSeats = $invoice->pilgrims->pluck('pivot.seatNumber')->flatten()->toArray();
 
-        // التحقق من التغييرات فقط إذا كانت هناك بيانات حجاج في الطلب
-        $pilgrimsChanged = false;
-        if ($request->has('pilgrims') && $busTrip) {
-            $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
+//         // التحقق من التغييرات فقط إذا كانت هناك بيانات حجاج في الطلب
+//         $pilgrimsChanged = false;
+//         if ($request->has('pilgrims') && $busTrip) {
+//             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
 
-            // إذا كانت المقاعد المطلوبة مختلفة عن الأصلية
-            if ($requestedSeats->diff($originalSeats)->isNotEmpty() ||
-                count($requestedSeats) !== count($originalSeats)) {
+//             // إذا كانت المقاعد المطلوبة مختلفة عن الأصلية
+//             if ($requestedSeats->diff($originalSeats)->isNotEmpty() ||
+//                 count($requestedSeats) !== count($originalSeats)) {
 
-                $pilgrimsChanged = true;
+//                 $pilgrimsChanged = true;
 
-                // التحقق من توفر المقاعد الجديدة
-                $availableSeats = collect($seatMapArray)
-                    ->where('status', 'available')
-                    ->pluck('seatNumber');
+//                 // التحقق من توفر المقاعد الجديدة
+//                 $availableSeats = collect($seatMapArray)
+//                     ->where('status', 'available')
+//                     ->pluck('seatNumber');
 
-                // تضمين المقاعد الأصلية في المقاعد المتاحة
-                $availableSeats = $availableSeats->merge($originalSeats)->unique();
-                $unavailableSeats = $requestedSeats->diff($availableSeats);
+//                 // تضمين المقاعد الأصلية في المقاعد المتاحة
+//                 $availableSeats = $availableSeats->merge($originalSeats)->unique();
+//                 $unavailableSeats = $requestedSeats->diff($availableSeats);
 
-                if ($unavailableSeats->isNotEmpty()) {
-                    return response()->json([
-                        'message' => 'بعض المقاعد غير متوفرة',
-                        'unavailable_seats' => $unavailableSeats
-                    ], 422);
-                }
-            }
-        }
+//                 if ($unavailableSeats->isNotEmpty()) {
+//                     return response()->json([
+//                         'message' => 'بعض المقاعد غير متوفرة',
+//                         'unavailable_seats' => $unavailableSeats
+//                     ], 422);
+//                 }
+//             }
+//         }
 
-        // تحديث البيانات
-        $data = $request->except([
-            'pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels'
-        ]);
+//         // تحديث البيانات
+//         $data = $request->except([
+//             'pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels'
+//         ]);
 
-        $numericFields = [
-            'discount' => $request->input('discount', 0),
-            'tax' => $request->input('tax', 0),
-            'paidAmount' => $request->input('paidAmount', 0)
-        ];
+//         $numericFields = [
+//             'discount' => $request->input('discount', 0),
+//             'tax' => $request->input('tax', 0),
+//             'paidAmount' => $request->input('paidAmount', 0)
+//         ];
 
-        foreach ($numericFields as $field => $value) {
-            $data[$field] = $this->ensureNumeric($value);
-        }
+//         foreach ($numericFields as $field => $value) {
+//             $data[$field] = $this->ensureNumeric($value);
+//         }
 
-        $data = array_merge($data, $this->prepareUpdateMetaData());
-        $invoice->update($data);
+//         $data = array_merge($data, $this->prepareUpdateMetaData());
+//         $invoice->update($data);
 
-        if ($request->has('hotels')) {
-            $this->syncHotels($invoice, $request->hotels);
-        }
+//         if ($request->has('hotels')) {
+//             $this->syncHotels($invoice, $request->hotels);
+//         }
 
-        // مزامنة الحجاج فقط إذا كان هناك تغيير
-        if ($pilgrimsChanged) {
-            $syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
-            $invoice->pilgrimsCount = count($syncedPilgrims);
-        }
+//         // مزامنة الحجاج فقط إذا كان هناك تغيير
+//         if ($pilgrimsChanged) {
+//             $syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+//             $invoice->pilgrimsCount = count($syncedPilgrims);
+//         }
 
-        if ($request->has('ihramSupplies')) {
-            $this->syncIhramSupplies($invoice, $request->ihramSupplies);
-        }
+//         if ($request->has('ihramSupplies')) {
+//             $this->syncIhramSupplies($invoice, $request->ihramSupplies);
+//         }
 
-        $invoice->updateSeatsCount();
-        $invoice->calculateTotals();
-        $invoice->updateIhramSuppliesCount();
+//         $invoice->updateSeatsCount();
+//         $invoice->calculateTotals();
+//         $invoice->updateIhramSuppliesCount();
 
-        DB::commit();
-        return response()->json([
-            'message' => 'تم تحديث الفاتورة بنجاح',
-            'invoice' => new MainInvoiceResource(
-                $invoice->load([
-                    'pilgrims', 'ihramSupplies', 'busTrip', 'hotels',
-                    'campaign', 'office', 'group', 'worker',
-                    'paymentMethodType', 'mainPilgrim'
-                ])
-            )
-        ]);
+//         DB::commit();
+//         return response()->json([
+//             'message' => 'تم تحديث الفاتورة بنجاح',
+//             'invoice' => new MainInvoiceResource(
+//                 $invoice->load([
+//                     'pilgrims', 'ihramSupplies', 'busTrip', 'hotels',
+//                     'campaign', 'office', 'group', 'worker',
+//                     'paymentMethodType', 'mainPilgrim'
+//                 ])
+//             )
+//         ]);
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
-        ], 500);
-    }
-}
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return response()->json([
+//             'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
 
 
 protected function syncPilgrims(MainInvoice $invoice, array $pilgrims, ?BusTrip $busTrip = null, ?array $seatMapArray = null)
@@ -774,32 +774,174 @@ protected function getPivotChanges(array $oldPivotData, array $newPivotData): ar
     return $changes;
 }
 
-protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims): bool
+public function update(MainInvoiceRequest $request, $id)
 {
-    // الحصول على المعتمرين الحاليين مع أرقام مقاعدهم
-    $current = $invoice->pilgrims->map(function ($p) {
-        return [
-            'idNum' => $p->idNum,
-            'phoNum' => $p->phoNum,
-            'seatNumbers' => collect($p->pivot->seatNumber ?? [])->sort()->values()->all(),
+    $this->authorize('manage_system');
+
+    DB::beginTransaction();
+    try {
+        $invoice = MainInvoice::with(['pilgrims', 'ihramSupplies', 'hotels', 'busTrip'])->findOrFail($id);
+        $busTrip = $invoice->busTrip;
+        $seatMapArray = $busTrip ? json_decode(json_encode($busTrip->seatMap), true) : [];
+
+        // الحصول على المقاعد الأصلية مع ربطها بالحجاج
+        $originalSeats = $invoice->pilgrims->mapWithKeys(function($pilgrim) {
+            return [$pilgrim->id => $pilgrim->pivot->seatNumber];
+        })->toArray();
+
+        // التحقق من التغييرات فقط إذا كانت هناك بيانات حجاج في الطلب
+        $pilgrimsChanged = false;
+        if ($request->has('pilgrims') && $busTrip) {
+            $newPilgrimsData = collect($request->pilgrims)->keyBy('idNum');
+            $originalPilgrimsData = $invoice->pilgrims->keyBy('idNum');
+
+            // التحقق إذا كان هناك تغيير في الحجاج أو المقاعد
+            $pilgrimsChanged = $this->hasPilgrimsOrSeatsChanged($originalPilgrimsData, $newPilgrimsData);
+
+            if ($pilgrimsChanged) {
+                // جمع جميع المقاعد المطلوبة
+                $requestedSeats = collect($request->pilgrims)
+                    ->pluck('seatNumber')
+                    ->flatten()
+                    ->filter()
+                    ->toArray();
+
+                // الحصول على المقاعد المتاحة + المقاعد الأصلية للفاتورة الحالية
+                $availableSeats = collect($seatMapArray)
+                    ->where('status', 'available')
+                    ->pluck('seatNumber')
+                    ->toArray();
+
+                $originalSeatsFlat = collect($originalSeats)->flatten()->toArray();
+                $allAvailableSeats = array_unique(array_merge($availableSeats, $originalSeatsFlat));
+
+                // البحث عن المقاعد غير المتاحة
+                $unavailableSeats = array_diff($requestedSeats, $allAvailableSeats);
+
+                if (!empty($unavailableSeats)) {
+                    return response()->json([
+                        'message' => 'بعض المقاعد غير متوفرة',
+                        'unavailable_seats' => array_values($unavailableSeats)
+                    ], 422);
+                }
+            }
+        }
+
+        // تحديث البيانات
+        $data = $request->except(['pilgrims', 'ihramSupplies', 'seatMapValidation', 'hotels']);
+
+        $numericFields = [
+            'discount' => $request->input('discount', 0),
+            'tax' => $request->input('tax', 0),
+            'paidAmount' => $request->input('paidAmount', 0)
         ];
-    })->toArray();
 
-    // ترتيبهم لتسهيل المقارنة
-    usort($current, fn($a, $b) => $a['idNum'] <=> $b['idNum']);
+        foreach ($numericFields as $field => $value) {
+            $data[$field] = $this->ensureNumeric($value);
+        }
 
-    $new = collect($newPilgrims)->map(function ($p) {
-        return [
-            'idNum' => $p['idNum'] ?? null,
-            'phoNum' => $p['phoNum'] ?? null,
-            'seatNumbers' => collect($p['seatNumber'] ?? [])->sort()->values()->all(),
-        ];
-    })->toArray();
+        $data = array_merge($data, $this->prepareUpdateMetaData());
+        $invoice->update($data);
 
-    usort($new, fn($a, $b) => $a['idNum'] <=> $b['idNum']);
+        if ($request->has('hotels')) {
+            $this->syncHotels($invoice, $request->hotels);
+        }
 
-    return $current !== $new;
+        // مزامنة الحجاج فقط إذا كان هناك تغيير
+        if ($pilgrimsChanged) {
+            $syncedPilgrims = $this->syncPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+            $invoice->pilgrimsCount = count($syncedPilgrims);
+        }
+
+        if ($request->has('ihramSupplies')) {
+            $this->syncIhramSupplies($invoice, $request->ihramSupplies);
+        }
+
+        $invoice->updateSeatsCount();
+        $invoice->calculateTotals();
+        $invoice->updateIhramSuppliesCount();
+
+        DB::commit();
+        return response()->json([
+            'message' => 'تم تحديث الفاتورة بنجاح',
+            'invoice' => new MainInvoiceResource(
+                $invoice->load([
+                    'pilgrims', 'ihramSupplies', 'busTrip', 'hotels',
+                    'campaign', 'office', 'group', 'worker',
+                    'paymentMethodType', 'mainPilgrim'
+                ])
+            )
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'فشل في تحديث الفاتورة: ' . $e->getMessage(),
+        ], 500);
+    }
 }
+
+// دالة جديدة للتحقق من تغيير الحجاج أو المقاعد
+protected function hasPilgrimsOrSeatsChanged($originalPilgrims, $newPilgrims)
+{
+    // إذا اختلف عدد الحجاج
+    if ($originalPilgrims->count() !== $newPilgrims->count()) {
+        return true;
+    }
+
+    foreach ($newPilgrims as $idNum => $newPilgrim) {
+        if (!isset($originalPilgrims[$idNum])) {
+            return true;
+        }
+
+        $originalPilgrim = $originalPilgrims[$idNum];
+
+        // التحقق من تغيير المقاعد
+        $newSeats = is_array($newPilgrim['seatNumber']) ?
+            $newPilgrim['seatNumber'] :
+            explode(',', $newPilgrim['seatNumber']);
+
+        $originalSeats = is_array($originalPilgrim->pivot->seatNumber) ?
+            $originalPilgrim->pivot->seatNumber :
+            explode(',', $originalPilgrim->pivot->seatNumber);
+
+        sort($newSeats);
+        sort($originalSeats);
+
+        if ($newSeats !== $originalSeats) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// protected function hasPilgrimsChanges(MainInvoice $invoice, array $newPilgrims): bool
+// {
+//     // الحصول على المعتمرين الحاليين مع أرقام مقاعدهم
+//     $current = $invoice->pilgrims->map(function ($p) {
+//         return [
+//             'idNum' => $p->idNum,
+//             'phoNum' => $p->phoNum,
+//             'seatNumbers' => collect($p->pivot->seatNumber ?? [])->sort()->values()->all(),
+//         ];
+//     })->toArray();
+
+//     // ترتيبهم لتسهيل المقارنة
+//     usort($current, fn($a, $b) => $a['idNum'] <=> $b['idNum']);
+
+//     $new = collect($newPilgrims)->map(function ($p) {
+//         return [
+//             'idNum' => $p['idNum'] ?? null,
+//             'phoNum' => $p['phoNum'] ?? null,
+//             'seatNumbers' => collect($p['seatNumber'] ?? [])->sort()->values()->all(),
+//         ];
+//     })->toArray();
+
+//     usort($new, fn($a, $b) => $a['idNum'] <=> $b['idNum']);
+
+//     return $current !== $new;
+// }
 
 
 protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
