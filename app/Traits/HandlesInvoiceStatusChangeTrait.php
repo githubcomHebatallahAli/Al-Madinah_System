@@ -6,76 +6,78 @@ use App\Models\PaymentMethodType;
 
 trait HandlesInvoiceStatusChangeTrait
 {
+
     public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
-    {
-        $this->authorize('manage_system');
+{
+    $this->authorize('manage_system');
 
-        if (!$invoice) {
-            return response()->json(['message' => "Invoice not found."], 404);
-        }
-
-        // البيانات الأصلية بعد الكاست
-        $originalData = $invoice->attributesToArray();
-
-        // القيم الجديدة المقترحة
-        $paidAmount = $extra['paidAmount'] ?? $invoice->paidAmount;
-        $discount = $extra['discount'] ?? $invoice->discount;
-        $tax = $extra['tax'] ?? $invoice->tax;
-
-        if ($status === 'completed') {
-            // نسخة مؤقتة للحساب فقط
-            $tempInvoice = clone $invoice;
-            $tempInvoice->discount = $discount;
-            $tempInvoice->tax = $tax;
-            $tempInvoice->calculateTotals();
-
-            if ($paidAmount != $tempInvoice->total) {
-                return response()->json([
-                    'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
-                    'required_amount' => $tempInvoice->total,
-                    'paid_amount' => $paidAmount,
-                    'current_status' => $invoice->invoiceStatus
-                ], 422);
-            }
-
-            // يتم تعديل القيم فقط إذا نجحت الفاتورة فعلاً
-            $invoice->paidAmount = $paidAmount;
-            $invoice->discount = $discount;
-            $invoice->tax = $tax;
-
-            if ($invoice->invoiceStatus !== 'completed') {
-                $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
-            }
-        }
-
-        if ($invoice->invoiceStatus !== $status || $status === 'completed') {
-            $invoice->invoiceStatus = $status;
-
-            if ($status === 'rejected') {
-                $invoice->reason = $extra['reason'] ?? null;
-            }
-        }
-
-        $invoice->updated_by = $this->getUpdatedByIdOrFail();
-        $invoice->updated_by_type = $this->getUpdatedByType();
-
-        $invoice->calculateTotals();
-
-        $changedData = $this->buildInvoiceChanges($invoice, $originalData);
-        if (!empty($changedData)) {
-            $invoice->changed_data = $changedData;
-        }
-
-        $invoice->save();
-
-        $this->loadInvoiceRelations($invoice);
-
-        return $this->respondWithResource($invoice,
-            $invoice->invoiceStatus === 'completed'
-                ? "تم إكمال الفاتورة بنجاح"
-                : "تم تحديث حالة الفاتورة إلى {$status}"
-        );
+    if (!$invoice) {
+        return response()->json(['message' => "Invoice not found."], 404);
     }
+
+    // البيانات الأصلية بعد الكاست
+    $originalData = $invoice->attributesToArray();
+
+    // القيم الجديدة المقترحة
+    $paidAmount = $extra['paidAmount'] ?? $invoice->paidAmount;
+    $discount = $extra['discount'] ?? $invoice->discount;
+    $tax = $extra['tax'] ?? $invoice->tax;
+
+    // في حالة الإكمال، نحسب القيم بدون تعديل الفاتورة الأصلية
+    if ($status === 'completed') {
+        // نحسب الإجمالي المتوقع باستخدام نفس المعادلات بدون تعديل الموديل
+        $subtotal = $invoice->subtotal; // بافتراض موجود في الفاتورة
+        $totalAfterDiscount = $subtotal - $discount;
+        $expectedTotal = $totalAfterDiscount + $tax;
+
+        // التحقق من تطابق المبلغ المدفوع مع الإجمالي
+        if ($paidAmount != $expectedTotal) {
+            return response()->json([
+                'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
+                'required_amount' => $expectedTotal,
+                'paid_amount' => $paidAmount,
+                'current_status' => $invoice->invoiceStatus
+            ], 422);
+        }
+
+        // فقط بعد نجاح التحقق يتم تعديل الخصم والضريبة والمبلغ المدفوع
+        $invoice->paidAmount = $paidAmount;
+        $invoice->discount = $discount;
+        $invoice->tax = $tax;
+
+        if ($invoice->invoiceStatus !== 'completed') {
+            $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
+        }
+    }
+
+    if ($invoice->invoiceStatus !== $status || $status === 'completed') {
+        $invoice->invoiceStatus = $status;
+
+        if ($status === 'rejected') {
+            $invoice->reason = $extra['reason'] ?? null;
+        }
+    }
+
+    $invoice->updated_by = $this->getUpdatedByIdOrFail();
+    $invoice->updated_by_type = $this->getUpdatedByType();
+
+    $invoice->calculateTotals();
+
+    $changedData = $this->buildInvoiceChanges($invoice, $originalData);
+    if (!empty($changedData)) {
+        $invoice->changed_data = $changedData;
+    }
+
+    $invoice->save();
+
+    $this->loadInvoiceRelations($invoice);
+
+    return $this->respondWithResource($invoice,
+        $invoice->invoiceStatus === 'completed'
+            ? "تم إكمال الفاتورة بنجاح"
+            : "تم تحديث حالة الفاتورة إلى {$status}"
+    );
+}
 
 
 protected function buildInvoiceChanges($invoice, $originalData): array
