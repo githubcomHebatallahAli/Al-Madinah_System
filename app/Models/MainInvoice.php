@@ -235,7 +235,7 @@ public function calculateTotals(): void
 
 public function calculateSeatsCount(): int
 {
-    // لو العلاقة مش محمّلة، نحمّلها علشان نقدر نحسب
+
     if (!$this->relationLoaded('pilgrims')) {
         $this->load('pilgrims');
     }
@@ -332,14 +332,10 @@ protected static function booted()
     static::created(function ($invoice) {
         $invoice->load('ihramSupplies');
         $invoice->updateIhramSuppliesCount();
-            //  $invoice->calculateSeatsCount();
+
     });
 
-    //   static::updated(function ($invoice) {
-    //     if ($invoice->isDirty('pilgrimsCount')) {
-    //         // $invoice->calculateSeatsCount();
-    //     }
-    // });
+
 }
 
 
