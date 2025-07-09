@@ -6,8 +6,8 @@ use App\Models\PaymentMethodType;
 
 trait HandlesInvoiceStatusChangeTrait
 {
-    public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
-    {
+ public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
+{
         $this->authorize('manage_system');
 
         if (!$invoice) {
@@ -26,39 +26,39 @@ trait HandlesInvoiceStatusChangeTrait
         $invoice->updated_by = $this->getUpdatedByIdOrFail();
         $invoice->updated_by_type = $this->getUpdatedByType();
 
-        if ($status === 'rejected') {
-            $invoice->reason = $extra['reason'] ?? null;
+   if ($status === 'rejected') {
+        $invoice->reason = $extra['reason'] ?? null;
+    }
+
+    // معالجة paidAmount لجميع الحالات وليس فقط completed
+    if (isset($extra['paidAmount'])) {
+        $invoice->paidAmount = $this->ensureNumeric($extra['paidAmount']);
+    }
+
+    if ($status === 'completed') {
+        $tempDiscount = $this->ensureNumeric($extra['discount'] ?? 0);
+        $tempTax = $this->ensureNumeric($extra['tax'] ?? 0);
+
+        $tempInvoice = clone $invoice;
+        $tempInvoice->discount = $tempDiscount;
+        $tempInvoice->tax = $tempTax;
+        $tempInvoice->calculateTotals();
+
+        if (round($invoice->paidAmount, 2) !== round($tempInvoice->total, 2)) {
+            return response()->json([
+                'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة.',
+                'paidAmount' => number_format($invoice->paidAmount, 2),
+                'total' => number_format($tempInvoice->total, 2)
+            ], 422);
         }
 
-        if ($status === 'completed') {
-            $tempPaidAmount = $this->ensureNumeric($extra['paidAmount']);
-            $tempDiscount = $this->ensureNumeric($extra['discount'] ?? 0);
-            $tempTax = $this->ensureNumeric($extra['tax'] ?? 0);
-
-            // نحسب الإجمالي مؤقتًا للتأكد من صحته قبل التعديل
-            $tempInvoice = clone $invoice;
-            $tempInvoice->discount = $tempDiscount;
-            $tempInvoice->tax = $tempTax;
-            $tempInvoice->calculateTotals();
-
-            if (round($tempPaidAmount, 2) !== round($tempInvoice->total, 2)) {
-                return response()->json([
-                    'message' => 'لا يمكن اكتمال الفاتورة إلا إذا كان المبلغ المدفوع مساوياً لإجمالي الفاتورة.',
-                    'paidAmount' => number_format($tempPaidAmount, 2),
-                    'total' => number_format($tempInvoice->total, 2)
-                ], 422);
-            }
-
-            // ✅ التعديلات الفعلية بعد التأكد
-            $invoice->paidAmount = $tempPaidAmount;
-            $invoice->discount = $tempDiscount;
-            $invoice->tax = $tempTax;
-            $invoice->payment_method_type_id = $extra['payment_method_type_id'];
-
-            $invoice->updateSeatsCount();
-            $invoice->calculateTotals();
-            $invoice->updateIhramSuppliesCount();
-        }
+        $invoice->discount = $tempDiscount;
+        $invoice->tax = $tempTax;
+        $invoice->payment_method_type_id = $extra['payment_method_type_id'];
+        $invoice->updateSeatsCount();
+        $invoice->calculateTotals();
+        $invoice->updateIhramSuppliesCount();
+    }
 
         // ✅ تتبع التعديلات قبل أول حفظ
         $changedData = $this->buildInvoiceChanges($invoice, $originalData);
