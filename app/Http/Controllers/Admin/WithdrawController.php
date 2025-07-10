@@ -224,7 +224,7 @@ public function create(WithdrawRequest $request)
 {
     $this->authorize('manage_users');
 
-    $totalSales = MainInvoice::sum('total');
+    $totalSales = MainInvoice::sum('paidAmount');
     $totalWithdrawals = Withdraw::sum('withdrawnAmount');
     $availableWithdrawal = $totalSales - $totalWithdrawals;
 
@@ -269,7 +269,7 @@ public function update(WithdrawRequest $request, string $id)
 
     $oldData = $withdraw->toArray();
 
-    $totalSales = MainInvoice::sum('total');
+    $totalSales = MainInvoice::sum('paidAmount');
     $totalWithdrawals = Withdraw::where('id', '!=', $id)->sum('withdrawnAmount');
     $availableWithdrawal = $totalSales - $totalWithdrawals;
 

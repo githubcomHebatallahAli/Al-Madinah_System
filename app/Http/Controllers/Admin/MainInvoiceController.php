@@ -9,7 +9,6 @@ use App\Models\IhramSupply;
 use App\Models\MainInvoice;
 use Illuminate\Http\Request;
 use App\Traits\HijriDateTrait;
-use App\Models\PaymentMethodType;
 use App\Traits\HandleAddedByTrait;
 use App\Traits\TracksChangesTrait;
 use Illuminate\Support\Facades\DB;
