@@ -33,4 +33,5 @@ require __DIR__ . '/Apis/Admin/flightInvoice.php';
 require __DIR__ . '/Apis/Admin/mainInvoice.php';
 require __DIR__ . '/Apis/Admin/ihramItem.php';
 require __DIR__ . '/Apis/Admin/workerLogin.php';
+require __DIR__ . '/Apis/Admin/withdraw.php';
 
