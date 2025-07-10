@@ -133,117 +133,11 @@ class MainInvoiceController extends Controller
     return is_numeric($value) ? $value : 0;
 }
 
-
-
-// public function create(MainInvoiceRequest $request)
-// {
-//     $this->authorize('manage_system');
-
-//       DB::beginTransaction();
-//     try {
-//         $busTrip = null;
-//         $seatMapArray = [];
-
-//         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
-//             $busTrip = BusTrip::find($request->bus_trip_id);
-//             if (!$busTrip) {
-//                 return response()->json(['message' => 'رحلة الباص غير موجودة'], 404);
-//             }
-
-//             $seatMapArray = json_decode(json_encode($busTrip->seatMap), true);
-//             $requestedSeats = collect($request->pilgrims)->pluck('seatNumber')->flatten();
-//             $availableSeats = collect($seatMapArray)->where('status', 'available')->pluck('seatNumber');
-//             $unavailableSeats = $requestedSeats->diff($availableSeats);
-
-//             if ($unavailableSeats->isNotEmpty()) {
-//                 return response()->json([
-//                     'message' => 'بعض المقاعد غير متوفرة',
-//                     'unavailable_seats' => $unavailableSeats
-//                 ], 422);
-//             }
-//         }
-
-//         $data = $request->except([
-//             'pilgrims',
-//             'ihramSupplies',
-//             'seatMapValidation',
-//             'discount',
-//             'tax',
-//             'paidAmount',
-//         ]);
-
-//         $data['discount'] = $this->ensureNumeric($request->input('discount', 0));
-//         $data['tax'] = $this->ensureNumeric($request->input('tax', 0));
-//         $data['paidAmount'] = $this->ensureNumeric($request->input('paidAmount', 0));
-
-//         $data['subtotal'] = 0;
-//         $data['totalAfterDiscount'] = 0;
-//         $data['total'] = 0;
-//         $data['creationDate'] = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
-//         $data['creationDateHijri'] = $this->getHijriDate();
-
-//         $data = array_merge($data, $this->prepareCreationMetaData());
-
-//         if ($request->filled('bus_trip_id') && $request->has('pilgrims')) {
-//             $busTrip = BusTrip::findOrFail($request->bus_trip_id);
-//             $this->validateBusSeats($busTrip, $request->pilgrims);
-//         }
-
-//         if ($request->has('roomNum')) {
-//             $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
-//         }
-
-//         $invoice = MainInvoice::create($data);
-
-//         if ($request->has('hotels')) {
-//             $this->attachHotels($invoice, $request->hotels);
-//         }
-
-//         if ($request->has('pilgrims')) {
-// $attachedPilgrims = $this->attachPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
-// $invoice->pilgrimsCount = count($attachedPilgrims);
-// }
-
-//         if ($request->has('ihramSupplies')) {
-//             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
-//         }
-
-//    $invoice->load(['hotels', 'ihramSupplies', 'pilgrims']);
-//         $invoice->updateSeatsCount();
-//         $invoice->calculateTotals();
-//         $invoice->updateIhramSuppliesCount();
-
-//         DB::commit();
-
-//         return response()->json([
-//             'message' => 'تم إنشاء الفاتورة بنجاح',
-//             'invoice' => new MainInvoiceResource($invoice->load([
-//                 'pilgrims',
-//                 'ihramSupplies',
-//                 'busTrip',
-//                 'hotels',
-//                 'campaign',
-//                 'office',
-//                 'group',
-//                 'worker',
-//                 'paymentMethodType',
-//                 'mainPilgrim'
-//             ]))
-//         ], 201);
-
-//     } catch (\Exception $e) {
-//         DB::rollBack();
-//         return response()->json([
-//             'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage(),
-//         ], 500);
-//     }
-// }
-
 public function create(MainInvoiceRequest $request)
 {
     $this->authorize('manage_system');
 
-    DB::beginTransaction();
+      DB::beginTransaction();
     try {
         $busTrip = null;
         $seatMapArray = [];
@@ -267,36 +161,6 @@ public function create(MainInvoiceRequest $request)
             }
         }
 
-        // القيم الرقمية
-        $discount = $this->ensureNumeric($request->input('discount', 0));
-        $tax = $this->ensureNumeric($request->input('tax', 0));
-        $paidAmount = $this->ensureNumeric($request->input('paidAmount', 0));
-
-        // حساب مبدئي للتوتال قبل الإنشاء للتحقق من paidAmount
-        $tempInvoice = new MainInvoice();
-        $tempInvoice->fill([
-            'discount' => $discount,
-            'tax' => $tax,
-            'paidAmount' => $paidAmount
-        ]);
-
-        if ($request->has('pilgrims')) {
-            $pilgrimCount = count($request->pilgrims);
-            $tempInvoice->seatsCount = $pilgrimCount;
-            $tempInvoice->subtotal = $pilgrimCount * $tempInvoice->defaultSeatPrice ?? 0; // عدلها حسب لوجيك المشروع
-        }
-
-        $tempInvoice->calculateTotals();
-
-        if (abs($paidAmount - $tempInvoice->total) > 0.01) {
-            return response()->json([
-                'message' => 'المبلغ المدفوع يجب أن يساوي الإجمالي',
-                'required_amount' => $tempInvoice->total,
-                'paid_amount' => $paidAmount
-            ], 422);
-        }
-
-        // التحضير للإنشاء
         $data = $request->except([
             'pilgrims',
             'ihramSupplies',
@@ -306,9 +170,9 @@ public function create(MainInvoiceRequest $request)
             'paidAmount',
         ]);
 
-        $data['discount'] = $discount;
-        $data['tax'] = $tax;
-        $data['paidAmount'] = $paidAmount;
+        $data['discount'] = $this->ensureNumeric($request->input('discount', 0));
+        $data['tax'] = $this->ensureNumeric($request->input('tax', 0));
+        $data['paidAmount'] = $this->ensureNumeric($request->input('paidAmount', 0));
 
         $data['subtotal'] = 0;
         $data['totalAfterDiscount'] = 0;
@@ -327,7 +191,6 @@ public function create(MainInvoiceRequest $request)
             $this->validateRoomAvailability($request->hotel_id, $request->roomNum);
         }
 
-        // الإنشاء الفعلي
         $invoice = MainInvoice::create($data);
 
         if ($request->has('hotels')) {
@@ -335,16 +198,15 @@ public function create(MainInvoiceRequest $request)
         }
 
         if ($request->has('pilgrims')) {
-            $attachedPilgrims = $this->attachPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
-            $invoice->pilgrimsCount = count($attachedPilgrims);
-        }
+$attachedPilgrims = $this->attachPilgrims($invoice, $request->pilgrims, $busTrip, $seatMapArray);
+$invoice->pilgrimsCount = count($attachedPilgrims);
+}
 
         if ($request->has('ihramSupplies')) {
             $this->attachIhramSupplies($invoice, $request->ihramSupplies);
         }
 
-        // التحديثات الحسابية
-        $invoice->load(['hotels', 'ihramSupplies', 'pilgrims']);
+   $invoice->load(['hotels', 'ihramSupplies', 'pilgrims']);
         $invoice->updateSeatsCount();
         $invoice->calculateTotals();
         $invoice->updateIhramSuppliesCount();
@@ -374,6 +236,7 @@ public function create(MainInvoiceRequest $request)
         ], 500);
     }
 }
+
 
 
 public function update(MainInvoiceRequest $request, $id)
