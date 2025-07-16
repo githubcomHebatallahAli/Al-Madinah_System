@@ -50,30 +50,21 @@ class StatisticsController extends Controller
         $busProfit = $busTrips->sum('profit');
 
         // ✅ أرباح الفنادق (bed / room)
-        $hotelProfit = DB::table('main_invoice_hotels')
-            ->join('hotels', 'hotels.id', '=', 'main_invoice_hotels.hotel_id')
-            ->selectRaw("
-                SUM(
-                    CASE
-                        WHEN main_invoice_hotels.sleep = 'room'
-                            THEN (hotels.sellingPrice - hotels.purchesPrice) * main_invoice_hotels.numRoom * main_invoice_hotels.numDay
-                        WHEN main_invoice_hotels.sleep = 'bed'
-                            THEN (hotels.bedPrice - (hotels.purchesPrice / 
-                                CASE 
-                                    hotels.roomType
-                                        WHEN 'single' THEN 1
-                                        WHEN 'double' THEN 2
-                                        WHEN 'triple' THEN 3
-                                        WHEN 'quad' THEN 4
-                                        WHEN 'suite' THEN 5
-                                        ELSE 1
-                                END
-                            )) * main_invoice_hotels.numBed * main_invoice_hotels.numDay
-                        ELSE 0
-                    END
-                ) AS profit
-            ")
-            ->value('profit');
+ $hotelProfit = DB::table('main_invoice_hotels')
+    ->join('hotels', 'hotels.id', '=', 'main_invoice_hotels.hotel_id')
+    ->selectRaw("
+        SUM(
+            CASE
+                WHEN main_invoice_hotels.sleep = 'room'
+                    THEN (hotels.sellingPrice - hotels.purchesPrice) * main_invoice_hotels.numRoom * main_invoice_hotels.numDay
+                WHEN main_invoice_hotels.sleep = 'bed' AND main_invoice_hotels.numBed > 0
+                    THEN (hotels.bedPrice - (hotels.purchesPrice / main_invoice_hotels.numBed)) * main_invoice_hotels.numBed * main_invoice_hotels.numDay
+                ELSE 0
+            END
+        ) AS profit
+    ")
+    ->value('profit');
+
 
         // ✅ أرباح الطيران
         // $flightProfit = DB::table('flights')
