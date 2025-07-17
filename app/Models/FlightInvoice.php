@@ -56,7 +56,9 @@ class FlightInvoice extends Model
 public function calculateSeatsCount(): int
 {
     if (!$this->relationLoaded('pilgrims')) {
-        $this->load('pilgrims');
+        $this->load(['pilgrims' => function($query) {
+            $query->withPivot('seatNumber');
+        }]);
     }
 
     return $this->pilgrims->sum(function ($pilgrim) {
@@ -66,17 +68,22 @@ public function calculateSeatsCount(): int
             return 0;
         }
 
-        // تأكد من معالجة المسافات الفارغة إن وجدت
-        $seats = array_filter(array_map('trim', explode(',', $seatNumbers)));
-        return count($seats);
+        // تقسيم المقاعد وحسابها بدقة
+        $seats = explode(',', $seatNumbers);
+        return count(array_filter($seats, 'trim'));
     });
 }
 
 public function updateSeatsCount(): void
 {
+    // فرض إعادة التحميل من الداتا بيز حتى لو كانت العلاقة محملة
+    $this->unsetRelation('pilgrims'); 
+    $this->load(['pilgrims' => fn ($q) => $q->withPivot('seatNumber')]);
+
     $this->seatsCount = $this->calculateSeatsCount();
     $this->save();
 }
+
 
 public function calculateTotal(): void
 {
