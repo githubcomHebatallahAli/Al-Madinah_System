@@ -22,7 +22,6 @@ return new class extends Migration
             $table->unsignedBigInteger('seatsCount')->default(0);
 
             $table->text('description')->nullable();
-
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('totalAfterDiscount', 10, 2)->default(0);

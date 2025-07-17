@@ -21,7 +21,7 @@ class FlightInvoiceRequest extends FormRequest
         'main_pilgrim_id'=>'nullable|exists:pilgrims,id',
         'flight_id'=>'required|exists:flights,id',
         'trip_id'=>'nullable|exists:trips,id',
-        'hotel_id'=>'required|exists:hotels,id',
+        'hotel_id'=>'nullable|exists:hotels,id',
         'payment_method_type_id'=>'nullable|exists:payment_method_types,id',
         'description'=>'nullable|string',
 
