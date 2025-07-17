@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('main_pilgrim_id')->nullable()->constrained('pilgrims')->cascadeOnDelete();
             $table->foreignId('payment_method_type_id')->nullable()->constrained('payment_method_types');
             $table->unsignedBigInteger('pilgrimsCount')->default(0);
-
+            $table->unsignedBigInteger('seatsCount')->default(0);
 
             $table->text('description')->nullable();
 

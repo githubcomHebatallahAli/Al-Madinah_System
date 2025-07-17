@@ -28,6 +28,7 @@ class FlightInvoiceController extends Controller
     use LoadsCreatorRelationsTrait;
     use LoadsUpdaterRelationsTrait;
     use HandlesControllerCrudsTrait;
+
     protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
 {
     if (empty($pilgrimData['idNum'])) {
@@ -226,6 +227,7 @@ public function create(FlightInvoiceRequest $request)
         if ($request->has('pilgrims')) {
             $this->attachPilgrims($invoice, $request->pilgrims);
         }
+        $invoice->updateSeatsCount();
         $invoice->PilgrimsCount();
         $invoice->calculateTotal();
         DB::commit();
@@ -511,31 +513,31 @@ public function completed($id, Request $request)
     DB::beginTransaction();
 
     try {
-        $hotelInvoice = FlightInvoice::with([
+        $invoice = FlightInvoice::with([
              'paymentMethodType.paymentMethod',
             'mainPilgrim',
             'flight', 'trip','hotel','pilgrims'
         ])->findOrFail($id);
 
-        if ($hotelInvoice->invoiceStatus === 'completed') {
-            $this->loadCommonRelations($hotelInvoice);
+        if ($invoice->invoiceStatus === 'completed') {
+            $this->loadCommonRelations($invoice);
             DB::commit();
-            return $this->respondWithResource($hotelInvoice, 'فاتورة الطيران مكتملة مسبقاً');
+            return $this->respondWithResource($invoice, 'فاتورة الطيران مكتملة مسبقاً');
         }
 
-        $originalData = $hotelInvoice->getOriginal();
+        $originalData = $invoice->getOriginal();
 
-        $hotelInvoice->invoiceStatus = 'completed';
-        $hotelInvoice->payment_method_type_id = $validated['payment_method_type_id'];
-        $hotelInvoice->paidAmount = $validated['paidAmount'];
-        $hotelInvoice->discount = $validated['discount'] ?? 0;
-        $hotelInvoice->tax = $validated['tax'] ?? 0;
-        $hotelInvoice->updated_by = $this->getUpdatedByIdOrFail();
-        $hotelInvoice->updated_by_type = $this->getUpdatedByType();
+        $invoice->invoiceStatus = 'completed';
+        $invoice->payment_method_type_id = $validated['payment_method_type_id'];
+        $invoice->paidAmount = $validated['paidAmount'];
+        $invoice->discount = $validated['discount'] ?? 0;
+        $invoice->tax = $validated['tax'] ?? 0;
+        $invoice->updated_by = $this->getUpdatedByIdOrFail();
+        $invoice->updated_by_type = $this->getUpdatedByType();
 
 
         $changedData = [];
-        foreach ($hotelInvoice->getDirty() as $field => $newValue) {
+        foreach ($invoice->getDirty() as $field => $newValue) {
             if (array_key_exists($field, $originalData)) {
                 $changedData[$field] = [
                     'old' => $originalData[$field],
@@ -544,15 +546,15 @@ public function completed($id, Request $request)
             }
         }
 
-        if ($hotelInvoice->isDirty('payment_method_type_id')) {
+        if ($invoice->isDirty('payment_method_type_id')) {
             $paymentMethodType = PaymentMethodType::with('paymentMethod')
                 ->find($validated['payment_method_type_id']);
 
             $changedData['payment_method'] = [
                 'old' => [
-                    'type' => $hotelInvoice->paymentMethodType?->type,
-                    'by' => $hotelInvoice->paymentMethodType?->by,
-                    'method' => $hotelInvoice->paymentMethodType?->paymentMethod?->name
+                    'type' => $invoice->paymentMethodType?->type,
+                    'by' => $invoice->paymentMethodType?->by,
+                    'method' => $invoice->paymentMethodType?->paymentMethod?->name
                 ],
                 'new' => $paymentMethodType ? [
                     'type' => $paymentMethodType->type,
@@ -563,34 +565,34 @@ public function completed($id, Request $request)
         }
 
         if (!empty($changedData)) {
-            $previousChanged = $hotelInvoice->changed_data ?? [];
+            $previousChanged = $invoice->changed_data ?? [];
 
             $newCreationDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
             $newCreationDateHijri = $this->getHijriDate();
 
             $changedData['creationDate'] = [
-                'old' => $previousChanged['creationDate']['new'] ?? $hotelInvoice->getOriginal('creationDate'),
+                'old' => $previousChanged['creationDate']['new'] ?? $invoice->getOriginal('creationDate'),
                 'new' => $newCreationDate
             ];
 
             $changedData['creationDateHijri'] = [
-                'old' => $previousChanged['creationDateHijri']['new'] ?? $hotelInvoice->getOriginal('creationDateHijri'),
+                'old' => $previousChanged['creationDateHijri']['new'] ?? $invoice->getOriginal('creationDateHijri'),
                 'new' => $newCreationDateHijri
             ];
 
         }
+        $invoice->updateSeatsCount();
+        $invoice->PilgrimsCount();
+        $invoice->calculateTotal();
 
-        $hotelInvoice->PilgrimsCount();
-        $hotelInvoice->calculateTotal();
+        $invoice->changed_data = $changedData;
+        $invoice->save();
 
-        $hotelInvoice->changed_data = $changedData;
-        $hotelInvoice->save();
-
-        $this->loadCommonRelations($hotelInvoice);
+        $this->loadCommonRelations($invoice);
         DB::commit();
 
         return $this->respondWithResource(
-            $hotelInvoice,
+            $invoice,
             'تم إكمال فاتورة الطائره بنجاح'
         );
 
@@ -651,6 +653,37 @@ public function absence(string $id, Request $request)
         return FlightInvoiceResource::class;
     }
 
+// protected function preparePilgrimsData(array $pilgrims): array
+// {
+//     $pilgrimsData = [];
+//     $hijriDate = $this->getHijriDate();
+//     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
+
+//     foreach ($pilgrims as $pilgrim) {
+//         // للأطفال بدون idNum
+//         if (empty($pilgrim['idNum'])) {
+//             $p = Pilgrim::create([
+//                 'name' => $pilgrim['name'],
+//                 'nationality' => $pilgrim['nationality'],
+//                 'gender' => $pilgrim['gender'],
+//                 'phoNum' => null,
+//                 'idNum' => null
+//             ]);
+//         } else {
+//             $p = Pilgrim::where('idNum', $pilgrim['idNum'])->firstOrFail();
+//         }
+
+//         $pilgrimsData[$p->id] = [
+//             'creationDate' => $currentDate,
+//             'creationDateHijri' => $hijriDate,
+//             'changed_data' => null
+//         ];
+//     }
+
+//     return $pilgrimsData;
+// }
+
+
 protected function preparePilgrimsData(array $pilgrims): array
 {
     $pilgrimsData = [];
@@ -658,17 +691,39 @@ protected function preparePilgrimsData(array $pilgrims): array
     $currentDate = now()->timezone('Asia/Riyadh')->format('Y-m-d H:i:s');
 
     foreach ($pilgrims as $pilgrim) {
-        // للأطفال بدون idNum
+        // التحقق من وجود رقم الهوية
         if (empty($pilgrim['idNum'])) {
-            $p = Pilgrim::create([
+            throw new \InvalidArgumentException('جميع الحجاج يجب أن يكون لديهم رقم هوية. الحاج: ' . ($pilgrim['name'] ?? 'غير معروف'));
+        }
+
+        // البحث عن الحاج أو إنشاؤه
+        $p = Pilgrim::firstOrCreate(
+            ['idNum' => $pilgrim['idNum']],
+            [
                 'name' => $pilgrim['name'],
                 'nationality' => $pilgrim['nationality'],
                 'gender' => $pilgrim['gender'],
-                'phoNum' => null,
-                'idNum' => null
-            ]);
-        } else {
-            $p = Pilgrim::where('idNum', $pilgrim['idNum'])->firstOrFail();
+                'phoNum' => $pilgrim['phoNum'] ?? null
+            ]
+        );
+
+        // تحديث بيانات الحاج إذا كانت هناك تغييرات
+        $updates = [];
+        if (!empty($pilgrim['name']) && $p->name !== $pilgrim['name']) {
+            $updates['name'] = $pilgrim['name'];
+        }
+        if (!empty($pilgrim['nationality']) && $p->nationality !== $pilgrim['nationality']) {
+            $updates['nationality'] = $pilgrim['nationality'];
+        }
+        if (!empty($pilgrim['gender']) && $p->gender !== $pilgrim['gender']) {
+            $updates['gender'] = $pilgrim['gender'];
+        }
+        if (isset($pilgrim['phoNum']) && $p->phoNum !== $pilgrim['phoNum']) {
+            $updates['phoNum'] = $pilgrim['phoNum'];
+        }
+
+        if (!empty($updates)) {
+            $p->update($updates);
         }
 
         $pilgrimsData[$p->id] = [
@@ -762,7 +817,7 @@ public function update(FlightInvoiceRequest $request, FlightInvoice $FlightInvoi
         if ($pilgrimsChanged && $request->has('pilgrims')) {
             $this->syncPilgrims($FlightInvoice, $request->pilgrims);
         }
-
+        $FlightInvoice->updateSeatsCount();
         $FlightInvoice->PilgrimsCount();
         $FlightInvoice->calculateTotal();
 
@@ -960,6 +1015,7 @@ protected function syncPilgrims(FlightInvoice $invoice, array $pilgrims)
 
     $invoice->pilgrims()->sync($pilgrimsData);
 
+    $invoice->updateSeatsCount();
     $invoice->PilgrimsCount();
     $invoice->calculateTotal();
 }

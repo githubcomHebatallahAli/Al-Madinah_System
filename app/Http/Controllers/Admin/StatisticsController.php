@@ -63,11 +63,11 @@ class StatisticsController extends Controller
             ->value('profit');
 
         // ✅ أرباح الطيران
-        $flightProfit = DB::table('flight_invoices')
-            ->join('flights', 'flights.id', '=', 'flight_invoices.flight_id')
-            ->selectRaw('SUM((flight_invoices.total - (flights.purchesPrice * flight_invoices.pilgrimsCount))) as profit')
-            ->where('flight_invoices.invoiceStatus', 'completed')
-            ->value('profit');
+     $flightProfit = DB::table('flight_invoices')
+    ->join('flights', 'flights.id', '=', 'flight_invoices.flight_id')
+    ->selectRaw('SUM(flight_invoices.total - (flights.purchesPrice * flight_invoices.seatsCount)) as profit')
+    ->where('flight_invoices.invoiceStatus', 'completed')
+    ->value('profit');
 
         // ✅ أرباح مستلزمات الإحرام
         $ihramProfit = DB::table('main_invoice_supplies')
@@ -118,12 +118,12 @@ class StatisticsController extends Controller
             ")
             ->value('profit');
 
-        $dailyFlightProfit = DB::table('flight_invoices')
-            ->join('flights', 'flights.id', '=', 'flight_invoices.flight_id')
-            ->whereDate('flight_invoices.created_at', $today)
-            ->where('flight_invoices.invoiceStatus', 'completed')
-            ->selectRaw('SUM((flight_invoices.total - (flights.purchesPrice * flight_invoices.pilgrimsCount))) as profit')
-            ->value('profit');
+$dailyFlightProfit = DB::table('flight_invoices')
+    ->join('flights', 'flights.id', '=', 'flight_invoices.flight_id')
+    ->whereDate('flight_invoices.created_at', $today)
+    ->where('flight_invoices.invoiceStatus', 'completed')
+    ->selectRaw('SUM(flight_invoices.total - (flights.purchesPrice * flight_invoices.seatsCount)) as profit')
+    ->value('profit');
 
         $dailyIhramProfit = DB::table('main_invoice_supplies')
             ->join('main_invoices', 'main_invoice_supplies.main_invoice_id', '=', 'main_invoices.id')

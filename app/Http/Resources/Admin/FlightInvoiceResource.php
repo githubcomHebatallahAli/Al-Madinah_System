@@ -12,7 +12,7 @@ class FlightInvoiceResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-                        "id" => $this->id,
+            "id" => $this->id,
             'pilgrimsCount'=> $this ->pilgrimsCount,
             'main_pilgrim' => $this->whenLoaded('mainPilgrim', function () {
     return [
@@ -23,7 +23,6 @@ class FlightInvoiceResource extends JsonResource
 }),
 
             // 'invoiceNumber' => $this->invoiceNumber,
-
             'flight_id'=> $this ->flight_id,
             'flight_direction' => $this->flight?->direction,
             'DateTimeTrip'=>$this->flight?->DateTimeTrip,
@@ -35,8 +34,8 @@ class FlightInvoiceResource extends JsonResource
             'payment_method_type' => $this->paymentMethodType?->type,
             'payment_method_type_by' => $this->paymentMethodType?->by,
 
-
             'description'=> $this-> description,
+            'seatsCount' => $this->seatsCount,
             'ticketPrice' => $this->flight?->sellingPrice ?? 0,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
@@ -45,10 +44,8 @@ class FlightInvoiceResource extends JsonResource
             'total' => $this->total,
             'paidAmount' => $this->paidAmount,
 
-
             'invoiceStatus' => $this->invoiceStatus,
             'reason' => $this->reason,
-
             'creationDateHijri' => $this->creationDateHijri,
             'creationDate' => $this->creationDate,
             'changed_data' => $this->changed_data,
@@ -66,7 +63,6 @@ class FlightInvoiceResource extends JsonResource
                         'seatNumber' => $pilgrim->pivot->seatNumber,
                         'creationDateHijri' => $this->getHijriDate($pilgrim->pivot->creationDateHijri),
                         'creationDate' => $pilgrim->pivot->creationDate,
-
                     ];
                 });
             }),

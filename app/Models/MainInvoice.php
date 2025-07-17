@@ -222,16 +222,6 @@ public function calculateTotals(): void
     $this->total = round($this->totalAfterDiscount + $taxAmount, 2);
 }
 
-// protected function calculateBusTotal(): float
-// {
-//     $seatPrice = $this->busTrip->bus->seatPrice ?? 0;
-
-//     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-//         return count(explode(',', $pilgrim->pivot->seatNumber));
-//     });
-
-//     return $seatPrice * $totalSeats;
-// }
 
 public function calculateSeatsCount(): int
 {
@@ -255,7 +245,7 @@ public function calculateSeatsCount(): int
 public function updateSeatsCount(): void
 {
     $count = $this->calculateSeatsCount();
-    $this->seatsCount = $count ?? 0; // تأكد إنها مش null
+    $this->seatsCount = $count ?? 0; 
     $this->save();
 }
 

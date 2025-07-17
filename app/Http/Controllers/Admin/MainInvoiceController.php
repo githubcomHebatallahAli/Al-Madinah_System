@@ -888,41 +888,68 @@ protected function validateBusSeats(BusTrip $busTrip, array $pilgrims)
 
 protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
 {
+    // التحقق من وجود رقم الهوية (إلزامي للجميع)
     if (empty($pilgrimData['idNum'])) {
-        throw new \Exception('رقم الهوية (idNum) مطلوب لكل معتمر بما فيهم الأطفال.');
-    }
-    $pilgrim = Pilgrim::where('idNum', $pilgrimData['idNum'])->first();
-    if (!$pilgrim) {
-        if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
-            throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
-        }
-        return Pilgrim::create([
-            'idNum'        => $pilgrimData['idNum'],
-            'name'         => $pilgrimData['name'],
-            'nationality'  => $pilgrimData['nationality'],
-            'gender'       => $pilgrimData['gender'],
-            'phoNum'       => $pilgrimData['phoNum'] ?? null
-        ]);
-    }
-    $updates = [];
-    if (!empty($pilgrimData['name']) && $pilgrim->name !== $pilgrimData['name']) {
-        $updates['name'] = $pilgrimData['name'];
-    }
-    if (!empty($pilgrimData['nationality']) && $pilgrim->nationality !== $pilgrimData['nationality']) {
-        $updates['nationality'] = $pilgrimData['nationality'];
-    }
-    if (!empty($pilgrimData['gender']) && $pilgrim->gender !== $pilgrimData['gender']) {
-        $updates['gender'] = $pilgrimData['gender'];
-    }
-    if (!empty($pilgrimData['phoNum']) && $pilgrim->phoNum !== $pilgrimData['phoNum']) {
-        $updates['phoNum'] = $pilgrimData['phoNum'];
+        throw new \InvalidArgumentException('رقم الهوية مطلوب لجميع الحجاج. بيانات الحاج: ' . json_encode($pilgrimData));
     }
 
-    if (!empty($updates)) {
-        $pilgrim->update($updates);
+    // التحقق من البيانات الأساسية المطلوبة
+    $requiredFields = ['name', 'nationality', 'gender'];
+    foreach ($requiredFields as $field) {
+        if (empty($pilgrimData[$field])) {
+            throw new \InvalidArgumentException("حقل {$field} مطلوب لتسجيل الحاج. رقم الهوية: {$pilgrimData['idNum']}");
+        }
     }
-    return $pilgrim;
+
+    // البحث عن الحاج أو إنشائه مع التحقق من التحديثات
+    return Pilgrim::updateOrCreate(
+        ['idNum' => $pilgrimData['idNum']],
+        [
+            'name' => $pilgrimData['name'],
+            'nationality' => $pilgrimData['nationality'],
+            'gender' => $pilgrimData['gender'],
+            'phoNum' => $pilgrimData['phoNum'] ?? null
+        ]
+    );
 }
+
+// protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
+// {
+//     if (empty($pilgrimData['idNum'])) {
+//         throw new \Exception('رقم الهوية (idNum) مطلوب لكل معتمر بما فيهم الأطفال.');
+//     }
+//     $pilgrim = Pilgrim::where('idNum', $pilgrimData['idNum'])->first();
+//     if (!$pilgrim) {
+//         if (!isset($pilgrimData['name'], $pilgrimData['nationality'], $pilgrimData['gender'])) {
+//             throw new \Exception('بيانات غير مكتملة للحاج الجديد: يرجى إدخال الاسم، الجنسية، والنوع على الأقل');
+//         }
+//         return Pilgrim::create([
+//             'idNum'        => $pilgrimData['idNum'],
+//             'name'         => $pilgrimData['name'],
+//             'nationality'  => $pilgrimData['nationality'],
+//             'gender'       => $pilgrimData['gender'],
+//             'phoNum'       => $pilgrimData['phoNum'] ?? null
+//         ]);
+//     }
+//     $updates = [];
+//     if (!empty($pilgrimData['name']) && $pilgrim->name !== $pilgrimData['name']) {
+//         $updates['name'] = $pilgrimData['name'];
+//     }
+//     if (!empty($pilgrimData['nationality']) && $pilgrim->nationality !== $pilgrimData['nationality']) {
+//         $updates['nationality'] = $pilgrimData['nationality'];
+//     }
+//     if (!empty($pilgrimData['gender']) && $pilgrim->gender !== $pilgrimData['gender']) {
+//         $updates['gender'] = $pilgrimData['gender'];
+//     }
+//     if (!empty($pilgrimData['phoNum']) && $pilgrim->phoNum !== $pilgrimData['phoNum']) {
+//         $updates['phoNum'] = $pilgrimData['phoNum'];
+//     }
+
+//     if (!empty($updates)) {
+//         $pilgrim->update($updates);
+//     }
+//     return $pilgrim;
+// }
 
  public function pending($id)
     {

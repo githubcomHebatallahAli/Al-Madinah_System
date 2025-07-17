@@ -22,7 +22,9 @@ class FlightInvoice extends Model
         'tax',
         'total',
         'paidAmount',
+        'seatsCount',
         'pilgrimsCount',
+        'description',
         'invoiceStatus',
         'reason',
         'creationDate',
@@ -51,26 +53,65 @@ class FlightInvoice extends Model
     $this->save();
 }
 
+public function calculateSeatsCount(): int
+{
+    if (!$this->relationLoaded('pilgrims')) {
+        $this->load('pilgrims');
+    }
+
+    return $this->pilgrims->sum(function ($pilgrim) {
+        $seatNumbers = $pilgrim->pivot->seatNumber ?? '';
+        
+        if (empty($seatNumbers)) {
+            return 0;
+        }
+
+        // تأكد من معالجة المسافات الفارغة إن وجدت
+        $seats = array_filter(array_map('trim', explode(',', $seatNumbers)));
+        return count($seats);
+    });
+}
+
+public function updateSeatsCount(): void
+{
+    $this->seatsCount = $this->calculateSeatsCount();
+    $this->save();
+}
 
 public function calculateTotal(): void
 {
+    $this->updateSeatsCount(); // تحديث عدد المقاعد أولاً
+    
     $seatPrice = $this->flight->sellingPrice ?? 0;
-    $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
-        $seats = explode(',', $pilgrim->pivot->seatNumber);
-        return count($seats);
-    });
-
-
-    $this->subtotal = $seatPrice * $totalSeats;
+    $this->subtotal = $seatPrice * $this->seatsCount;
 
     $discount = $this->discount ?? 0;
     $taxRate = $this->tax ?? 0;
+    
     $this->totalAfterDiscount = $this->subtotal - $discount;
-
     $taxAmount = $this->totalAfterDiscount * ($taxRate / 100);
-
     $this->total = $this->totalAfterDiscount + $taxAmount;
 }
+
+// public function calculateTotal(): void
+// {
+//     $seatPrice = $this->flight->sellingPrice ?? 0;
+//     $totalSeats = $this->pilgrims->sum(function ($pilgrim) {
+//         $seats = explode(',', $pilgrim->pivot->seatNumber);
+//         return count($seats);
+//     });
+
+
+//     $this->subtotal = $seatPrice * $totalSeats;
+
+//     $discount = $this->discount ?? 0;
+//     $taxRate = $this->tax ?? 0;
+//     $this->totalAfterDiscount = $this->subtotal - $discount;
+
+//     $taxAmount = $this->totalAfterDiscount * ($taxRate / 100);
+
+//     $this->total = $this->totalAfterDiscount + $taxAmount;
+// }
 
 
 
