@@ -17,6 +17,7 @@ class ShowAllMainInvoiceResource extends JsonResource
         return [
             "id" => $this->id,
             'pilgrimsCount'=> $this ->pilgrimsCount,
+            'invoiceStatus' => $this->invoiceStatus,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'totalAfterDiscount'=>$this->totalAfterDiscount,
