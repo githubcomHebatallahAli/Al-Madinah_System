@@ -980,7 +980,7 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
 
     // }
 
-    public function rejected($id, Request $request)
+public function rejected($id, Request $request)
 {
     $invoice = MainInvoice::find($id);
     
@@ -993,17 +993,20 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
         'reason' => $request->input('reason'),
     ]);
 
-    // محاولة إرسال رسالة الواتساب
+    // رقم الأدمن الثابت (يجب استبداله برقم حقيقي)
+    $adminNumber = '201120230743'; // مثال: رقم من لوحة Vonage
+    
+    // إرسال الواتساب للأدمن فقط
     $whatsappSent = $this->sendWhatsAppToAdmin(
         $invoice->id,
-        $request->input('reason')
+        $request->input('reason'),
+        $adminNumber // تم تمرير الرقم مباشرة
     );
 
-    // إذا فشل إرسال الواتساب
     if (!$whatsappSent) {
         return response()->json([
+            'data' => $invoice,
             'message' => 'تم رفض الفاتورة ولكن فشل إرسال إشعار الواتساب',
-            'invoice' => $invoice,
             'whatsapp_error' => true
         ], 200);
     }

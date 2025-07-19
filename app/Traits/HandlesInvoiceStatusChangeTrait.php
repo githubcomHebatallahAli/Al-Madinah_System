@@ -11,10 +11,18 @@ trait HandlesInvoiceStatusChangeTrait
 {
 
 
-protected function sendWhatsAppToAdmin($invoiceId, $reason)
+protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
 {
-    $adminNumber = '201120230743'; // رقم الأدمن
-    $message = "🚨 تنبيه رفض فاتورة\nرقم: {$invoiceId}\nالسبب: {$reason}";
+    // تأكد من وجود رقم صالح
+    if (empty($adminNumber)) {
+        Log::error('رقم الأدمن غير محدد');
+        return false;
+    }
+
+    $message = "🚨 تنبيه رفض فاتورة\n"
+             . "رقم الفاتورة: {$invoiceId}\n"
+             . "السبب: {$reason}\n"
+             . "التاريخ: " . now()->format('Y-m-d H:i:s');
 
     try {
         $response = Http::withBasicAuth(
@@ -29,7 +37,9 @@ protected function sendWhatsAppToAdmin($invoiceId, $reason)
 
         $responseData = $response->json();
 
-        // تحقق من نجاح الإرسال في رد Vonage
+        // سجل الرد الكامل للتحقق
+        Log::debug('رد Vonage', $responseData);
+
         if (isset($responseData['messages'][0]['status']) && 
             $responseData['messages'][0]['status'] == '0') {
             return true;
@@ -39,7 +49,10 @@ protected function sendWhatsAppToAdmin($invoiceId, $reason)
         return false;
 
     } catch (\Exception $e) {
-        Log::error('استثناء أثناء الإرسال', ['error' => $e->getMessage()]);
+        Log::error('استثناء أثناء الإرسال', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
         return false;
     }
 }
