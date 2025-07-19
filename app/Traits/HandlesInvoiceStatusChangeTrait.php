@@ -7,79 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 trait HandlesInvoiceStatusChangeTrait
 {
-// public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
-// {
-//     $this->authorize('manage_system');
 
-//     if (!$invoice) {
-//         return response()->json(['message' => "Invoice not found."], 404);
-//     }
-
-//     $originalData = $invoice->only([
-//         'discount', 'tax', 'paidAmount', 'invoiceStatus',
-//         'subtotal', 'totalAfterDiscount', 'total'
-//     ]);
-
-//     $proposedPaidAmount = $extra['paidAmount'] ?? $invoice->paidAmount;
-//     $proposedDiscount = $extra['discount'] ?? $invoice->discount;
-//     $proposedTax = $extra['tax'] ?? $invoice->tax;
-
-//     if ($status === 'completed') {
-//         $tempInvoice = clone $invoice;
-//         $tempInvoice->discount = $proposedDiscount;
-//         $tempInvoice->tax = $proposedTax;
-//         $tempInvoice->calculateTotals();
-
-//         if (round($proposedPaidAmount, 2) !== round($tempInvoice->total, 2)) {
-//             $invoice->fill([
-//                 'discount' => $originalData['discount'],
-//                 'tax' => $originalData['tax'],
-//                 'paidAmount' => $originalData['paidAmount'],
-//             ]);
-
-//             return response()->json([
-//                 'message' => 'لا يمكن إكمال الفاتورة: المبلغ المدفوع لا يساوي الإجمالي',
-//                 'required_amount' => number_format($tempInvoice->total, 2),
-//                 'paid_amount' => number_format($proposedPaidAmount, 2),
-//                 'current_status' => $invoice->invoiceStatus
-//             ], 422);
-//         }
-
-//         $invoice->discount = $proposedDiscount;
-//         $invoice->tax = $proposedTax;
-//         $invoice->paidAmount = $proposedPaidAmount;
-
-//         if ($invoice->invoiceStatus !== 'completed') {
-//             $invoice->payment_method_type_id = $extra['payment_method_type_id'] ?? $invoice->payment_method_type_id;
-//         }
-//     }
-
-//     if ($invoice->invoiceStatus !== $status || $status === 'completed') {
-//         $invoice->invoiceStatus = $status;
-
-//         if ($status === 'rejected') {
-//             $invoice->reason = $extra['reason'] ?? null;
-//         }
-//     }
-
-//     $invoice->updated_by = $this->getUpdatedByIdOrFail();
-//     $invoice->updated_by_type = $this->getUpdatedByType();
-
-//     $invoice->calculateTotals();
-//     $changedData = $this->buildInvoiceChanges($invoice, $originalData);
-//     if (!empty($changedData)) {
-//         $invoice->changed_data = $changedData;
-//     }
-
-//     $invoice->save();
-//     $this->loadInvoiceRelations($invoice);
-//     return $this->respondWithResource(
-//         $invoice,
-//         $invoice->invoiceStatus === 'completed'
-//             ? 'تم إكمال الفاتورة بنجاح'
-//             : "تم تحديث حالة الفاتورة إلى {$status}"
-//     );
-// }
 
     public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
     {
