@@ -13,32 +13,34 @@ trait HandlesInvoiceStatusChangeTrait
 
 protected function sendWhatsAppToAdmin($invoiceId, $reason)
 {
-    $adminNumber = '201120230743'; // رقم الأدمن المسجل في Vonage (بدون +)
-    $vonageApiKey = env('VONAGE_API_KEY');
-    $vonageApiSecret = env('VONAGE_API_SECRET');
-    $vonageFrom = env('VONAGE_FROM'); // اسم المرسل في Vonage
-
-    $message = "🚨 تنبيه رفض فاتورة\n"
-             . "رقم الفاتورة: {$invoiceId}\n"
-             . "السبب: {$reason}\n"
-             . "التاريخ: " . now()->format('Y-m-d H:i:s');
+    $adminNumber = '201120230743'; // رقم الأدمن
+    $message = "🚨 تنبيه رفض فاتورة\nرقم: {$invoiceId}\nالسبب: {$reason}";
 
     try {
-        $response = Http::withBasicAuth($vonageApiKey, $vonageApiSecret)
-            ->post('https://rest.nexmo.com/sms/json', [
-                'from' => $vonageFrom,
-                'to' => $adminNumber,
-                'text' => $message,
-                'type' => 'unicode' // لضمان دعم اللغة العربية
-            ]);
-
-        Log::info('تم إرسال رسالة الواتساب', [
+        $response = Http::withBasicAuth(
+            env('VONAGE_API_KEY'),
+            env('VONAGE_API_SECRET')
+        )->post('https://rest.nexmo.com/sms/json', [
+            'from' => env('VONAGE_FROM'),
             'to' => $adminNumber,
-            'response' => $response->json()
+            'text' => $message,
+            'type' => 'unicode'
         ]);
 
+        $responseData = $response->json();
+
+        // تحقق من نجاح الإرسال في رد Vonage
+        if (isset($responseData['messages'][0]['status']) && 
+            $responseData['messages'][0]['status'] == '0') {
+            return true;
+        }
+
+        Log::error('فشل إرسال الرسالة', ['response' => $responseData]);
+        return false;
+
     } catch (\Exception $e) {
-        Log::error('فشل إرسال الرسالة', ['error' => $e->getMessage()]);
+        Log::error('استثناء أثناء الإرسال', ['error' => $e->getMessage()]);
+        return false;
     }
 }
  

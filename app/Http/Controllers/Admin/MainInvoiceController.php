@@ -971,21 +971,45 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
         return $this->changeInvoiceStatus($invoice, 'approved');
     }
 
+    // public function rejected($id, Request $request)
+    // {
+    //     $invoice = MainInvoice::find($id);
+    //     return $this->changeInvoiceStatus($invoice, 'rejected', [
+    //         'reason' => $request->input('reason'),
+    //     ]);
+
+    // }
+
     public function rejected($id, Request $request)
-    {
-        $invoice = MainInvoice::find($id);
-        return $this->changeInvoiceStatus($invoice, 'rejected', [
-            'reason' => $request->input('reason'),
-        ]);
-  if ($response->getStatusCode() === 200) {
-        $this->sendWhatsAppToAdmin(
-            $invoice->id,
-            $request->input('reason')
-        );
-    }
+{
+    $invoice = MainInvoice::find($id);
     
-    return $response;
+    if (!$invoice) {
+        return response()->json(['error' => 'الفاتورة غير موجودة'], 404);
     }
+
+    // تغيير حالة الفاتورة أولاً
+    $response = $this->changeInvoiceStatus($invoice, 'rejected', [
+        'reason' => $request->input('reason'),
+    ]);
+
+    // محاولة إرسال رسالة الواتساب
+    $whatsappSent = $this->sendWhatsAppToAdmin(
+        $invoice->id,
+        $request->input('reason')
+    );
+
+    // إذا فشل إرسال الواتساب
+    if (!$whatsappSent) {
+        return response()->json([
+            'message' => 'تم رفض الفاتورة ولكن فشل إرسال إشعار الواتساب',
+            'invoice' => $invoice,
+            'whatsapp_error' => true
+        ], 200);
+    }
+
+    return $response;
+}
 
     public function completed($id, Request $request)
     {
