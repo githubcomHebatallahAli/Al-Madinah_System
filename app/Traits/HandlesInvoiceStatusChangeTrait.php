@@ -3,10 +3,67 @@
 namespace App\Traits;
 
 use App\Models\BusTrip;
+use App\Services\VonageService;
 use Illuminate\Support\Facades\Log;
 
 trait HandlesInvoiceStatusChangeTrait
 {
+
+
+protected function sendRejectionNotificationToAdmin($invoice, $reason)
+{
+    try {
+        $vonageService = app(VonageService::class);
+        $adminNumber = '201120230743'; // استبدل برقم الأدمن الفعلي
+        
+        $message = "🚨 تنبيه رفض فاتورة\n"
+                 . "رقم الفاتورة: {$invoice->id}\n"
+                 . "اسم العميل: {$invoice->mainPilgrim->name}\n"
+                 . "سبب الرفض: {$reason}\n"
+                 . "التاريخ: " . now()->format('Y-m-d H:i:s');
+
+        $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
+        
+        Log::info('تم إرسال إشعار الرفض للأدمن', ['invoice_id' => $invoice->id]);
+    } catch (\Exception $e) {
+        Log::error('فشل إرسال إشعار الواتساب', [
+            'error' => $e->getMessage(),
+            'invoice_id' => $invoice->id
+        ]);
+    }
+}
+ 
+
+// protected function sendWhatsAppNotification($invoice, $status, $reason = null)
+// {
+//     try {
+//         $vonageService = app(VonageService::class);
+//         $adminNumber = '201120230743'; // رقم المشرف
+//         $customerNumber = $invoice->mainPilgrim->phoNum; // رقم العميل
+        
+//         if ($status === 'rejected') {
+//             // رسالة الرفض للمشرف
+//             $adminMessage = "تم رفض الفاتورة رقم {$invoice->id} للعميل {$invoice->mainPilgrim->name}. السبب: {$reason}";
+//             $vonageService->sendWhatsAppMessage($adminNumber, $adminMessage);
+            
+//             // رسالة الرفض للعميل
+//             $customerMessage = "عزيزي {$invoice->mainPilgrim->name}، تم رفض الفاتورة رقم {$invoice->id}. السبب: {$reason}";
+//             $vonageService->sendWhatsAppMessage($customerNumber, $customerMessage);
+//         } elseif ($status === 'approved') {
+//             // رسالة القبول للمشرف
+//             $adminMessage = "تم قبول الفاتورة رقم {$invoice->id} للعميل {$invoice->mainPilgrim->name}";
+//             $vonageService->sendWhatsAppMessage($adminNumber, $adminMessage);
+            
+//             // رسالة القبول للعميل
+//             $customerMessage = "عزيزي {$invoice->mainPilgrim->name}، تم قبول الفاتورة رقم {$invoice->id}";
+//             $vonageService->sendWhatsAppMessage($customerNumber, $customerMessage);
+//         }
+        
+//         Log::info("تم إرسال إشعار واتساب بنجاح لحالة الفاتورة: {$status}");
+//     } catch (\Exception $e) {
+//         Log::error("فشل إرسال إشعار واتساب: " . $e->getMessage());
+//     }
+// }
 
 
     public function changeInvoiceStatus($invoice, string $status, array $extra = []): \Illuminate\Http\JsonResponse
