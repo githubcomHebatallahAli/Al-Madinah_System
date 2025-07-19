@@ -977,8 +977,11 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
         return $this->changeInvoiceStatus($invoice, 'rejected', [
             'reason' => $request->input('reason'),
         ]);
-          if ($response->getStatusCode() === 200) {
-        $this->sendRejectionNotificationToAdmin($invoice, $request->input('reason'));
+  if ($response->getStatusCode() === 200) {
+        $this->sendWhatsAppToAdmin(
+            $invoice->id,
+            $request->input('reason')
+        );
     }
     
     return $response;

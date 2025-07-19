@@ -4,32 +4,41 @@ namespace App\Traits;
 
 use App\Models\BusTrip;
 use App\Services\VonageService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 trait HandlesInvoiceStatusChangeTrait
 {
 
 
-protected function sendRejectionNotificationToAdmin($invoice, $reason)
+protected function sendWhatsAppToAdmin($invoiceId, $reason)
 {
-    try {
-        $vonageService = app(VonageService::class);
-        $adminNumber = '201120230743'; // استبدل برقم الأدمن الفعلي
-        
-        $message = "🚨 تنبيه رفض فاتورة\n"
-                 . "رقم الفاتورة: {$invoice->id}\n"
-                 . "اسم العميل: {$invoice->mainPilgrim->name}\n"
-                 . "سبب الرفض: {$reason}\n"
-                 . "التاريخ: " . now()->format('Y-m-d H:i:s');
+    $adminNumber = '201120230743'; // رقم الأدمن المسجل في Vonage (بدون +)
+    $vonageApiKey = env('VONAGE_API_KEY');
+    $vonageApiSecret = env('VONAGE_API_SECRET');
+    $vonageFrom = env('VONAGE_FROM'); // اسم المرسل في Vonage
 
-        $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
-        
-        Log::info('تم إرسال إشعار الرفض للأدمن', ['invoice_id' => $invoice->id]);
-    } catch (\Exception $e) {
-        Log::error('فشل إرسال إشعار الواتساب', [
-            'error' => $e->getMessage(),
-            'invoice_id' => $invoice->id
+    $message = "🚨 تنبيه رفض فاتورة\n"
+             . "رقم الفاتورة: {$invoiceId}\n"
+             . "السبب: {$reason}\n"
+             . "التاريخ: " . now()->format('Y-m-d H:i:s');
+
+    try {
+        $response = Http::withBasicAuth($vonageApiKey, $vonageApiSecret)
+            ->post('https://rest.nexmo.com/sms/json', [
+                'from' => $vonageFrom,
+                'to' => $adminNumber,
+                'text' => $message,
+                'type' => 'unicode' // لضمان دعم اللغة العربية
+            ]);
+
+        Log::info('تم إرسال رسالة الواتساب', [
+            'to' => $adminNumber,
+            'response' => $response->json()
         ]);
+
+    } catch (\Exception $e) {
+        Log::error('فشل إرسال الرسالة', ['error' => $e->getMessage()]);
     }
 }
  
