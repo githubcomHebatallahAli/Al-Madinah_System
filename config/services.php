@@ -43,6 +43,9 @@ return [
     'signature_secret'=>env('VONAGE_SIGNATURE_SECRET'),
     'application_id' => env('VONAGE_APPLICATION_ID'),
     'private_key' => env('VONAGE_PRIVATE_KEY'),
+    'api_url' => env('VONAGE_API_URL', 'https://messages-sandbox.nexmo.com/v1/messages'),
+    'admin_number' => env('VONAGE_ADMIN_NUMBER'),
+    'enabled' => env('VONAGE_ENABLED', true),
 ],
 
 

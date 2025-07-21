@@ -13,9 +13,8 @@ trait HandlesInvoiceStatusChangeTrait
 
 protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
 {
-    // تأكد من وجود رقم صالح
-    if (empty($adminNumber)) {
-        Log::error('رقم الأدمن غير محدد');
+    if (!preg_match('/^\d{8,15}$/', $adminNumber)) {
+        Log::error('رقم الأدمن غير صالح', ['number' => $adminNumber]);
         return false;
     }
 
@@ -26,30 +25,34 @@ protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
 
     try {
         $response = Http::withBasicAuth(
-            env('VONAGE_API_KEY'),
-            env('VONAGE_API_SECRET')
-        )->post('https://messages-sandbox.nexmo.com/v1/messages', [
-            'from' => env('VONAGE_FROM'),
+            config('services.vonage.api_key'),
+            config('services.vonage.api_secret')
+        )->post(config('services.vonage.api_url'), [
+            'from' => config('services.vonage.from'),
             'to' => $adminNumber,
+            'message_type' => 'text',
             'text' => $message,
+            'channel' => 'whatsapp',
             'type' => 'unicode'
         ]);
 
-        $responseData = $response->json();
-
-        // سجل الرد الكامل للتحقق
-        Log::debug('رد Vonage', $responseData);
-
-        if (isset($responseData['messages'][0]['status']) && 
-            $responseData['messages'][0]['status'] == '0') {
-            return true;
+        if ($response->successful()) {
+            $responseData = $response->json();
+            
+            if (isset($responseData['messages'][0]['status']) && 
+                $responseData['messages'][0]['status'] == '0') {
+                return true;
+            }
         }
 
-        Log::error('فشل إرسال الرسالة', ['response' => $responseData]);
+        Log::error('فشل إرسال رسالة واتساب', [
+            'status' => $response->status(),
+            'response' => $response->json()
+        ]);
         return false;
 
     } catch (\Exception $e) {
-        Log::error('استثناء أثناء الإرسال', [
+        Log::error('استثناء أثناء إرسال واتساب', [
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString()
         ]);

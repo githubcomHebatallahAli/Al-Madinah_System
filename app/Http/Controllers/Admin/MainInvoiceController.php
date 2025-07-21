@@ -982,33 +982,38 @@ protected function findOrCreatePilgrimForInvoice(array $pilgrimData): Pilgrim
 
 public function rejected($id, Request $request)
 {
-    $invoice = MainInvoice::find($id);
+    $invoice = MainInvoice::findOrFail($id);
     
-    if (!$invoice) {
-        return response()->json(['error' => 'الفاتورة غير موجودة'], 404);
-    }
-
     $response = $this->changeInvoiceStatus($invoice, 'rejected', [
         'reason' => $request->input('reason'),
     ]);
 
-    $adminNumber = '201120230743'; // مثال: رقم من لوحة Vonage
-    
-    $whatsappSent = $this->sendWhatsAppToAdmin(
-        $invoice->id,
-        $request->input('reason'),
-        $adminNumber
-    );
+    try {
+        $adminNumber = config('services.vonage.admin_number');
+        $whatsappSent = $this->sendWhatsAppToAdmin(
+            $invoice->id,
+            $request->input('reason'),
+            $adminNumber
+        );
 
-    if (!$whatsappSent) {
+        if (!$whatsappSent) {
+            Log::warning('فشل إرسال إشعار واتساب لرفض الفاتورة', ['invoice_id' => $id]);
+        }
+
+        return $response;
+
+    } catch (\Exception $e) {
+        Log::error('خطأ غير متوقع في إرسال إشعار الرفض', [
+            'invoice_id' => $id,
+            'error' => $e->getMessage()
+        ]);
+        
         return response()->json([
             'data' => $invoice,
-            'message' => 'تم رفض الفاتورة ولكن فشل إرسال إشعار الواتساب',
+            'message' => 'تم رفض الفاتورة ولكن حدث خطأ في إرسال الإشعار',
             'whatsapp_error' => true
         ], 200);
     }
-
-    return $response;
 }
 
     public function completed($id, Request $request)
