@@ -4,37 +4,41 @@ namespace App\Traits;
 
 use App\Models\BusTrip;
 use App\Services\VonageService;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 trait HandlesInvoiceStatusChangeTrait
 {
-protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
-{
-    if (!preg_match('/^\d{8,15}$/', $adminNumber)) {
-        Log::error('رقم الأدمن غير صالح', ['number' => $adminNumber]);
-        return false;
+    protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
+    {
+        // التحقق من صحة رقم الأدمن
+        if (!preg_match('/^\d{8,15}$/', $adminNumber)) {
+            Log::error('رقم الأدمن غير صالح', ['number' => $adminNumber]);
+            return false;
+        }
+
+        // تجهيز الرسالة
+        $message = "🚨 تنبيه رفض فاتورة\n"
+                 . "رقم الفاتورة: {$invoiceId}\n"
+                 . "السبب: {$reason}\n"
+                 . "التاريخ: " . now()->format('Y-m-d H:i:s');
+
+        try {
+            // استخدام الخدمة بشكل سليم من الـ Container
+            $vonageService = app(VonageService::class);
+
+            $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
+
+            return $result['success'];
+
+        } catch (\Exception $e) {
+            Log::error('استثناء أثناء إرسال واتساب', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 
-    $message = "🚨 تنبيه رفض فاتورة\n"
-             . "رقم الفاتورة: {$invoiceId}\n"
-             . "السبب: {$reason}\n"
-             . "التاريخ: " . now()->format('Y-m-d H:i:s');
-
-    try {
-        $vonageService = new VonageService();
-        $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
-
-        return $result['success'];
-
-    } catch (\Exception $e) {
-        Log::error('استثناء أثناء إرسال واتساب', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        return false;
-    }
-}
  
 
 // protected function sendWhatsAppNotification($invoice, $status, $reason = null)
