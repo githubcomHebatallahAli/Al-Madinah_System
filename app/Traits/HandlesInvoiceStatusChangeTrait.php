@@ -28,7 +28,7 @@ protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
         $response = Http::withBasicAuth(
             env('VONAGE_API_KEY'),
             env('VONAGE_API_SECRET')
-        )->post('https://rest.nexmo.com/sms/json', [
+        )->post('https://messages-sandbox.nexmo.com/v1/messages', [
             'from' => env('VONAGE_FROM'),
             'to' => $adminNumber,
             'text' => $message,

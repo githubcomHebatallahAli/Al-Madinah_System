@@ -988,19 +988,16 @@ public function rejected($id, Request $request)
         return response()->json(['error' => 'الفاتورة غير موجودة'], 404);
     }
 
-    // تغيير حالة الفاتورة أولاً
     $response = $this->changeInvoiceStatus($invoice, 'rejected', [
         'reason' => $request->input('reason'),
     ]);
 
-    // رقم الأدمن الثابت (يجب استبداله برقم حقيقي)
     $adminNumber = '201120230743'; // مثال: رقم من لوحة Vonage
     
-    // إرسال الواتساب للأدمن فقط
     $whatsappSent = $this->sendWhatsAppToAdmin(
         $invoice->id,
         $request->input('reason'),
-        $adminNumber // تم تمرير الرقم مباشرة
+        $adminNumber
     );
 
     if (!$whatsappSent) {
