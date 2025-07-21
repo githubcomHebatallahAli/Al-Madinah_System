@@ -19,7 +19,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-          $this->app->singleton(VonageService::class, function ($app) {
+    $this->app->singleton(Client::class, function ($app) {
+        return new Client(new Basic(
+            config('services.vonage.api_key'),
+            config('services.vonage.api_secret')
+        ));
+    });
+
+    $this->app->singleton(VonageService::class, function ($app) {
         return new VonageService($app->make(Client::class));
     });
     }
@@ -62,14 +69,14 @@ Gate::define('manage_system', function ($user) {
         //     ));
         // });
 
-            $this->app->singleton(Client::class, function ($app) {
-        $keypair = new Keypair(
-            file_get_contents(config('services.vonage.private_key')),
-            config('services.vonage.application_id')
-        );
+    //         $this->app->singleton(Client::class, function ($app) {
+    //     $keypair = new Keypair(
+    //         file_get_contents(config('services.vonage.private_key')),
+    //         config('services.vonage.application_id')
+    //     );
 
-        return new Client($keypair);
-    });
+    //     return new Client($keypair);
+    // });
 
     }
 
