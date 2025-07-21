@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Log;
 
 trait HandlesInvoiceStatusChangeTrait
 {
-
-
 protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
 {
     if (!preg_match('/^\d{8,15}$/', $adminNumber)) {
@@ -24,32 +22,10 @@ protected function sendWhatsAppToAdmin($invoiceId, $reason, $adminNumber)
              . "التاريخ: " . now()->format('Y-m-d H:i:s');
 
     try {
-        $response = Http::withBasicAuth(
-            config('services.vonage.api_key'),
-            config('services.vonage.api_secret')
-        )->post(config('services.vonage.api_url'), [
-            'from' => config('services.vonage.from'),
-            'to' => $adminNumber,
-            'message_type' => 'text',
-            'text' => $message,
-            'channel' => 'whatsapp',
-            'type' => 'unicode'
-        ]);
+        $vonageService = new VonageService();
+        $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
 
-        if ($response->successful()) {
-            $responseData = $response->json();
-            
-            if (isset($responseData['messages'][0]['status']) && 
-                $responseData['messages'][0]['status'] == '0') {
-                return true;
-            }
-        }
-
-        Log::error('فشل إرسال رسالة واتساب', [
-            'status' => $response->status(),
-            'response' => $response->json()
-        ]);
-        return false;
+        return $result['success'];
 
     } catch (\Exception $e) {
         Log::error('استثناء أثناء إرسال واتساب', [

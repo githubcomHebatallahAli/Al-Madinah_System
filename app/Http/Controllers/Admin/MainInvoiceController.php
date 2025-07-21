@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Hotel;
-use App\Models\BusTrip;
-use App\Models\Pilgrim;
-use App\Models\IhramSupply;
-use App\Models\MainInvoice;
-use Illuminate\Http\Request;
-use App\Traits\HijriDateTrait;
-use App\Traits\HandleAddedByTrait;
-use App\Traits\TracksChangesTrait;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Traits\LoadsCreatorRelationsTrait;
-use App\Traits\LoadsUpdaterRelationsTrait;
-use App\Traits\HandlesControllerCrudsTrait;
 use App\Http\Requests\Admin\MainInvoiceRequest;
-use App\Traits\HandlesInvoiceStatusChangeTrait;
 use App\Http\Resources\Admin\MainInvoiceResource;
 use App\Http\Resources\Admin\ShowAllMainInvoiceResource;
+use App\Models\BusTrip;
+use App\Models\Hotel;
+use App\Models\IhramSupply;
+use App\Models\MainInvoice;
+use App\Models\Pilgrim;
+use App\Services\VonageService;
+use App\Traits\HandleAddedByTrait;
+use App\Traits\HandlesControllerCrudsTrait;
+use App\Traits\HandlesInvoiceStatusChangeTrait;
+use App\Traits\HijriDateTrait;
+use App\Traits\LoadsCreatorRelationsTrait;
+use App\Traits\LoadsUpdaterRelationsTrait;
+use App\Traits\TracksChangesTrait;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MainInvoiceController extends Controller
 {
@@ -989,17 +990,15 @@ public function rejected($id, Request $request)
     ]);
 
     try {
-        $vonageService = new VonageService();
         $adminNumber = config('services.vonage.admin_number');
-        
-        $message = $this->prepareRejectionMessage($invoice, $request->input('reason'));
-        $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
+        $whatsappSent = $this->sendWhatsAppToAdmin(
+            $invoice->id,
+            $request->input('reason'),
+            $adminNumber
+        );
 
-        if (!$result['success']) {
-            Log::warning('فشل إرسال إشعار واتساب لرفض الفاتورة', [
-                'invoice_id' => $id,
-                'error' => $result['error'] ?? 'Unknown error'
-            ]);
+        if (!$whatsappSent) {
+            Log::warning('فشل إرسال إشعار واتساب لرفض الفاتورة', ['invoice_id' => $id]);
         }
 
         return $response;
@@ -1007,37 +1006,15 @@ public function rejected($id, Request $request)
     } catch (\Exception $e) {
         Log::error('خطأ غير متوقع في إرسال إشعار الرفض', [
             'invoice_id' => $id,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'error' => $e->getMessage()
         ]);
         
         return response()->json([
             'data' => $invoice,
             'message' => 'تم رفض الفاتورة ولكن حدث خطأ في إرسال الإشعار',
-            'whatsapp_error' => true,
-            'error_details' => $e->getMessage()
+            'whatsapp_error' => true
         ], 200);
     }
-}
-
-protected function prepareRejectionMessage($invoice, $reason): string
-{
-    return sprintf(
-        "🚨 *إشعار رفض فاتورة*\n\n".
-        "📌 رقم الفاتورة: %s\n".
-        "🏢 المكتب: %s\n".
-        "👤 المسؤول: %s\n".
-        "💵 المبلغ الإجمالي: %s ر.س\n".
-        "📅 تاريخ الإنشاء: %s\n".
-        "🛑 السبب: %s\n\n".
-        "مع تحيات نظام إدارة الفواتير",
-        $invoice->invoiceNumber,
-        $invoice->office_name ?? 'غير معروف',
-        $invoice->worker_name ?? 'غير معروف',
-        $invoice->total ?? '0.00',
-        $invoice->creationDateHijri ?? 'غير معروف',
-        $reason ?? 'غير محدد'
-    );
 }
 
     public function completed($id, Request $request)
