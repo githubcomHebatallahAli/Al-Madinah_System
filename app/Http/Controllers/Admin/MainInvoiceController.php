@@ -989,15 +989,17 @@ public function rejected($id, Request $request)
     ]);
 
     try {
+        $vonageService = new VonageService();
         $adminNumber = config('services.vonage.admin_number');
-        $whatsappSent = $this->sendWhatsAppToAdmin(
-            $invoice->id,
-            $request->input('reason'),
-            $adminNumber
-        );
+        
+        $message = $this->prepareRejectionMessage($invoice, $request->input('reason'));
+        $result = $vonageService->sendWhatsAppMessage($adminNumber, $message);
 
-        if (!$whatsappSent) {
-            Log::warning('فشل إرسال إشعار واتساب لرفض الفاتورة', ['invoice_id' => $id]);
+        if (!$result['success']) {
+            Log::warning('فشل إرسال إشعار واتساب لرفض الفاتورة', [
+                'invoice_id' => $id,
+                'error' => $result['error'] ?? 'Unknown error'
+            ]);
         }
 
         return $response;
@@ -1005,15 +1007,37 @@ public function rejected($id, Request $request)
     } catch (\Exception $e) {
         Log::error('خطأ غير متوقع في إرسال إشعار الرفض', [
             'invoice_id' => $id,
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
         ]);
         
         return response()->json([
             'data' => $invoice,
             'message' => 'تم رفض الفاتورة ولكن حدث خطأ في إرسال الإشعار',
-            'whatsapp_error' => true
+            'whatsapp_error' => true,
+            'error_details' => $e->getMessage()
         ], 200);
     }
+}
+
+protected function prepareRejectionMessage($invoice, $reason): string
+{
+    return sprintf(
+        "🚨 *إشعار رفض فاتورة*\n\n".
+        "📌 رقم الفاتورة: %s\n".
+        "🏢 المكتب: %s\n".
+        "👤 المسؤول: %s\n".
+        "💵 المبلغ الإجمالي: %s ر.س\n".
+        "📅 تاريخ الإنشاء: %s\n".
+        "🛑 السبب: %s\n\n".
+        "مع تحيات نظام إدارة الفواتير",
+        $invoice->invoiceNumber,
+        $invoice->office_name ?? 'غير معروف',
+        $invoice->worker_name ?? 'غير معروف',
+        $invoice->total ?? '0.00',
+        $invoice->creationDateHijri ?? 'غير معروف',
+        $reason ?? 'غير محدد'
+    );
 }
 
     public function completed($id, Request $request)

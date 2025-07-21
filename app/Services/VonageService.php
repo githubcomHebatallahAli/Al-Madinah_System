@@ -11,10 +11,12 @@ use Vonage\Messages\Channel\WhatsApp\WhatsAppText;
 class VonageService
 {
     protected $client;
+    protected $adminNumbers = [];
 
     public function __construct()
     {
         $this->initializeClient();
+        $this->loadAdminNumbers();
     }
 
     protected function initializeClient(): void
@@ -31,29 +33,59 @@ class VonageService
         );
     }
 
-    public function sendWhatsAppMessage(string $to, string $message): array
+    protected function loadAdminNumbers(): void
+    {
+        $numbers = config('services.vonage.admin_numbers', '');
+        $this->adminNumbers = array_filter(
+            explode(',', $numbers),
+            fn($num) => $this->validatePhoneNumber($num)
+        );
+    }
+
+    public function sendRejectionNotification(array $invoiceData): array
+    {
+        if (empty($this->adminNumbers)) {
+            Log::error('No valid admin numbers configured');
+            return ['success' => false, 'error' => 'No valid admin numbers'];
+        }
+
+        $message = $this->prepareRejectionMessage($invoiceData);
+        $results = [];
+
+        foreach ($this->adminNumbers as $number) {
+            $results[$number] = $this->sendSingleMessage($number, $message);
+        }
+
+        return $results;
+    }
+
+    protected function prepareRejectionMessage(array $invoice): string
+    {
+        return sprintf(
+            "🚨 *إشعار رفض فاتورة*\n\n".
+            "📌 رقم الفاتورة: %s\n".
+            "🏢 المكتب: %s\n".
+            "👤 المسؤول: %s\n".
+            "💵 المبلغ الإجمالي: %s ر.س\n".
+            "📅 تاريخ الإنشاء: %s\n".
+            "🛑 السبب: %s\n\n".
+            "مع تحيات نظام إدارة الفواتير",
+            $invoice['invoiceNumber'] ?? 'غير معروف',
+            $invoice['office_name'] ?? 'غير معروف',
+            $invoice['worker_name'] ?? 'غير معروف',
+            $invoice['total'] ?? '0.00',
+            $invoice['creationDateHijri'] ?? 'غير معروف',
+            $invoice['reason'] ?? 'غير محدد'
+        );
+    }
+
+    protected function sendSingleMessage(string $to, string $message): array
     {
         $defaultResponse = [
             'success' => false,
             'message_id' => null,
-            'response' => null,
-            'error' => null,
-            'code' => null
+            'error' => null
         ];
-
-        if (!config('services.vonage.enabled', false)) {
-            Log::warning('WhatsApp service is disabled in configuration');
-            return array_merge($defaultResponse, [
-                'error' => 'WhatsApp service is disabled'
-            ]);
-        }
-
-        if (empty($to) || !$this->validatePhoneNumber($to)) {
-            Log::error('Invalid recipient phone number', ['to' => $to]);
-            return array_merge($defaultResponse, [
-                'error' => 'Invalid recipient phone number'
-            ]);
-        }
 
         try {
             $fromNumber = config('services.vonage.from');
@@ -62,56 +94,31 @@ class VonageService
                 throw new \RuntimeException('Sender number is not configured');
             }
 
-            $whatsAppMessage = new WhatsAppText(
-                $fromNumber,
-                $to,
-                $message
-            );
-
+            $whatsAppMessage = new WhatsAppText($fromNumber, $to, $message);
             $response = $this->client->messages()->send($whatsAppMessage);
             
             if (is_object($response) && method_exists($response, 'getMessageId')) {
-                $messageId = $response->getMessageId();
-                
-                Log::info('WhatsApp message sent successfully', [
+                Log::info('Invoice rejection notification sent', [
                     'to' => $to,
-                    'message_id' => $messageId,
-                    'from' => $fromNumber
+                    'message_id' => $response->getMessageId()
                 ]);
 
                 return [
                     'success' => true,
-                    'message_id' => $messageId,
-                    'response' => $response->getResponseData(),
-                    'error' => null,
-                    'code' => null
+                    'message_id' => $response->getMessageId()
                 ];
             }
 
             throw new \RuntimeException('Invalid response from Vonage API');
 
         } catch (VonageException $e) {
-            Log::error('Failed to send WhatsApp message', [
+            Log::error('Failed to send rejection notification', [
                 'to' => $to,
-                'error' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
 
             return array_merge($defaultResponse, [
-                'error' => $e->getMessage(),
-                'code' => $e->getCode()
-            ]);
-        } catch (\Throwable $e) {
-            Log::critical('Unexpected error sending WhatsApp message', [
-                'to' => $to,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return array_merge($defaultResponse, [
-                'error' => 'An unexpected error occurred',
-                'code' => $e->getCode()
+                'error' => $e->getMessage()
             ]);
         }
     }
