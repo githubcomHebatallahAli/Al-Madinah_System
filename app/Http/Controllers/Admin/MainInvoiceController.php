@@ -22,6 +22,8 @@ use App\Traits\TracksChangesTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Vonage\Client;
+use Vonage\Client\Credentials\Keypair;
 
 class MainInvoiceController extends Controller
 {
@@ -1044,11 +1046,19 @@ public function rejected($id, Request $request)
 
         // return response()->json($result);
 
-         return response()->json([
-        'enabled' => config('services.vonage.enabled'),
-        'from' => config('services.vonage.from'),
-        'application_id' => config('services.vonage.application_id'),
-    ]);
+      
+     try {
+        $keypair = new Keypair(
+            file_get_contents(storage_path('app/private.key')),
+            config('services.vonage.application_id')
+        );
+
+        $client = new Client($keypair);
+
+        return response()->json(['status' => 'success', 'message' => 'Client created successfully']);
+    } catch (\Exception $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+    }
 
       
 
