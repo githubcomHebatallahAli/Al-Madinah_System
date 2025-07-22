@@ -1063,7 +1063,7 @@ public function rejected($id, Request $request)
             // إرسال الرسالة
             $response = $client->message()->send([
                 'to' => $this->formatPhoneNumber($validated['phone']),
-                'from' => config('services.vonage.whatsapp_from'),
+                'from' => config('services.vonage.from'),
                 'text' => $validated['message'],
                 'type' => 'text',
                 'channel' => 'whatsapp'
