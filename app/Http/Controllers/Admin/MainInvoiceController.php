@@ -23,7 +23,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Vonage\Client;
+use Vonage\Client\Credentials\Basic;
 use Vonage\Client\Credentials\Keypair;
+use Vonage\Messages\Channel\WhatsApp\Text;
+use Vonage\Client\Exception\Exception as VonageException;
 
 class MainInvoiceController extends Controller
 {
@@ -1039,30 +1042,59 @@ public function rejected($id, Request $request)
         return MainInvoiceResource::class;
     }
 
-    public function testWhatsApp()
+  
+    public function sendTestMessage(Request $request)
     {
-        // $vonageService = app(VonageService::class);
-        // $result = $vonageService->sendWhatsAppMessage('201120230743', 'رسالة تجريبية من النظام');
+        $this->authorize('manage_system');
 
-        // return response()->json($result);
+        $validated = $request->validate([
+            'phone' => 'required|string|min:10|max:15',
+            'message' => 'required|string|max:1000'
+        ]);
 
-      
-     try {
-        $keypair = new Keypair(
-            file_get_contents(storage_path('app/private.key')),
-            config('services.vonage.application_id')
-        );
+        try {
+            // تهيئة عميل Vonage
+            $basic = new Basic(
+                config('services.vonage.api_key'),
+                config('services.vonage.api_secret')
+            );
+            $client = new Client($basic);
 
-        $client = new Client($keypair);
+            // إرسال الرسالة
+            $response = $client->message()->send([
+                'to' => $this->formatPhoneNumber($validated['phone']),
+                'from' => config('services.vonage.whatsapp_from'),
+                'text' => $validated['message'],
+                'type' => 'text',
+                'channel' => 'whatsapp'
+            ]);
 
-        return response()->json(['status' => 'success', 'message' => 'Client created successfully']);
-    } catch (\Exception $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            return response()->json([
+                'success' => true,
+                'message_id' => $response['message-id'],
+                'to' => $validated['phone']
+            ]);
+
+        } catch (VonageException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'فشل إرسال الرسالة: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-      
-
-       
+    private function formatPhoneNumber($phone)
+    {
+        // إزالة جميع الأحرف غير الرقمية
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // إضافة رمز الدولة إذا لم يكن موجوداً
+        if (!str_starts_with($phone, '20')) { // كود مصر
+            $phone = '20' . ltrim($phone, '0');
+        }
+        
+        return $phone;
     }
-
+      
 }
+
