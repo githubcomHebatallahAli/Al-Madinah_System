@@ -24,7 +24,7 @@ Route::controller(MainInvoiceController::class)->prefix('/delegate')->middleware
     Route::put('completed/mainInvoice/{id}', 'completed');
     Route::put('absence/mainInvoice/{id}', 'absence');
 
-    Route::post('/test-whatsapp', 'testWhatsApp');
+    Route::post('/test-whatsapp', 'sendTestMessage');
    
 
 
