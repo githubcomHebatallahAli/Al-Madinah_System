@@ -1055,10 +1055,10 @@ public function sendTestMessage(Request $request)
 
     try {
         // إعداد بيانات الاتصال باستخدام keypair
-        $keypair = new Keypair(
-            dd(base_path(env('VONAGE_PRIVATE_KEY'))),
-            env('VONAGE_APPLICATION_ID')
-        );
+     $keypair = new Keypair(
+    file_get_contents(env('VONAGE_PRIVATE_KEY')),
+    env('VONAGE_APPLICATION_ID')
+);
 
         $client = new Client($keypair);
 
