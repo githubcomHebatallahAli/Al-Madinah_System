@@ -45,7 +45,7 @@ return [
     'private_key' => env('VONAGE_PRIVATE_KEY'),
     'api_url' => env('VONAGE_API_URL', 'https://messages-sandbox.nexmo.com/v1/messages'),
     'admin_number' => env('VONAGE_ADMIN_NUMBER'),
-    'enabled' => env('VONAGE_ENABLED', true),
+    'enabled' => env('VONAGE_ENABLED', false),
 ],
 
 
