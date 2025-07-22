@@ -1039,10 +1039,16 @@ public function rejected($id, Request $request)
 
     public function testWhatsApp()
     {
-        $vonageService = app(VonageService::class);
-        $result = $vonageService->sendWhatsAppMessage('201120230743', 'رسالة تجريبية من النظام');
+        // $vonageService = app(VonageService::class);
+        // $result = $vonageService->sendWhatsAppMessage('201120230743', 'رسالة تجريبية من النظام');
 
-        return response()->json($result);
+        // return response()->json($result);
+
+         return response()->json([
+        'enabled' => config('services.vonage.enabled'),
+        'from' => config('services.vonage.from'),
+        'application_id' => config('services.vonage.application_id'),
+    ]);
 
       
 
