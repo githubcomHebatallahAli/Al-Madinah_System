@@ -1055,7 +1055,7 @@ public function sendTestMessage(Request $request)
 
     try {
 $keypair = new Keypair(
-    file_get_contents(env('VONAGE_PRIVATE_KEY')), // اقرأ محتوى ملف المفتاح نفسه
+    dd(file_get_contents(env('VONAGE_PRIVATE_KEY'))), // اقرأ محتوى ملف المفتاح نفسه
     env('VONAGE_APPLICATION_ID')
 );
 
