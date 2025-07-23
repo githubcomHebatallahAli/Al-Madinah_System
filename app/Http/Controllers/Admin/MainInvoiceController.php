@@ -1054,17 +1054,15 @@ public function sendTestMessage(Request $request)
     $vonage = new Client($keypair);
 
     $message = new Text(
-        to: '201112345678',
+        to: '201120230743',
         from: config('services.vonage_whatsapp_sender'),
         text: 'Test message from Laravel'
     );
 
     $vonage->messages()->send($message);
-
     return response()->json(['message' => 'تم الإرسال بنجاح']);
 
 }
 
-      
 }
 
