@@ -1046,12 +1046,18 @@ public function rejected($id, Request $request)
   
 public function sendTestMessage(Request $request)
 {
-      $keyPath = env('VONAGE_PRIVATE_KEY');
-    dd([
-        'path' => $keyPath,
-        'file_exists' => file_exists(base_path($keyPath)),
-        'content' => file_get_contents(base_path($keyPath)),
-    ]);
+  $privateKeyPath = base_path(env('VONAGE_PRIVATE_KEY'));
+
+if (!file_exists($privateKeyPath)) {
+    dd('الملف غير موجود:', $privateKeyPath);
+}
+
+if (is_dir($privateKeyPath)) {
+    dd('المسار يدل على مجلد وليس ملف:', $privateKeyPath);
+}
+
+dd(file_get_contents($privateKeyPath));
+
 }
 
       
