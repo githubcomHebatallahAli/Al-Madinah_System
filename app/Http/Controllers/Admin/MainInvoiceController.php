@@ -1046,7 +1046,7 @@ public function rejected($id, Request $request)
   
 public function sendTestMessage(Request $request)
 {
-dd(env('VONAGE_PRIVATE_KEY'));
+return response(env('VONAGE_PRIVATE_KEY'));
 
 }
 
