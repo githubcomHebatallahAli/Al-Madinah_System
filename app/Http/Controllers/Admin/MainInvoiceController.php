@@ -1046,42 +1046,12 @@ public function rejected($id, Request $request)
   
 public function sendTestMessage(Request $request)
 {
-    $this->authorize('manage_system');
-
-    $validated = $request->validate([
-        'phone' => 'required|string|min:10|max:15',
-        'message' => 'required|string|max:1000'
+      $keyPath = env('VONAGE_PRIVATE_KEY');
+    dd([
+        'path' => $keyPath,
+        'file_exists' => file_exists(base_path($keyPath)),
+        'content' => file_get_contents(base_path($keyPath)),
     ]);
-
-    try {
-$keypair = new Keypair(
-    dd(file_get_contents(env('VONAGE_PRIVATE_KEY'))), // اقرأ محتوى ملف المفتاح نفسه
-    env('VONAGE_APPLICATION_ID')
-);
-
-        $client = new Client($keypair);
-
-        // إنشاء الرسالة
-        $whatsappMessage = new Text(
-            to: $this->formatPhoneNumber($validated['phone']),
-            from: config('services.vonage.from'), // رقم واتساب المفعل
-            text: $validated['message']
-        );
-
-        // إرسال الرسالة
-        $response = $client->messages()->send($whatsappMessage);
-
-        return response()->json([
-            'success' => true,
-            'message_uuid' => $response->getMessageUuid(),
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => 'فشل إرسال الرسالة: ' . $e->getMessage()
-        ], 500);
-    }
 }
 
       
