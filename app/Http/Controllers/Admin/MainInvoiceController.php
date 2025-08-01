@@ -1046,23 +1046,8 @@ public function rejected($id, Request $request)
   
 public function sendTestMessage(Request $request)
 {
-  $keypair = new Keypair(
-        file_get_contents(config('services.vonage_private_key')),
-        config('services.vonage_application_id') // ضيف دي برضه في ملف config/services.php
-    );
 
-    $vonage = new Client($keypair);
-
-    $message = new Text(
-        to: '201120230743',
-        from: config('services.vonage_whatsapp_sender'),
-        text: 'Test message from Laravel'
-    );
-
-    $vonage->messages()->send($message);
-    return response()->json(['message' => 'تم الإرسال بنجاح']);
 
 }
 
 }
-

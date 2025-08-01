@@ -7,7 +7,7 @@ use App\Models\Pilgrim;
 use App\Models\WorkerLogin;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class PilgrimsPolicy
+class PilgrimPolicy
 {
     use HandlesAuthorization;
 

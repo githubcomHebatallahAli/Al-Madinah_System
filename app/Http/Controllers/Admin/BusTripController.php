@@ -20,7 +20,7 @@ use App\Http\Resources\Admin\ShowAllBusTripResource;
 
 class BusTripController extends Controller
 {
-     use HijriDateTrait;
+    use HijriDateTrait;
     use TracksChangesTrait;
     use HandleAddedByTrait;
     use LoadsCreatorRelationsTrait;

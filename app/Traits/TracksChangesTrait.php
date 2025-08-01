@@ -1,8 +1,7 @@
 <?php
 
 namespace App\Traits;
-
-
+use App\Traits\HijriDateTrait;
 trait TracksChangesTrait
 {
      use HijriDateTrait;
