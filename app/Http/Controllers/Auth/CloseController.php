@@ -14,10 +14,11 @@ class CloseController extends Controller
         $status = Close::first();
 
         return response()->json([
-            'status' => $status ? $status->is_active : false
+            'status' => $status && $status->is_active ? true : false
+
         ]);
     }
-    
+
 
     public function toggleStatus(CloseRequest $request)
     {
