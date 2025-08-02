@@ -6,7 +6,7 @@ use App\Models\Admin;
 use App\Models\WorkerLogin;
 use Illuminate\Support\Facades\Auth;
 
-trait HandleAddedByTrait
+trait StorekeeperAddedByTrait
 {
     public function getAddedByIdOrFail()
     {
@@ -14,7 +14,7 @@ trait HandleAddedByTrait
             return Auth::guard('admin')->id();
         }
 
-        if (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 2) {
+        if (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 6) {
             return Auth::guard('worker')->id();
         }
 
@@ -44,7 +44,7 @@ trait HandleAddedByTrait
             return Auth::guard('admin')->id();
         }
 
-        if (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 2) {
+        if (Auth::guard('worker')->check() && Auth::guard('worker')->user()->role_id == 6) {
             return Auth::guard('worker')->id();
         }
 

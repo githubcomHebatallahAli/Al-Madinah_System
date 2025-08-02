@@ -19,6 +19,10 @@ use App\Models\PaymentMethodType;
 use App\Models\Pilgrim;
 use App\Models\Service;
 use App\Models\Shipment;
+use App\Models\ShipmentItem;
+use App\Models\Store;
+use App\Models\Supplier;
+use App\Models\Trip;
 use App\Policies\AdminPolicy;
 use App\Policies\BusDriverPolicy;
 use App\Policies\BusPolicy;
@@ -32,21 +36,32 @@ use App\Policies\HotelPolicy;
 use App\Policies\IhramItemPolicy;
 use App\Policies\IhramSupplyPolicy;
 use App\Policies\MainInvoicePolicy;
+
 use App\Policies\OfficePolicy;
 use App\Policies\PaymentMethodPolicy;
 use App\Policies\PaymentMethodTypePolicy;
-
 use App\Policies\PilgrimPolicy;
+
 use App\Policies\ServicePolicy;
+
+use App\Policies\ShipmentItemPolicy;
 use App\Policies\ShipmentPolicy;
+use App\Policies\StorePolicy;
+use App\Policies\SupplierPolicy;
+use App\Policies\TripPolicy;
 use function Illuminate\Foundation\Configuration\basePath;
-
 use Illuminate\Foundation\Application;
-
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+
+
+
+
+
+
+
 
 
 
@@ -86,5 +101,8 @@ return Application::configure(basePath: dirname(__DIR__))
         Gate::policy(PaymentMethodType::class, PaymentMethodTypePolicy::class);
         Gate::policy(Service::class, ServicePolicy::class);
         Gate::policy(Shipment::class, ShipmentPolicy::class);
-
+        Gate::policy(ShipmentItem::class, ShipmentItemPolicy::class);
+        Gate::policy(Store::class, StorePolicy::class);
+        Gate::policy(Supplier::class, SupplierPolicy::class);
+        Gate::policy(Trip::class, TripPolicy::class);
     })->create();
